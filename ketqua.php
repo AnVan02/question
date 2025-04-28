@@ -10,15 +10,15 @@ if (!isset($_SESSION["highest_score"])) $_SESSION["highest_score"] = 0;
 if (!isset($_SESSION["time"])) $_SESSION["time"] = date("d-m-Y H:i:s");
 if (!isset($_SESSION["selected_questions"])) $_SESSION["selected_questions"] = [];
 
-$score = $_SESSION["score"];
-$total = 5; // Fixed to 5 questions
-$attempts = $_SESSION["attempts"];
-$highest = $_SESSION["highest_score"];
-$time = $_SESSION["time"];
+$score = (int)$_SESSION["score"];
+$attempts = (int)$_SESSION["attempts"];
+$highest = (int)$_SESSION["highest_score"];
+$time = htmlspecialchars($_SESSION["time"]);
 $answers = $_SESSION["answers"];
 $selected_question_indices = $_SESSION["selected_questions"];
+$total = count($selected_question_indices); // Dynamic total based on selected questions
 
-// Check for limit exceeded message
+// Check for limit exceeded
 $showLimitMessage = isset($_GET["limit_exceeded"]) || $attempts >= 3;
 
 // Map answer keys to A, B, C, D
@@ -104,6 +104,12 @@ $answer_labels = ['A', 'B', 'C', 'D'];
             font-weight: bold;
             color: red;
         }
+        .correct-answer {
+            font-weight: bold;
+            color: green;
+            background: #e6ffe6;
+            padding: 5px;
+        }
         .limit-message {
             color: red;
             font-weight: bold;
@@ -115,6 +121,12 @@ $answer_labels = ['A', 'B', 'C', 'D'];
             text-align: center;
             font-weight: bold;
         }
+        .explanation-block {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-left: 5px solid;
+        }
     </style>
 </head>
 <body>
@@ -122,28 +134,28 @@ $answer_labels = ['A', 'B', 'C', 'D'];
         <h2>🎉 Kết quả làm bài kiểm tra 🎉</h2>
         <p><strong>Bài test về môn Lập Trình</strong></p>
         <p><strong>Tổng điểm:</strong> <?= $score ?> / <?= $total ?></p>
-        <p><strong>Ngày làm bài kiểm tra:</strong> <?= htmlspecialchars($time) ?></p>
+        <p><strong>Ngày làm bài kiểm tra:</strong> <?= $time ?></p>
         <p><strong>Số lần làm bài:</strong> <?= $attempts ?> / 3</p>
         <p><strong>Điểm cao nhất:</strong> <?= $highest ?> / <?= $total ?></p>
         <hr>
 
         <?php
-        $answeredQuestions = 0; // Track the number of answered questions
+        $answeredQuestions = 0;
         foreach ($selected_question_indices as $index => $question_index) {
-            // Only display questions that were answered
-            if (isset($answers[$index]["selected"])) {
+            if (!isset($questions[$question_index])) {
+                continue; // Skip invalid question indices
+            }
+            $question_data = $questions[$question_index];
+            $userAnswer = isset($answers[$index]["selected"]) ? $answers[$index]["selected"] : null;
+            $isCorrect = isset($answers[$index]["is_correct"]) ? $answers[$index]["is_correct"] : false;
+
+            if ($userAnswer !== null) {
                 $answeredQuestions++;
-                $userAnswer = $answers[$index]["selected"];
-                $isCorrect = $answers[$index]["is_correct"];
-                $question_data = $questions[$question_index];
+            }
         ?>
             <div class="question-block">
                 <p class="question-text">Câu <?= $index + 1 ?>: <?= htmlspecialchars($question_data["question"]) ?></p>
-                <?php if (!empty($question_data["image"])): ?>
-                    <div class="question-image-container">
-                        <img src="<?= htmlspecialchars($question_data["image"]) ?>" alt="Hình ảnh câu hỏi" style="max-width: 100%; height: auto; margin: 10px 0;">
-                    </div>
-                <?php endif; ?>
+
                 <ul>
                     <?php foreach ($question_data["choices"] as $key => $value): ?>
                         <?php
@@ -151,9 +163,8 @@ $answer_labels = ['A', 'B', 'C', 'D'];
                         $style = '';
                         $icon = '';
                         if ($key === $userAnswer) {
-                            // Only highlight the user's answer
                             $style = $isCorrect ? 'correct' : 'incorrect';
-                            $icon = $isCorrect ? '✅ (Đáp án của bạn)' : '❌ (Đáp án của bạn)';
+                            $icon = $isCorrect ? '✅' : '❌ ';
                         }
                         ?>
                         <li class="<?= $style ?>">
@@ -161,22 +172,39 @@ $answer_labels = ['A', 'B', 'C', 'D'];
                         </li>
                     <?php endforeach; ?>
                 </ul>
+
+                <?php if ($userAnswer !== null): ?>
+                    <div class="explanation-block" style="border-color: <?= $isCorrect ? 'green' : 'red' ?>;">
+                        <?php if ($isCorrect): ?>
+                            <p><strong>👍 Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p>
+                        <?php else: ?>
+                            <p><strong>👎 Giải thích: </strong> <?= htmlspecialchars($question_data["explanations"][$userAnswer]) ?></p>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="explanation-block" style="border-color: orange;">
+                        <p style="color:orange; font-weight:bold;">⚠️ Bạn chưa trả lời câu hỏi này!</p>
+                    </div>
+                <?php endif; ?>
                 <hr>
             </div>
         <?php
-            }
         }
         ?>
 
-        <?php if ($answeredQuestions === 0): ?>
-            <p class="no-answers">Bạn chưa trả lời câu hỏi nào!</p>
+        <?php if ($answeredQuestions === 0 && $total > 0): ?>
+            <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a href="FAQ.php">Quay lại làm bài</a></p>
+        <?php elseif ($total === 0): ?>
+            <p class="no-answers">Không có câu hỏi nào được chọn! <a href="FAQ.php">Quay lại làm bài</a></p>
         <?php endif; ?>
 
-        <?php if ($showLimitMessage): ?>
-            <p class="limit-message">Bạn đã sử dụng hết 3 lần làm bài!</p>
-        <?php endif; ?>
+        <!-- <?php if ($showLimitMessage): ?>
+            <p class="limit-message">Bạn đã sử dụng hết 3 lần làm bài! Liên hệ giáo viên để đặt lại lượt.</p>
+        <?php endif; ?> -->
 
-        <a href="<?= $attempts >= 3 ? '#' : 'FAQ.php?reset=1' ?>" class="try-again <?= $attempts >= 3 ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / 3)</a>
+        <a href="<?= $attempts >= 3 ? '#' : 'FAQ.php?reset=1' ?>" class="try-again <?= $attempts >= 3 ? 'disabled' : '' ?>">
+            🔁 Thử lại (<?= $attempts ?> / 3)
+        </a>
     </div>
 </body>
 </html>
