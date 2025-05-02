@@ -73,20 +73,6 @@ console.log(typeof null);
     'correct' => 'C',
     'explanation' => 'Hiện nay, có khoảng 700 loại ngôn ngữ lập trình được nghiên cứu và sử dụng rộng rãi trên toàn thế giới',
   ),
-  8 => 
-  array (
-    'question' => 'có bao nhieu ngôn ngữ lâp trinh',
-    'image' => '',
-    'choices' => 
-    array (
-      'A' => '200',
-      'B' => '300',
-      'C' => '700',
-      'D' => '10000',
-    ),
-    'correct' => 'C',
-    'explanation' => 'Hiện nay, có khoảng 700 loại ngôn ngữ lập trình được nghiên cứu và sử dụng rộng rãi trên toàn thế giới',
-  ),
   9 => 
   array (
     'question' => 'Phím sao chép trên thiết bị máy tính',

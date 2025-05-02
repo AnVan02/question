@@ -17,7 +17,7 @@ if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0755, true);
 }
 
-// Handle form submission for adding or editing questions
+// lấy dữ liệu câu hỏi đế chỉnh sửa 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     $question_text = trim($_POST["question_text"]);
     $choices = [
@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     $question_id = isset($_POST["question_id"]) ? $_POST["question_id"] : null;
     $image = "";
 
-    // Handle image upload
+    // Upload hình ảnh
     if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
         $allowed_types = ['image/png', 'image/jpeg', 'image/gif'];
         $max_size = 2 * 1024 * 1024; // 2MB

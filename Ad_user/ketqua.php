@@ -18,10 +18,28 @@ function getQuestionsFromDB() {
     $questions = [];
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $questions[] = $row; // Lưu câu hỏi vào mảng
+            // Lưu câu hỏi vào mảng 
+            $questions[] = [
+                'id' => $row['Id_cauhoi'],
+                'cauhoi' => $row['cauhoi'],
+                'hinhanh' => $row['hinhanh'],
+                'cau_a' => $row['cau_a'],
+                'giaithich_a' => $row['giaithich_a'],
+                'cau_b' => $row['cau_b'],
+                'giaithich_b' => $row['giaithich_b'],
+                'cau_c' => $row['cau_c'],
+                'giaithich_c' => $row['giaithich_c'],
+                'cau_d' => $row['cau_d'],
+                'giaithich_d' => $row['giaithich_d'],
+                'dap_an' => $row['dap_an']
+
+            ];
         }
     }
     $conn->close();
+    if (empty ($questions)) {
+        die ("Lỗi: không có câu nào tron cơ sở dữ liệu.");
+    }
     return $questions;
 }
 
@@ -35,14 +53,8 @@ $time = htmlspecialchars($_SESSION["time"] ?? date("d-m-Y H:i:s"));
 $answers = $_SESSION["answers"] ?? [];
 $selected_question_indices = $_SESSION["selected_questions"] ?? [];
 $total = count($selected_question_indices);
-// $showLimitMessage = $message !== "" || $attempts >= 3;
 
-// Đảm bảo câu hỏi đã được lấy từ cơ sở dữ liệu
 ?>
-
-
-
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -53,8 +65,8 @@ $total = count($selected_question_indices);
 </head>
 <body>
     <div class="container">
-        <h1>🎉 Kết quả Quiz Lập Trình 🎉</h1>
-        <p><strong>Bài test về môn Lập Trình</strong></p>
+        <h1> Kết Quả Môn Lập Trình </h1>
+        <p><strong>Bài Quiz Về Môn Lập Trình</strong></p>
         
         <p><strong>Tổng điểm:</strong> <?= $score ?> / <?= $total ?></p>
         <p><strong>Điểm cao nhất:</strong> <?= $highest ?> / <?= $total ?></p>
@@ -84,6 +96,13 @@ $total = count($selected_question_indices);
                             'C' => $question_data["cau_c"],
                             'D' => $question_data["cau_d"]
                         ];
+                        $explanations = [
+                            'A' => $question_data["giaithich_a"],
+                            'B' => $question_data["giaithich_b"],
+                            'C' => $question_data["giaithich_c"],
+                            'D' => $question_data["giaithich_d"]
+
+                        ];
                         foreach ($choices as $key => $value) {
                             $style = '';
                             $icon = '';
@@ -100,122 +119,142 @@ $total = count($selected_question_indices);
                     <?php if ($userAnswer !== null): ?>
                         <div class="explanation-block" style="border-color: <?= $isCorrect ? 'green' : 'red' ?>;">
                             <?php if ($isCorrect): ?>
-                                <p><strong>🥰👍 Giải thích:</strong> <?= htmlspecialchars($question_data["giaithich"]) ?></p>
+                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
                             <?php else: ?>
-                                <p><strong>😱👎 Giải thích:</strong> <?= htmlspecialchars($question_data["giaithich"]) ?></p>
+                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
+                                <!-- <p><strong>Bạn chọn:</strong> <?= htmlspecialchars($choices[$userAnswer]) ?> (Giải thích: <?= htmlspecialchars($explanations[$userAnswer]) ?>)</p> -->
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
+
                         <div class="explanation-block" style="border-color: orange;">
-                            <p style="color: orange; font-weight: bold;">⚠️ Bạn chưa trả lời câu hỏi này!</p>
-                            <p><strong>Đáp án đúng:</strong> <span class="correct-answer"><?= $question_data["dap_an"] ?>. <?= htmlspecialchars($question_data[$question_data["dap_an"]]) ?></span></p>
-                            <p><strong>Giải thích:</strong> <?= htmlspecialchars($question_data["giaithich"]) ?></p>
+                            <p style="color: orange; font-weight: bold;"> Bạn chưa trả lời câu hỏi này!</p>
+                            <p><strong>Đáp án đúng:</strong> <span class="correct-answer"><?= $question_data["dap_an"] ?>. <?= htmlspecialchars($choices[$question_data["dap_an"]]) ?></span></p>
+                            <p><strong>Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
                         </div>
                     <?php endif; ?>
                     <hr>
                 </div>
-
             <?php endforeach; ?>
         <?php endif; ?>
 
         <a href="<?= $attempts >= 3 ? '#' : 'FAQ.php?reset=1' ?>" class="try-again <?= $attempts >= 3 ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / 3)</a>
     </div>
 
-<style>
-        /* CSS cho giao diện */
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f4f4f9;
-            margin: 0;
-            font-size: 16px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-        }
-        p {
-            font-size: 16px;
-            color: #1a1a1a;
-            margin: 10px 0;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-        hr {
-            border: 0;
-            border-top: 1px solid #e0e0e0;
-            margin: 20px 0;
-        }
-        a.try-again {
-            display: inline-block;
-            padding: 10px 25px;
-            background: #6f42c1;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-        a.try-again:hover {
-            background: #563d7c;
-        }
-        a.try-again.disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .question-block {
-            margin-bottom: 25px;
-        }
-        .question-text {
-            font-weight: bold;
-            color: #1a1a1a;
-        }
-        .correct {
-            font-weight: bold;
-            color: green;
-        }
-        .incorrect {
-            font-weight: bold;
-            color: red;
-        }
-        .correct-answer {
-            font-weight: bold;
-            color: green;
-            background: #e6ffe6;
-            padding: 5px;
-        }
-        .limit-message {
-            color: red;
-            font-weight: bold;
-            text-align: center;
-            margin: 15px 0;
-        }
-        .no-answers {
-            color: orange;
-            text-align: center;
-            font-weight: bold;
-        }
-        .explanation-block {
-            margin-top: 15px;
-            padding: 10px;
-            background: #f9f9f9;
-            border-left: 5px solid;
-        }
-    </style>
+    <Style>
+    body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fa;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    color: #2c3e50;
+    text-align: center;
+}
+
+p {
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 6px;
+    background-color: #f1f1f1;
+    transition: background-color 0.3s;
+}
+
+li.correct {
+    background-color: #d4edda;
+    color: #155724;
+    font-weight: bold;
+}
+
+li.incorrect {
+    background-color: #f8d7da;
+    color: #721c24;
+    font-weight: bold;
+}
+
+.question-block {
+    margin-bottom: 30px;
+    padding: 20px;
+    border-left: 6px solid #3498db;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.question-text {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.explanation-block {
+    margin-top: 10px;
+    padding: 15px;
+    border-left: 6px solid;
+    background-color: #fff3cd;
+    border-radius: 6px;
+}
+
+.correct-answer {
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+a.try-again {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 25px;
+    background-color: #3498db;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+a.try-again:hover {
+    background-color: #2980b9;
+}
+
+a.try-again.disabled {
+    background-color: #ccc;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.no-answers {
+    color: #e74c3c;
+    text-align: center;
+    font-weight: bold;
+}
+
+</Style>
