@@ -157,7 +157,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
         <form method="POST" enctype="multipart/form-data">
             <label>ID câu hỏi</label><br>
             <input type="text" name="id_cauhoi" value="<?= htmlspecialchars ($question_data ['id_cauhoi'] ?? '') ?>"><br><br>
-        
+
+            <label>loại bài test</label><br>
+            <!-- <input type="text" name="loai_baitest" value="<?= htmlspecialchars ($question_data ['loai_baitest'] ?? '') ?>"><br><br> -->
+            <select name="correct" class= "custom-select">
+                <option value="Python co bản"<?=($question_data ['loai_baitest'] ?? '') =='Python co ban '? 'selected' :''?>>Python cơ bản</option>
+                <option value="Python nang cao"<?= ($question_data ['loai_baitest'] ?? '')=='Python nang cao' ? 'selected' :''?>>Python nâng cao</option>
+                <option value="YOLO"<?= ($question_data ['loai_baitest']??'')=='YOLO' ? 'selected':''?>>YOLO</option>
+            </select>
+            
             <label>ID bài test:</label><br>
             <select name="correct" class="custom-select"></select>
             <input type="text" name="id_baitest" value="<?= htmlspecialchars($question_data['id_baitest'] ?? '') ?>"><br><br>

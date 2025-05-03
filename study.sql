@@ -22,6 +22,27 @@ SET time_zone = "+00:00";
 --
 
 -- --------------------------------------------------------
+--
+-- Cấu trúc bảng cho bảng `product` 
+--
+CREATE TABLE `product`(
+  `id_baitest` int (200) NOT NULL ,
+  `ten_baitest` varchar(255) NOT NULL, 
+  `loai_baitest` varchar (255) NOT NULL,
+  `cau_hoi` varchar(255) NOT NULL,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+--
+-- Đổ dữ liệu cho bảng `product` 
+--
+
+
+
+
+
+
 
 --
 -- Cấu trúc bảng cho bảng `quiz`
@@ -54,7 +75,6 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `cauhoi`, `hinhanh`, `cau_a`, `gi
 (4, 'TEST1', 'What is MySQL?', '', 'A programming language', 'Incorrect.', 'A database management system', 'Manages databases.', 'A web server', 'Incorrect.', 'A text editor', 'Incorrect.', 'B'),
 (5, 'TEST1', 'What is the purpose of JavaScript?', '', 'Styling web pages', 'CSS is for styling.', 'Adding interactivity to web pages', 'Correct.', 'Managing databases', 'Incorrect.', 'Serving web pages', 'Incorrect.', 'B'),
 (6, '1', 'hello là gì', '', 'for', 'dfsfjđss', 'hello', 'dsjfodjds', 'do-while', 'dsjdjdjs', 'if', 'dsjjdhsodo', 'B'),
-(7, '1', 'hello là gì', NULL, 'for', 'dfsfjđss', 'hello', 'dsjfodjds', 'do-while', 'dsjdjdjs', 'if', 'dsjjdhsodo', 'B'),
 (8, 'Giưa ky', '1+2 = mấy', NULL, '2', 'dfsfjđss', '4', 'dsjfodjds', '3', 'dsjdjdjs', '5', 'dsjjdhsodo', 'C'),
 (9, 'GIUA_KY', 'Ngôn ngữ lập trình nào được sử dụng chủ yếu cho phát triển web phía server?', NULL, 'PHP', 'PHP là ngôn ngữ phía server phổ biến.', 'CSS', 'CSS dùng để định dạng giao diện.', 'HTML', 'HTML là ngôn ngữ đánh dấu.', 'JavaScript', 'JavaScript chủ yếu chạy trên trình duyệt.', 'A'),
 (10, 'GIUA_KY', 'Câu lệnh nào dùng để lặp trong PHP?', NULL, 'for', 'Câu lệnh for dùng để lặp với số lần xác định.', 'if', 'if dùng để kiểm tra điều kiện.', 'echo', 'echo dùng để xuất dữ liệu.', 'switch', 'switch dùng để chọn nhiều trường hợp.', 'A'),
