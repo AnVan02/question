@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th5 01, 2025 lúc 07:22 PM
+-- Thời gian đã tạo: Th5 04, 2025 lúc 08:08 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -24,12 +24,33 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `khoa_hoc`
+--
+
+CREATE TABLE `khoa_hoc` (
+  `id` int(11) NOT NULL,
+  `khoa_hoc` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `khoa_hoc`
+--
+
+INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
+(1, 'Python cơ bản'),
+(2, 'Python nâng cao'),
+(3, 'YOLO');
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `quiz`
 --
 
 CREATE TABLE `quiz` (
-  `Id_cauhoi` int(255) NOT NULL,
-  `id_baitest` varchar(255) NOT NULL,
+  `Id_cauhoi` int(11) NOT NULL,
+  `id_baitest` int(11) NOT NULL,
+  `id_khoa` int(11) NOT NULL,
   `cauhoi` varchar(255) NOT NULL,
   `hinhanh` varchar(255) DEFAULT NULL,
   `cau_a` varchar(255) NOT NULL,
@@ -47,44 +68,91 @@ CREATE TABLE `quiz` (
 -- Đang đổ dữ liệu cho bảng `quiz`
 --
 
-INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
-(1, 'TEST1', 'What is PHP?', '', 'A server-side scripting language', 'PHP runs on the server.', 'A styling language', 'CSS is for styling.', 'A database', 'MySQL is a database.', 'A browser', 'Browsers display web pages.', 'A'),
-(2, 'TEST1', 'What does HTML stand for?', '', 'Hyper Text Markup Language', 'Correct definition.', 'High Text Machine Language', 'Incorrect.', 'Hyper Tabular Markup Language', 'Incorrect.', 'None of these', 'Incorrect.', 'A'),
-(3, 'TEST1', 'Which is a CSS framework?', 'images/bootstrap.png', 'Bootstrap', 'A popular CSS framework.', 'Laravel', 'A PHP framework.', 'Django', 'A Python framework.', 'Flask', 'A Python framework.', 'A'),
-(4, 'TEST1', 'What is MySQL?', '', 'A programming language', 'Incorrect.', 'A database management system', 'Manages databases.', 'A web server', 'Incorrect.', 'A text editor', 'Incorrect.', 'B'),
-(5, 'TEST1', 'What is the purpose of JavaScript?', '', 'Styling web pages', 'CSS is for styling.', 'Adding interactivity to web pages', 'Correct.', 'Managing databases', 'Incorrect.', 'Serving web pages', 'Incorrect.', 'B'),
-(6, '1', 'hello là gì', '', 'for', 'dfsfjđss', 'hello', 'dsjfodjds', 'do-while', 'dsjdjdjs', 'if', 'dsjjdhsodo', 'B'),
-(7, '1', 'hello là gì', NULL, 'for', 'dfsfjđss', 'hello', 'dsjfodjds', 'do-while', 'dsjdjdjs', 'if', 'dsjjdhsodo', 'B'),
-(8, 'Giưa ky', '1+2 = mấy', NULL, '2', 'dfsfjđss', '4', 'dsjfodjds', '3', 'dsjdjdjs', '5', 'dsjjdhsodo', 'C'),
-(9, 'GIUA_KY', 'Ngôn ngữ lập trình nào được sử dụng chủ yếu cho phát triển web phía server?', NULL, 'PHP', 'PHP là ngôn ngữ phía server phổ biến.', 'CSS', 'CSS dùng để định dạng giao diện.', 'HTML', 'HTML là ngôn ngữ đánh dấu.', 'JavaScript', 'JavaScript chủ yếu chạy trên trình duyệt.', 'A'),
-(10, 'GIUA_KY', 'Câu lệnh nào dùng để lặp trong PHP?', NULL, 'for', 'Câu lệnh for dùng để lặp với số lần xác định.', 'if', 'if dùng để kiểm tra điều kiện.', 'echo', 'echo dùng để xuất dữ liệu.', 'switch', 'switch dùng để chọn nhiều trường hợp.', 'A'),
-(11, 'GIUA_KY', 'Hàm nào dùng để kết nối cơ sở dữ liệu MySQL trong PHP?', NULL, 'mysqli_connect', 'Hàm này tạo kết nối đến MySQL.', 'mysql_connect', 'Hàm cũ, không khuyến khích dùng.', 'connect_db', 'Không phải hàm có sẵn.', 'db_open', 'Không tồn tại trong PHP.', 'A'),
-(12, 'CUOI_KY', 'Phương thức nào dùng để gửi dữ liệu form an toàn hơn trong HTML?', NULL, 'POST', 'POST gửi dữ liệu qua body, an toàn hơn.', 'GET', 'GET gửi dữ liệu qua URL, dễ bị lộ.', 'PUT', 'PUT dùng trong API, không phải form HTML.', 'DELETE', 'DELETE dùng trong API, không phải form HTML.', 'A'),
-(13, 'CUOI_KY', 'Trong PHP, biến toàn cục được khai báo bằng từ khóa nào?', NULL, 'global', 'Từ khóa global dùng để truy cập biến toàn cục.', 'static', 'static giữ giá trị giữa các lần gọi hàm.', 'const', 'const khai báo hằng số.', 'var', 'var không dùng để khai báo biến toàn cục.', 'A'),
-(14, 'CUOI_KY', 'Hàm nào dùng để mã hóa mật khẩu trong PHP?', NULL, 'password_hash', 'Hàm này tạo chuỗi băm an toàn cho mật khẩu.', 'md5', 'md5 không an toàn cho mật khẩu.', 'sha1', 'sha1 không an toàn cho mật khẩu.', 'encrypt', 'Không phải hàm chuẩn trong PHP.', 'A'),
-(15, 'CUOI_KY', 'Câu lệnh SQL nào dùng để cập nhật dữ liệu?', NULL, 'UPDATE', 'UPDATE dùng để sửa đổi dữ liệu.', 'INSERT', 'INSERT dùng để thêm dữ liệu.', 'DELETE', 'DELETE dùng để xóa dữ liệu.', 'SELECT', 'SELECT dùng để truy vấn dữ liệu.', 'A'),
-(16, 'CUOI_KY', 'Trong PHP, hàm nào dùng để lấy số phần tử của mảng?', NULL, 'count', 'Hàm count trả về số phần tử của mảng.', 'sizeof', 'sizeof tương tự count, nhưng count phổ biến hơn.', 'length', 'length không tồn tại trong PHP.', 'array_length', 'array_length không phải hàm PHP.', 'A'),
-(17, 'CUOI_KY', 'Thẻ HTML nào dùng để tạo liên kết?', NULL, '<a>', 'Thẻ <a> tạo liên kết với thuộc tính href.', '<link>', '<link> dùng để liên kết tài nguyên như CSS.', '<href>', '<href> không phải thẻ HTML.', '<url>', '<url> không phải thẻ HTML.', 'A');
+INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `id_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
+(1, 1, 1, 'Python là ngôn ngữ lập trình gì?', 'cuoiky.jpg', 'Python là ngôn ngữ cấp thấp', 'Sai, Python là ngôn ngữ cấp cao', 'Python là ngôn ngữ lập trình tổng quát', 'Đúng', 'Python là ngôn ngữ sử dụng cho hệ điều hành', 'Sai, không đặc trưng cho hệ điều hành', 'Python là ngôn ngữ lập trình cho game', 'Sai, không đặc biệt cho game', 'B'),
+(2, 2, 2, 'Trong Python, lệnh nào dùng để khai báo một hàm?', 'hinh_2.jpg', 'def', 'Đúng, def dùng để khai báo hàm', 'function', 'Sai, không phải cú pháp của Python', 'func', 'Sai, không phải cú pháp của Python', 'declare', 'Sai, không phải cú pháp của Python', 'A'),
+(3, 3, 3, 'YOLO là gì trong học máy?', 'yolo_image.jpg', 'You Only Learn Once', 'Sai, YOLO là You Only Look Once', 'You Open Learning Once', 'Sai, không phải', 'You Only Live Once', 'Sai, không phải', 'You Observe Learning Once', 'Sai, không phải', 'B');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `test`
+--
+
+CREATE TABLE `test` (
+  `id_test` int(11) NOT NULL,
+  `id_khoa` int(11) NOT NULL,
+  `ten_test` varchar(255) NOT NULL,
+  `lan_thu` int(11) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `test`
+--
+
+INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`) VALUES
+(1, 1, 'Giữa kỳ', 1),
+(2, 2, 'Giữa kỳ', 1),
+(3, 3, 'Cuối kỳ', 5),
+(4, 1, 'cuôi kỳ', 5);
 
 --
 -- Chỉ mục cho các bảng đã đổ
 --
 
 --
+-- Chỉ mục cho bảng `khoa_hoc`
+--
+ALTER TABLE `khoa_hoc`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Chỉ mục cho bảng `quiz`
 --
 ALTER TABLE `quiz`
-  ADD PRIMARY KEY (`Id_cauhoi`);
+  ADD PRIMARY KEY (`Id_cauhoi`),
+  ADD KEY `id_khoa` (`id_khoa`),
+  ADD KEY `id_baitest` (`id_baitest`);
+
+--
+-- Chỉ mục cho bảng `test`
+--
+ALTER TABLE `test`
+  ADD PRIMARY KEY (`id_test`),
+  ADD KEY `id_khoa` (`id_khoa`);
 
 --
 -- AUTO_INCREMENT cho các bảng đã đổ
 --
 
 --
--- AUTO_INCREMENT cho bảng `quiz`
+-- AUTO_INCREMENT cho bảng `khoa_hoc`
+--
+ALTER TABLE `khoa_hoc`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT cho bảng `test`
+--
+ALTER TABLE `test`
+  MODIFY `id_test` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Các ràng buộc cho các bảng đã đổ
+--
+
+--
+-- Các ràng buộc cho bảng `quiz`
 --
 ALTER TABLE `quiz`
-  MODIFY `Id_cauhoi` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  ADD CONSTRAINT `quiz_ibfk_1` FOREIGN KEY (`id_khoa`) REFERENCES `khoa_hoc` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `quiz_ibfk_2` FOREIGN KEY (`id_baitest`) REFERENCES `test` (`id_test`) ON DELETE CASCADE;
+
+--
+-- Các ràng buộc cho bảng `test`
+--
+ALTER TABLE `test`
+  ADD CONSTRAINT `test_ibfk_1` FOREIGN KEY (`id_khoa`) REFERENCES `khoa_hoc` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
