@@ -76,9 +76,9 @@
                             <li class="has-submenu">
                                 <a href="#">SMB <i class="fas fa-chevron-right"></i></a>
                                 <ul class="submenu">
-                                    <li><a href="/courses/Assitant.php">CHATBOT AI</a></li>
-                                    <li><a href="/courses/AIchamcong.php">CHẤM CÔNG CAMERA AI</a></li>
-                                    <li><a href="/courses/Nextcloud.php">NEXCLOUND</a></li>
+                                    <li><a href="Assitant.php">CHATBOT AI</a></li>
+                                    <li><a href="AI chamcong.php">CHẤM CÔNG CAMERA AI</a></li>
+                                    <li><a href="Nextcloud.php">NEXCLOUND</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -115,14 +115,14 @@
                                 <li><a href="/courses/python-course.php">PYTHON CƠ BẢN</a></li>
                                 <li><a href="/courses/yolo-course.php">THỊ GIÁC MÁY TÍNH</a></li>
                                 </ul>
-                            </li>
-                        </ul>
+                        </li>
+                    </ul>
                         <li class="has-submenu">
                             <a href="javascript:void(0)" class="submenu-toggle">SMB<i class="fas fa-chevron-down" style="margin-left:15px"></i></a>
                             <ul class="submenu">
                                 <li><a href="/courses/Assitant.php">CHATBOX AI</a></li>
-                                <li><a href="/courses/AIchamcong.php">CHẤM CÔNG CAMERA AI</a></li>
-                                <li><a href="/courses/Nextcloud.php">NEXTCLOUND</a></li>
+                                <li><a href="/courses/AI chamcong.php">CHẤM CÔNG CAMERA AI</a></li>
+                                <li><a href="/courses/Nextclound.php">NEXTCLOUND</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -533,7 +533,7 @@
             }
 
             .nav_container ul li a {
-                font-size: 15px;
+                font-size: 14px;
                 padding: 5px 10px;
                 color: #000000; /* Change text color to yellow */
                 text-decoration: none; /* Remove underline */

@@ -2,179 +2,299 @@
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "study");
     if ($conn->connect_error) {
-        die("Kết nối thất bại: " . $conn->connect_error);
+        die("Kết nối CSDL thất bại: " . $conn->connect_error);
     }
     return $conn;
 }
 
-// Xử lý xóa câu hỏi
 $message = "";
-if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
-    $delete_id = (int)$_GET['delete_id'];
-    $conn = dbconnect();
-    
-    // Kiểm tra xem câu hỏi có hình ảnh không và xóa nếu có
-    $sql = "SELECT hinhanh FROM quiz WHERE Id_cauhoi = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $delete_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        if (!empty($row['hinhanh']) && file_exists($row['hinhanh'])) {
-            unlink($row['hinhanh']); // Xóa file hình ảnh
-        }
-    }
-    $stmt->close();
 
-    // Xóa câu hỏi khỏi cơ sở dữ liệu
-    $sql = "DELETE FROM khoahoc WHERE ten_khoahoc = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $delete_id);
+// Xử lý xóa khóa học
+if (isset($_GET['delete'])) {
+    $id = (int) $_GET['delete'];
+    $conn = dbconnect();
+    $stmt = $conn->prepare("DELETE FROM khoa_hoc WHERE id = ?");
+    $stmt->bind_param("i", $id);
     if ($stmt->execute()) {
-        $message = "<div style='color:green;'>Xóa câu hỏi thành công!</div>";
+        $message = "<div style='color:green;'>Đã xóa khóa học thành công!</div>";
     } else {
-        $message = "<div style='color:red;'>Lỗi khi xóa câu hỏi: " . $stmt->error . "</div>";
+        $message = "<div style='color:red;'>Lỗi khi xóa: " . $stmt->error . "</div>";
     }
     $stmt->close();
     $conn->close();
 }
 
-// Lấy danh sách câu hỏi
+// Xử lý sửa khóa học
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_course"])) {
+    $id = (int) $_POST["course_id"];
+    $ten_khoahoc = trim($_POST["ten_khoahoc"]);
+    if (empty($ten_khoahoc)) {
+        $message = "<div style='color:red;'>Vui lòng nhập tên khóa học!</div>";
+    } else {
+        $conn = dbconnect();
+        $stmt = $conn->prepare("UPDATE khoa_hoc SET khoa_hoc = ? WHERE id = ?");
+        $stmt->bind_param("si", $ten_khoahoc, $id);
+        if ($stmt->execute()) {
+            $message = "<div style='color:green;'>Đã cập nhật khóa học thành công!</div>";
+        } else {
+            $message = "<div style='color:red;'>Lỗi khi cập nhật: " . $stmt->error . "</div>";
+        }
+        $stmt->close();
+        $conn->close();
+    }
+}
+
+// Xử lý thêm mới
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_course"])) {
+    $ten_khoahoc = trim($_POST["ten_khoahoc"]);
+    if (empty($ten_khoahoc)) {
+        $message = "<div style='color:red;'>Vui lòng nhập tên khóa học!</div>";
+    } else {
+        $conn = dbconnect();
+        $stmt = $conn->prepare("INSERT INTO khoa_hoc (khoa_hoc) VALUES (?)");
+        $stmt->bind_param("s", $ten_khoahoc);
+        if ($stmt->execute()) {
+            $message = "<div style='color:green;'>Đã thêm khóa học thành công!</div>";
+        } else {
+            $message = "<div style='color:red;'>Lỗi khi thêm: " . $stmt->error . "</div>";
+        }
+        $stmt->close();
+        $conn->close();
+    }
+}
+
+// Lấy danh sách khóa học
 $conn = dbconnect();
-$sql = "SELECT Id ten_khoahoc FROM khoahoc";
-$result = $conn->query($sql);
-$questions = [];
-if ($result->num_rows > 0) {
+$khoa_hoc_list = [];
+$result = $conn->query("SELECT * FROM khoa_hoc ORDER BY id DESC");
+if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $questions[] = $row;
+        $khoa_hoc_list[] = $row;
     }
 }
 $conn->close();
+
+// Nếu đang sửa
+$editing = false;
+$edit_khoa_hoc = '';
+$edit_id = 0;
+if (isset($_GET['edit'])) {
+    $edit_id = (int) $_GET['edit'];
+    $conn = dbconnect();
+    $stmt = $conn->prepare("SELECT * FROM khoa_hoc WHERE id = ?");
+    $stmt->bind_param("i", $edit_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $editing = true;
+        $edit_khoa_hoc = $row['khoa_hoc'];
+    }
+    $stmt->close();
+    $conn->close();
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách câu hỏi</title>
-    <!-- <link rel="stylesheet" hre="style.css"> -->
+    <title>Quản lý Khóa Học</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h2>Danh sách câu hỏi</h2>
+        <h2><?= $editing ? "Cập nhật khóa học" : "Thêm khóa học" ?></h2>
         <?php if (!empty($message)) echo $message; ?>
 
-        <a href="add_khoahoc.php" class="btn-add">Thêm khoá học mới</a>
+        <form method="POST">
+            <label>Tên khóa học:</label>
+            <input type="text" name="ten_khoahoc" placeholder="Nhập tên khóa học" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
+            <?php if ($editing): ?>
+                <input type="hidden" name="course_id" value="<?= $edit_id ?>">
+                <button type="submit" name="update_course">Cập nhật</button>
+                <a href="index.php" style="display:block;margin-top:10px;text-align:center;">Huỷ</a>
+            <?php else: ?>
+                <button type="submit" name="add_course">Thêm khóa học</button>
+            <?php endif; ?>
+        </form>
 
-        <?php if (empty($questions)): ?>
-            <p>Chưa có câu hỏi nào trong cơ sở dữ liệu.</p>
+        <h3 style="margin-top:40px;">Danh sách khóa học</h3>
+        <?php if (empty($khoa_hoc_list)): ?>
+            <p>Chưa có khóa học nào.</p>
         <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID Câu hỏi</th>
-                        <th>Khoá học</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($questions as $question): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($question['Id_cauhoi']) ?></td>
-                            <td><?= htmlspecialchars($question['khoahoc']) ?></td>
-                       
-                            <td>
-                                <a href="add_question.php?question_id=<?= $question['Id_cauhoi'] ?>" class="btn-edit">Sửa</a>
-                                <a href="question.php?delete_id=<?= $question['Id_cauhoi'] ?>" 
-                                   class="btn-delete" 
-                                   onclick="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">Xóa</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <ul>
+                <?php foreach ($khoa_hoc_list as $kh): ?>
+                    <li>
+                        <strong><?= htmlspecialchars($kh['id']) ?>:</strong>
+                        <?= htmlspecialchars($kh['khoa_hoc']) ?>
+                        <br>
+                        <a href="?edit=<?= $kh['id'] ?>"> Sửa</a> |
+                        <a href="?delete=<?= $kh['id'] ?>" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"> Xóa</a> |
+                    </li>
+                   
+                <?php endforeach; ?>
+            </ul>
         <?php endif; ?>
+
+        <div style="with:100px ">
+            <button type="button" onclick="window.location.href='baihoc.php'" class="btn btn-secondary">Xem test </button>
+        </div>
+        
     </div>
+
+    
 </body>
 </html>
 
 <style>
+     /* style.css */
+
 body {
     font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f4f4f4;
+    background: linear-gradient(to right, #f8f9fa, #e0f7fa);
     margin: 0;
+    padding: 20px;
 }
-h2 {
+
+.container {
+    background-color: #ffffff;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+h2, h3 {
     text-align: center;
-    color:rgb(247, 18, 18);
+    color: #00796b;
     margin-bottom: 25px;
 }
 
-table {
+form label {
+    font-weight: 600;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+form input[type="text"] {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: #fff;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
     border-radius: 8px;
-    overflow: hidden;
-}
-.container {
-    max-width: 1500px;
-    margin: auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, background-color 0.3s;
 }
 
-th, td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+form input[type="text"]:focus {
+    border-color: #009688;
+    outline: none;
+    background-color: #f1fefc;
 }
 
-th {
+button {
+    display: block;
+    width: 100%;
     background-color: #009688;
     color: white;
-    font-weight: 600;
-}
-
-tr:hover {
-    background-color: #f5f5f5;
-}
-
-/* Kiểu cho nút hành động */
-.btn-add, .btn-edit, .btn-delete {
-    display: inline-block;
-    padding: 8px 12px;
-    margin-right: 5px;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 14px;
+    font-size: 16px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 25px;
     transition: background-color 0.3s;
 }
 
-.btn-add {
-    background-color: #28a745;
+button:hover {
+    background-color: #00796b;
+}
+
+a {
+    text-decoration: none;
+    color: #00796b;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #004d40;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul li {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+ul li strong {
+    margin-right: 10px;
+    color: #333;
+}
+
+ul li a {
+    margin-left: 10px;
+    font-size: 14px;
+}
+
+div[style^="color:red"] {
+    background-color: #ffeaea;
+    color: #c62828;
+    padding: 12px;
+    border-left: 5px solid red;
+    margin-bottom: 20px;
+    border-radius: 6px;
+}
+
+div[style^="color:green"] {
+    background-color: #e0fbe7;
+    color: #2e7d32;
+    padding: 12px;
+    border-left: 5px solid green;
+    margin-bottom: 20px;
+    border-radius: 6px;
+}
+
+a[href*="edit"], a[href*="delete"] {
+    background-color: #e0f2f1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: inline-block;
+}
+
+a[href*="edit"]:hover {
+    background-color: #b2dfdb;
+}
+
+a[href*="delete"]:hover {
+    background-color: #ffcdd2;
+    color: #c62828;
+}
+
+a[href*="xem_cauhoi"] {
+    background-color: #1976d2;
     color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
 }
 
-.btn-add:hover {
-    background-color: #218838;
+a[href*="xem_cauhoi"]:hover {
+    background-color: #1565c0;
 }
-/* button sửa */
-.btn-edit {
-    background-color:rgb(252, 14, 14);
-    color: white;
-}
-/* button xoá  */
-.btn-delete {
-    background-color:rgb(255, 230, 7);
-    color: blue;
-}
-
-
 </style>
