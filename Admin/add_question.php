@@ -1,5 +1,4 @@
 <?php
-// Kết nối cơ sở dữ liệu
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "study");
     if ($conn->connect_error) {
@@ -8,10 +7,32 @@ function dbconnect() {
     return $conn;
 }
 
+$conn = dbconnect();
+$message = "";
+
+// Lấy danh sách môn học
+$khoahoc = [];
+$sql = "SELECT ten_khoa FROM khoahoc";
+$result = $conn->query($sql);
+if ($result === false) {
+    $message = "<div class='error-message'>Lỗi: Không thể truy vấn bảng subjects. Vui lòng kiểm tra cơ sở dữ liệu.</div>";
+} else {
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $khoahoc[] = $row['ten_khoa'];
+        }
+    } else {
+        $message = "<div class='error-message'>Không có môn học nào trong cơ sở dữ liệu. Vui lòng thêm môn học trước.</div>";
+    }
+}
+
+// Lấy ten_khoa từ POST (nếu form được gửi) hoặc để trống
+$ten_khoa = isset($_POST['ten_khoa']) ? trim($_POST['ten_khoa']) : '';
+
+// Xử lý form
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
-    // Lấy dữ liệu từ form
     $id_baitest = trim($_POST["id_baitest"]);
-    $id_khoa = trim($_POST["id_khoa"]);
+    $ten_khoa = trim($_POST["ten_khoa"]);
     $question_text = trim($_POST["question_text"]);
     $choices = [
         'A' => trim($_POST["choice_a"]),
@@ -28,222 +49,128 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     $correct = strtoupper(trim($_POST["correct"]));
 
     // Kiểm tra các trường không được để trống
-    if (empty($id_baitest) || empty($id_khoa) || empty($question_text) || empty($choices['A']) || empty($choices['B']) ||
-        empty($choices['C']) || empty($choices['D']) || empty($correct) || 
+    if (empty($id_baitest) || empty($ten_khoa) || empty($question_text) || empty($choices['A']) || 
+        empty($choices['B']) || empty($choices['C']) || empty($choices['D']) || empty($correct) || 
         empty($explanations['A']) || empty($explanations['B']) || empty($explanations['C']) || empty($explanations['D'])) {
-        echo "Vui lòng điền đầy đủ thông tin!";
+        $message = "<div class='error-message'>Vui lòng điền đầy đủ thông tin!</div>";
+    } elseif (!in_array($id_baitest, ['Giữa kỳ', 'Cuối kỳ'])) {
+        $message = "<div class='error-message'>Loại bài test phải là Giữa kỳ hoặc Cuối kỳ!</div>";
     } elseif (!in_array($correct, ['A', 'B', 'C', 'D'])) {
-        echo "Đáp án đúng phải là A, B, C hoặc D!";
+        $message = "<div class='error-message'>Đáp án đúng phải là A, B, C hoặc D!</div>";
+    } elseif (!in_array($ten_khoa, $subjects) && !empty($subjects)) {
+        $message = "<div class='error-message'>Môn học không hợp lệ!</div>";
     } else {
         // Xử lý hình ảnh nếu có
         $image_path = null;
         if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
-            // Đảm bảo thư mục uploads đã tồn tại và có quyền ghi
-            $image_path = 'uploads/' . basename($_FILES["image"]["name"]);
-            if (move_uploaded_file($_FILES["image"]["tmp_name"], $image_path)) {
-                echo "Hình ảnh đã được tải lên thành công!";
+            $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+            $max_size = 5 * 1024 * 1024; // 5MB
+            if (!in_array($_FILES["image"]["type"], $allowed_types)) {
+                $message = "<div class='error-message'>Chỉ hỗ trợ định dạng JPG, PNG, GIF!</div>";
+            } elseif ($_FILES["image"]["size"] > $max_size) {
+                $message = "<div class='error-message'>Hình ảnh không được vượt quá 5MB!</div>";
             } else {
-                echo "Lỗi khi tải hình ảnh!";
-                $image_path = null;
+                $image_path = 'uploads/' . time() . '_' . basename($_FILES["image"]["name"]);
+                if (!move_uploaded_file($_FILES["image"]["tmp_name"], $image_path)) {
+                    $message = "<div class='error-message'>Lỗi khi tải hình ảnh!</div>";
+                    $image_path = null;
+                }
             }
         }
 
-        // Kết nối cơ sở dữ liệu
-        $conn = dbconnect();
+        if (empty($message)) {
+            // Thực hiện câu lệnh SQL để lưu câu hỏi
+            $sql = "INSERT INTO quiz (id_baitest, ten_khoa, cauhoi, hinhanh, 
+                        cau_a, giaithich_a, cau_b, giaithich_b, 
+                        cau_c, giaithich_c, cau_d, giaithich_d, dap_an) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssssssssssss", $id_baitest, $ten_khoa, $question_text, $image_path,
+                $choices['A'], $explanations['A'], $choices['B'], $explanations['B'],
+                $choices['C'], $explanations['C'], $choices['D'], $explanations['D'], $correct);
 
-        // Thực hiện câu lệnh SQL để lưu câu hỏi
-        $sql = "INSERT INTO quiz (id_baitest, id_khoa, cauhoi, hinhanh, 
-                    cau_a, giaithich_a, 
-                    cau_b, giaithich_b, 
-                    cau_c, giaithich_c, 
-                    cau_d, giaithich_d, 
-                    dap_an) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        if ($stmt = $conn->prepare($sql)) {
-            // Gán giá trị vào câu lệnh
-            $stmt->bind_param("ssssssssssss", $id_baitest, $id_khoa, $question_text, $image_path,
-                $choices['A'], $explanations['A'],
-                $choices['B'], $explanations['B'],
-                $choices['C'], $explanations['C'],
-                $choices['D'], $explanations['D'],
-                $correct);
-
-            // Thực thi câu lệnh SQL
             if ($stmt->execute()) {
-                echo "Câu hỏi đã được lưu thành công!";
+                $stmt->close();
+                $conn->close();
+                header("Location: baitest.php?ten_khoa=" . urlencode($ten_khoa) . "&message=" . urlencode("Câu hỏi đã được lưu thành công!"));
+                exit;
             } else {
-                echo "Lỗi khi lưu câu hỏi: " . $stmt->error;
+                $message = "<div class='error-message'>Lỗi khi lưu câu hỏi: " . $stmt->error . "</div>";
             }
-
-            // Đóng kết nối
             $stmt->close();
-        } else {
-            echo "Lỗi khi chuẩn bị câu lệnh SQL: " . $conn->error;
         }
-
-        // Đóng kết nối cơ sở dữ liệu
-        $conn->close();
     }
 }
-?>
 
+$conn->close();
+?>
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lưu Câu Hỏi</title>
+    <title>Thêm câu hỏi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        /* Giữ nguyên CSS từ mã gốc của bạn */
+    </style>
 </head>
 <body>
-    <h1>Thêm Câu Hỏi Trắc Nghiệm</h1>
-    <form method="POST" action="save_question.php" enctype="multipart/form-data">
-        <label for="id_baitest">ID Bài Test:</label><br>
-        <input type="text" id="id_baitest" name="id_baitest" required><br><br>
+    <div class="container">
+        <h2>Thêm câu hỏi</h2>
+        <a href="index.php" class="back-link"><i class="fas fa-arrow-left"></i>Quay lại danh sách môn học</a>
+        <?php if (!empty($message)) echo $message; ?>
 
-        <label for="id_khoa">ID Khóa Học:</label><br>
-        <input type="text" id="id_khoa" name="id_khoa" required><br><br>
+        <form method="POST" enctype="multipart/form-data">
+            <label for="ten_khoa">Môn học:</label>
+            <select id="ten_khoa" name="ten_khoa" required>
+                <option value="">Chọn môn học</option>
+                <?php foreach ($subjects as $subject): ?>
+                    <option value="<?= htmlspecialchars($subject) ?>" <?= $ten_khoa === $subject ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($subject) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
 
-        <label for="question_text">Câu Hỏi:</label><br>
-        <textarea id="question_text" name="question_text" required></textarea><br><br>
+            <label for="id_baitest">Loại bài test:</label>
+            <select id="id_baitest" name="id_baitest" required>
+                <option value="Giữa kỳ">Giữa kỳ</option>
+                <option value="Cuối kỳ">Cuối kỳ</option>
+            </select>
 
-        <label for="choice_a">Câu A:</label><br>
-        <input type="text" id="choice_a" name="choice_a" required><br><br>
+            <label for="question_text">Câu hỏi:</label>
+            <textarea id="question_text" name="question_text" required></textarea>
 
-        <label for="explain_a">Giải Thích Câu A:</label><br>
-        <textarea id="explain_a" name="explain_a" required></textarea><br><br>
+            <label for="choice_a">Đáp án A:</label>
+            <input type="text" id="choice_a" name="choice_a" required>
+            <label for="explain_a">Giải thích A:</label>
+            <textarea id="explain_a" name="explain_a" required></textarea>
 
-        <label for="choice_b">Câu B:</label><br>
-        <input type="text" id="choice_b" name="choice_b" required><br><br>
+            <label for="choice_b">Đáp án B:</label>
+            <input type="text" id="choice_b" name="choice_b" required>
+            <label for="explain_b">Giải thích B:</label>
+            <textarea id="explain_b" name="explain_b" required></textarea>
 
-        <label for="explain_b">Giải Thích Câu B:</label><br>
-        <textarea id="explain_b" name="explain_b" required></textarea><br><br>
+            <label for="choice_c">Đáp án C:</label>
+            <input type="text" id="choice_c" name="choice_c" required>
+            <label for="explain_c">Giải thích C:</label>
+            <textarea id="explain_c" name="explain_c" required></textarea>
 
-        <label for="choice_c">Câu C:</label><br>
-        <input type="text" id="choice_c" name="choice_c" required><br><br>
+            <label for="choice_d">Đáp án D:</label>
+            <input type="text" id="choice_d" name="choice_d" required>
+            <label for="explain_d">Giải thích D:</label>
+            <textarea id="explain_d" name="explain_d" required></textarea>
 
-        <label for="explain_c">Giải Thích Câu C:</label><br>
-        <textarea id="explain_c" name="explain_c" required></textarea><br><br>
+            <label for="correct">Đáp án đúng (A, B, C, D):</label>
+            <input type="text" id="correct" name="correct" required>
 
-        <label for="choice_d">Câu D:</label><br>
-        <input type="text" id="choice_d" name="choice_d" required><br><br>
+            <label for="image">Hình ảnh (nếu có):</label>
+            <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif">
 
-        <label for="explain_d">Giải Thích Câu D:</label><br>
-        <textarea id="explain_d" name="explain_d" required></textarea><br><br>
-
-        <label for="correct">Đáp Án Đúng:</label><br>
-        <input type="text" id="correct" name="correct" required><br><br>
-
-        <label for="image">Hình Ảnh (nếu có):</label><br>
-        <input type="file" id="image" name="image"><br><br>
-
-        <button type="submit" name="save_question">Lưu Câu Hỏi</button>
-    </form>
+            <button type="submit" name="save_question"><i class="fas fa-save"></i> Lưu câu hỏi</button>
+        </form>
+    </div>
 </body>
 </html>
-<style>
-}/* Đặt kiểu chữ cho toàn bộ trang */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
-    margin: 0;
-    padding: 0;
-}
-
-/* Thiết lập phần tiêu đề */
-h1 {
-    text-align: center;
-    color: #333;
-    margin-top: 30px;
-}
-
-/* Thiết lập cho form */
-form {
-    width: 60%;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Thẻ label cho các trường trong form */
-label {
-    font-size: 16px;
-    color: #333;
-    margin-bottom: 5px;
-    display: block;
-}
-
-/* Định dạng các trường nhập liệu */
-input[type="text"],
-textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0 20px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 16px;
-}
-
-input[type="file"] {
-    margin-bottom: 20px;
-}
-
-/* Nút submit */
-button[type="submit"] {
-    background-color: #4CAF50;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-button[type="submit"]:hover {
-    background-color: #45a049;
-}
-
-/* Thông báo lỗi hoặc thành công */
-.error-message,
-.success-message {
-    color: #d9534f;
-    font-size: 16px;
-    text-align: center;
-}
-
-.success-message {
-    color: #5bc0de;
-}
-
-/* Đảm bảo các phần tử trong form được căn chỉnh tốt trên các màn hình nhỏ */
-@media screen and (max-width: 768px) {
-    form {
-        width: 90%;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    h1 {
-        font-size: 20px;
-    }
-
-    form {
-        width: 100%;
-        padding: 15px;
-    }
-
-    input[type="text"],
-    textarea {
-        font-size: 14px;
-    }
-
-    button[type="submit"] {
-        width: 100%;
-        padding: 10px;
-    }
-}
-
-</style>

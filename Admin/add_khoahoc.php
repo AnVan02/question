@@ -130,7 +130,7 @@ if (isset($_GET['edit'])) {
                         <br>
                         <a href="?edit=<?= $kh['id'] ?>"> Sửa</a> |
                         <a href="?delete=<?= $kh['id'] ?>" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"> Xóa</a> |
-                        <a href="baitest.php?id_khoa=<?= $kh['id'] ?>" class="btn">Xem câu hỏi</a>
+                        <a href="baitest.php?ten_khoa=<?= urlencode($kh['khoa_hoc']) ?>" class="btn">Xem câu hỏi</a>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -140,8 +140,6 @@ if (isset($_GET['edit'])) {
 </html>
 
 <style>
-     /* style.css */
-
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(to right, #f8f9fa, #e0f7fa);
@@ -280,14 +278,14 @@ a[href*="delete"]:hover {
     color: #c62828;
 }
 
-a[href*="xem_cauhoi"] {
+a.btn {
     background-color: #1976d2;
     color: white;
     padding: 5px 10px;
     border-radius: 6px;
 }
 
-a[href*="xem_cauhoi"]:hover {
+a.btn:hover {
     background-color: #1565c0;
 }
 </style>
