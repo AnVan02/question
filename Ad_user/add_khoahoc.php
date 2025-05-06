@@ -95,12 +95,11 @@ if (isset($_GET['edit'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý khoá học</title>
-</head>
+    <title>Quản lý Khóa Học</title>
+    </head>
 <body>
     <div class="container">
         <h2><?= $editing ? "Cập nhật khóa học" : "Thêm khóa học" ?></h2>
@@ -112,7 +111,7 @@ if (isset($_GET['edit'])) {
             <?php if ($editing): ?>
                 <input type="hidden" name="course_id" value="<?= $edit_id ?>">
                 <button type="submit" name="update_course">Cập nhật</button>
-                <a href="index.php" style="display:block;margin-top:10px;text-align:center;">Huỷ</a>
+                <a href="add_khoahoc.php" style="display:block;margin-top:10px;text-align:center;">Huỷ</a>
             <?php else: ?>
                 <button type="submit" name="add_course">Thêm khóa học</button>
             <?php endif; ?>
@@ -130,20 +129,16 @@ if (isset($_GET['edit'])) {
                         <br>
                         <a href="?edit=<?= $kh['id'] ?>"> Sửa</a> |
                         <a href="?delete=<?= $kh['id'] ?>" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"> Xóa</a> |
-                        <a href="baihoc.php?id_khoa=<?= $kh['id'] ?>" class="btn">Xem test</a>
+                        <a href="khoahoc.php?ten_khoa=<?= urlencode($kh['khoa_hoc']) ?>" class="btn">Xem test</a>
                     </li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
     </div>
-    
 </body>
 </html>
 
 <style>
-
-     /* style.css */
-
 body {
     font-family: Arial, sans-serif;
     background: linear-gradient(to right, #f8f9fa, #e0f7fa);
@@ -153,7 +148,7 @@ body {
 
 .container {
     background-color: #ffffff;
-    max-width: 700px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 30px;
     border-radius: 15px;
@@ -282,14 +277,14 @@ a[href*="delete"]:hover {
     color: #c62828;
 }
 
-a[href*="xem_cauhoi"] {
+a.btn {
     background-color: #1976d2;
     color: white;
     padding: 5px 10px;
     border-radius: 6px;
 }
 
-a[href*="xem_cauhoi"]:hover {
+a.btn:hover {
     background-color: #1565c0;
 }
 </style>

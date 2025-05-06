@@ -77,7 +77,7 @@ $conn->close();
                         <th>ID Câu hỏi</th>
                         <th>ID Bài test</th>
                         <th>Nội dung câu hỏi</th>
-                        <th>Đáp án đúng</th>
+                        <!-- <th>Đáp án đúng</th> -->
                         <th>Hành động</th>
                     </tr>
                 </thead>
@@ -87,7 +87,7 @@ $conn->close();
                             <td><?= htmlspecialchars($question['Id_cauhoi']) ?></td>
                             <td><?= htmlspecialchars($question['id_baitest']) ?></td>
                             <td><?= htmlspecialchars($question['cauhoi']) ?></td>
-                            <td><?= htmlspecialchars($question['dap_an']) ?></td>
+                            <!-- <td><?= htmlspecialchars($question['dap_an']) ?></td> -->
                             <td>
                                 <a href="add_question.php?question_id=<?= $question['Id_cauhoi'] ?>" class="btn-edit">Sửa</a>
                                 <a href="question.php?delete_id=<?= $question['Id_cauhoi'] ?>" 

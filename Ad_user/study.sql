@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th5 04, 2025 lúc 08:08 PM
+-- Thời gian đã tạo: Th5 05, 2025 lúc 07:28 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -49,8 +49,8 @@ INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
 
 CREATE TABLE `quiz` (
   `Id_cauhoi` int(11) NOT NULL,
-  `ten_test` int(11) NOT NULL,
-  `khoa_hoc` int(11) NOT NULL,
+  `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
+  `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
   `cauhoi` varchar(255) NOT NULL,
   `hinhanh` varchar(255) DEFAULT NULL,
   `cau_a` varchar(255) NOT NULL,
@@ -68,10 +68,12 @@ CREATE TABLE `quiz` (
 -- Đang đổ dữ liệu cho bảng `quiz`
 --
 
-INSERT INTO `quiz` (`Id_cauhoi`, `ten_test`, ``, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
-(1, 'giữa kỳ', ' Python cơ bản', 'Python là ngôn ngữ lập trình gì?', 'cuoiky.jpg', 'Python là ngôn ngữ cấp thấp', 'Sai, Python là ngôn ngữ cấp cao', 'Python là ngôn ngữ lập trình tổng quát', 'Đúng', 'Python là ngôn ngữ sử dụng cho hệ điều hành', 'Sai, không đặc trưng cho hệ điều hành', 'Python là ngôn ngữ lập trình cho game', 'Sai, không đặc biệt cho game', 'B'),
-(2, 'cuoi ky', 'YOLO', 'Trong Python, lệnh nào dùng để khai báo một hàm?', 'hinh_2.jpg', 'def', 'Đúng, def dùng để khai báo hàm', 'function', 'Sai, không phải cú pháp của Python', 'func', 'Sai, không phải cú pháp của Python', 'declare', 'Sai, không phải cú pháp của Python', 'A'),
-(3, 'Giữa kỳ','python nâng cao ', 'YOLO là gì trong học máy?', 'yolo_image.jpg', 'You Only Learn Once', 'Sai, YOLO là You Only Look Once', 'You Open Learning Once', 'Sai, không phải', 'You Only Live Once', 'Sai, không phải', 'You Observe Learning Once', 'Sai, không phải', 'B');
+INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
+(1, 'Giữa kỳ', 'python cơ bản', 'Trong JavaScript, phương thức nào dùng để thêm phần tử vào cuối mảng?', NULL, 'push()', 'Phương thức push() thêm phần tử vào cuối mảng', 'pop()', 'pop() xóa phần tử cuối mảng', 'shift()', 'shift() xóa phần tử đầu mảng', 'unshift()', 'unshift() thêm phần tử vào đầu mảng', 'A'),
+(2, 'Cuối kỳ', 'python nâng cao', 'Kết quả của đoạn code C sau là gì? ```int main() { int x = 3; printf(\"%d\", x++); return 0; }```', 'uploads/c_code.png', '3', 'x++ tăng x sau khi in, nên in 3', '4', 'Sai: x++ tăng sau khi in, không phải ++x', '0', 'Sai: code không trả về 0', 'Lỗi cú pháp', 'Code không có lỗi cú pháp', 'A'),
+(3, 'Giữa kỳ', 'Yolo', 'Trong lập trình, \"đệ quy\" là gì?', NULL, 'Hàm gọi chính nó', 'Đệ quy là khi hàm tự gọi lại với tham số khác', 'Vòng lặp vô hạn', 'Sai: đệ quy không phải vòng lặp vô hạn', 'Hàm không trả về', 'Sai: đệ quy không liên quan đến việc không trả về', 'Gọi hàm khác', 'Sai: đệ quy là gọi chính hàm đó', 'A'),
+(4, 'Cuối kỳ', 'Python cơ bản', 'Trong Java, từ khóa nào dùng để tạo đối tượng mới?', 'uploads/java_new.png', 'new', 'Từ khóa new cấp phát bộ nhớ cho đối tượng', 'create', 'Sai: Java không có từ khóa create', 'instance', 'Sai: instance không phải từ khóa', 'object', 'Sai: object không phải từ khóa tạo đối tượng', 'A'),
+(5, 'Giữa kỳ', 'Yolo', 'Thuật toán tìm kiếm nào hiệu quả nhất cho mảng đã sắp xếp?', NULL, 'Binary Search', 'Binary Search có độ phức tạp O(log n) cho mảng đã sắp xếp', 'Linear Search', 'Linear Search có O(n), kém hiệu quả hơn', 'Bubble Search', 'Sai: không có thuật toán Bubble Search', 'Quick Search', 'Sai: Quick Search không tồn tại', 'A');
 
 -- --------------------------------------------------------
 
@@ -110,9 +112,7 @@ ALTER TABLE `khoa_hoc`
 -- Chỉ mục cho bảng `quiz`
 --
 ALTER TABLE `quiz`
-  ADD PRIMARY KEY (`Id_cauhoi`),
-  ADD KEY `id_khoa` (`id_khoa`),
-  ADD KEY `id_baitest` (`id_baitest`);
+  ADD PRIMARY KEY (`Id_cauhoi`);
 
 --
 -- Chỉ mục cho bảng `test`
@@ -132,6 +132,12 @@ ALTER TABLE `khoa_hoc`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
+-- AUTO_INCREMENT cho bảng `quiz`
+--
+ALTER TABLE `quiz`
+  MODIFY `Id_cauhoi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT cho bảng `test`
 --
 ALTER TABLE `test`
@@ -140,13 +146,6 @@ ALTER TABLE `test`
 --
 -- Các ràng buộc cho các bảng đã đổ
 --
-
---
--- Các ràng buộc cho bảng `quiz`
---
-ALTER TABLE `quiz`
-  ADD CONSTRAINT `quiz_ibfk_1` FOREIGN KEY (`id_khoa`) REFERENCES `khoa_hoc` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `quiz_ibfk_2` FOREIGN KEY (`id_baitest`) REFERENCES `test` (`id_test`) ON DELETE CASCADE;
 
 --
 -- Các ràng buộc cho bảng `test`

@@ -2,154 +2,134 @@
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "study");
     if ($conn->connect_error) {
-        die("Lỗi kết nối: " . $conn->connect_error);
+        die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }
     return $conn;
 }
 
 $conn = dbconnect();
-$message = "";
-$id_khoa = isset($_GET['id_khoa']) ? (int)$_GET['id_khoa'] : 0;
+$message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
 
-// Thêm bài test
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_test"])) {
-    $id_khoa_post = (int)$_POST["id_khoa"];
-    $ten_test = trim($_POST["ten_test"]);
-    $lan_thu = (int)$_POST["lan_thu"];
+// Lấy ten_khoa từ GET
+$ten_khoa = isset($_GET['ten_khoa']) ? trim(urldecode($_GET['ten_khoa'])) : '';
 
-    if ($id_khoa_post > 0 && !empty($ten_test)) {
-        $stmt = $conn->prepare("INSERT INTO test (id_khoa, ten_test, lan_thu) VALUES (?, ?, ?)");
-        $stmt->bind_param("isi", $id_khoa_post, $ten_test, $lan_thu);
-        if ($stmt->execute()) {
-            $message = "<div style='color:green;'>Thêm bài test thành công!</div>";
-            header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa_post);
-            exit();
-        } else {
-            $message = "<div style='color:red;'>Lỗi khi thêm test: " . $stmt->error . "</div>";
-        }
-        $stmt->close();
-    } else {
-        $message = "<div style='color:red;'>Vui lòng chọn khóa học và nhập tên test!</div>";
-    }
+// Kiểm tra ten_khoa hợp lệ
+if (empty($ten_khoa)) {
+    echo "<p>Tên môn học không hợp lệ.</p>";
+    exit;
 }
 
-// Xóa bài test
-if (isset($_GET['delete_test'])) {
-    $id_test = (int)$_GET['delete_test'];
-    $stmt = $conn->prepare("DELETE FROM test WHERE id_test = ?");
-    $stmt->bind_param("i", $id_test);
-    if ($stmt->execute()) {
-        $message = "<div style='color:green;'>Đã xóa bài test thành công!</div>";
-    } else {
-        $message = "<div style='color:red;'>Lỗi khi xóa bài test: " . $stmt->error . "</div>";
-    }
-    $stmt->close();
-}
-
-// Sửa bài test
-if (isset($_POST['edit_test'])) {
-    $id_test_edit = (int)$_POST['id_test_edit'];
-    $ten_test_edit = trim($_POST['ten_test_edit']);
-    $lan_thu_edit = (int)$_POST['lan_thu_edit'];
-
-    if (!empty($ten_test_edit)) {
-        $stmt = $conn->prepare("UPDATE test SET ten_test = ?, lan_thu = ? WHERE id_test = ?");
-        $stmt->bind_param("sii", $ten_test_edit, $lan_thu_edit, $id_test_edit);
-        if ($stmt->execute()) {
-            $message = "<div style='color:green;'>Sửa bài test thành công!</div>";
-        } else {
-            $message = "<div style='color:red;'>Lỗi khi sửa bài test: " . $stmt->error . "</div>";
-        }
-        $stmt->close();
-    } else {
-        $message = "<div style='color:red;'>Vui lòng nhập tên bài test!</div>";
-    }
-}
-
-// Xóa câu hỏi
-if (isset($_GET['delete_question'])) {
-    $id_cauhoi = (int)$_GET['delete_question'];
+// Xử lý xóa câu hỏi
+if (isset($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
     $stmt = $conn->prepare("DELETE FROM quiz WHERE Id_cauhoi = ?");
-    $stmt->bind_param("i", $id_cauhoi);
+    $stmt->bind_param("i", $id);
     if ($stmt->execute()) {
-        $message = "<div style='color:green;'>Đã xóa câu hỏi thành công!</div>";
+        $message = $stmt->affected_rows > 0 ? "Xóa câu hỏi thành công!" : "Câu hỏi không tồn tại!";
     } else {
-        $message = "<div style='color:red;'>Lỗi khi xóa câu hỏi: " . $stmt->error . "</div>";
+        $message = "Lỗi khi xóa: " . $stmt->error;
     }
     $stmt->close();
+    header("Location: baitest.php?ten_khoa=" . urlencode($ten_khoa) . "&message=" . urlencode($message));
+    exit;
 }
 
-// Sửa câu hỏi
-if (isset($_POST['edit_question'])) {
-    $id_cauhoi_edit = (int)$_POST['id_cauhoi_edit'];
-    $cauhoi_edit = trim($_POST['cauhoi_edit']);
-    $cau_a_edit = trim($_POST['cau_a_edit']);
-    $giaithich_a_edit = trim($_POST['giaithich_a_edit']);
-    $cau_b_edit = trim($_POST['cau_b_edit']);
-    $giaithich_b_edit = trim($_POST['giaithich_b_edit']);
-    $cau_c_edit = trim($_POST['cau_c_edit']);
-    $giaithich_c_edit = trim($_POST['giaithich_c_edit']);
-    $cau_d_edit = trim($_POST['cau_d_edit']);
-    $giaithich_d_edit = trim($_POST['giaithich_d_edit']);
-    $dap_an_edit = trim($_POST['dap_an_edit']);
+// Xử lý sửa câu hỏi
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_question"])) {
+    $id = (int)$_POST["id"];
+    $id_baitest = trim($_POST["id_baitest"]);
+    $ten_khoa = trim($_POST["ten_khoa"]);
+    $question_text = trim($_POST["question_text"]);
+    $choices = [
+        'A' => trim($_POST["choice_a"]),
+        'B' => trim($_POST["choice_b"]),
+        'C' => trim($_POST["choice_c"]),
+        'D' => trim($_POST["choice_d"])
+    ];
+    $explanations = [
+        'A' => trim($_POST["explain_a"]),
+        'B' => trim($_POST["explain_b"]),
+        'C' => trim($_POST["explain_c"]),
+        'D' => trim($_POST["explain_d"])
+    ];
+    $correct = strtoupper(trim($_POST["correct"]));
 
-    if (!empty($cauhoi_edit) && !empty($cau_a_edit) && !empty($cau_b_edit) && !empty($cau_c_edit) && !empty($cau_d_edit) && !empty($dap_an_edit)) {
-        $stmt = $conn->prepare("
-            UPDATE quiz 
-            SET cauhoi = ?, cau_a = ?, giaithich_a = ?, cau_b = ?, giaithich_b = ?, 
-                cau_c = ?, giaithich_c = ?, cau_d = ?, giaithich_d = ?, dap_an = ?
-            WHERE Id_cauhoi = ?
-        ");
-        $stmt->bind_param("ssssssssssi", $cauhoi_edit, $cau_a_edit, $giaithich_a_edit, $cau_b_edit, $giaithich_b_edit, 
-            $cau_c_edit, $giaithich_c_edit, $cau_d_edit, $giaithich_d_edit, $dap_an_edit, $id_cauhoi_edit);
-        if ($stmt->execute()) {
-            $message = "<div style='color:green;'>Sửa câu hỏi thành công!</div>";
-        } else {
-            $message = "<div style='color:red;'>Lỗi khi sửa câu hỏi: " . $stmt->error . "</div>";
+    // Kiểm tra dữ liệu
+    if (empty($id_baitest) || empty($ten_khoa) || empty($question_text) || 
+        empty($choices['A']) || empty($choices['B']) || empty($choices['C']) || empty($choices['D']) || 
+        empty($explanations['A']) || empty($explanations['B']) || empty($explanations['C']) || empty($explanations['D']) || 
+        empty($correct)) {
+        $message = "Vui lòng điền đầy đủ thông tin!";
+    } elseif (!in_array($id_baitest, ['Giữa kỳ', 'Cuối kỳ'])) {
+        $message = "Loại bài test phải là Giữa kỳ hoặc Cuối kỳ!";
+    } elseif (!in_array($correct, ['A', 'B', 'C', 'D'])) {
+        $message = "Đáp án đúng phải là A, B, C hoặc D!";
+    } else {
+        // Xử lý hình ảnh
+        $image_path = $_POST["current_image"];
+        if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
+            $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+            $max_size = 5 * 1024 * 1024; // 5MB
+            if (!in_array($_FILES["image"]["type"], $allowed_types)) {
+                $message = "Chỉ hỗ trợ định dạng JPG, PNG, GIF!";
+            } elseif ($_FILES["image"]["size"] > $max_size) {
+                $message = "Hình ảnh không được vượt quá 5MB!";
+            } else {
+                $image_path = 'uploads/' . time() . '_' . basename($_FILES["image"]["name"]);
+                if (!move_uploaded_file($_FILES["image"]["tmp_name"], $image_path)) {
+                    $message = "Lỗi khi tải hình ảnh!";
+                    $image_path = $_POST["current_image"];
+                }
+            }
         }
-        $stmt->close();
-    } else {
-        $message = "<div style='color:red;'>Vui lòng nhập đầy đủ thông tin câu hỏi!</div>";
+
+        if (empty($message)) {
+            // Cập nhật câu hỏi
+            $sql = "UPDATE quiz SET id_baitest = ?, ten_khoa = ?, cauhoi = ?, hinhanh = ?, 
+                    cau_a = ?, giaithich_a = ?, cau_b = ?, giaithich_b = ?, 
+                    cau_c = ?, giaithich_c = ?, cau_d = ?, giaithich_d = ?, dap_an = ? 
+                    WHERE Id_cauhoi = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssssssssssssi", $id_baitest, $ten_khoa, $question_text, $image_path,
+                $choices['A'], $explanations['A'], $choices['B'], $explanations['B'],
+                $choices['C'], $explanations['C'], $choices['D'], $explanations['D'], $correct, $id);
+
+            if ($stmt->execute()) {
+                $message = "Cập nhật câu hỏi thành công!";
+            } else {
+                $message = "Lỗi khi cập nhật: " . $stmt->error;
+            }
+            $stmt->close();
+            header("Location: baitest.php?ten_khoa=" . urlencode($ten_khoa) . "&message=" . urlencode($message));
+            exit;
+        }
     }
 }
 
-// Lấy danh sách khóa học
-$khoa_hoc = [];
-$res = $conn->query("SELECT * FROM khoa_hoc");
-while ($row = $res->fetch_assoc()) {
-    $khoa_hoc[] = $row;
+// Lấy tất cả câu hỏi thuộc ten_khoa
+$cau_hoi = [];
+$stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ?");
+$stmt->bind_param("s", $ten_khoa);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $cau_hoi[] = $row;
 }
+$stmt->close();
 
-// Lấy danh sách test theo khóa học
-$ds_test = [];
-if ($id_khoa > 0) {
-    $res = $conn->query("SELECT * FROM test WHERE id_khoa = $id_khoa ORDER BY id_test DESC");
-    while ($row = $res->fetch_assoc()) {
-        $ds_test[] = $row;
-    }
-}
-
-// Lấy danh sách câu hỏi trực tiếp từ bảng quiz theo id_khoa
-$cau_hoi_theo_khoa = [];
-if ($id_khoa > 0) {
-    $stmt = $conn->prepare("
-        SELECT q.*, k.khoa_hoc 
-        FROM quiz q
-        JOIN khoa_hoc k ON q.id_khoa = k.id
-        WHERE q.id_khoa = ?
-        ORDER BY q.Id_cauhoi ASC
-    ");
-    $stmt->bind_param("i", $id_khoa);
-    if (!$stmt->execute()) {
-        die("Lỗi truy vấn: " . $stmt->error);
-    }
+// Lấy thông tin câu hỏi để sửa (khi nhấn nút Sửa)
+$edit_cauhoi = null;
+if (isset($_GET['edit'])) {
+    $edit_id = (int)$_GET['edit'];
+    $stmt = $conn->prepare("SELECT * FROM quiz WHERE Id_cauhoi = ?");
+    $stmt->bind_param("i", $edit_id);
+    $stmt->execute();
     $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $cau_hoi_theo_khoa[] = $row;
+    if ($result->num_rows > 0) {
+        $edit_cauhoi = $result->fetch_assoc();
     }
     $stmt->close();
 }
-
 $conn->close();
 ?>
 
@@ -157,183 +137,459 @@ $conn->close();
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý bài test theo khóa học</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách câu hỏi - <?= htmlspecialchars($ten_khoa) ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, #e6f3fa, #f4f4f9);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
         .container {
-            background: #fff;
-            padding: 25px;
-            max-width: 1000px;
-            margin: auto;
-            border-radius: 10px;
-            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+            max-width: 1450px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            padding: 30px;
         }
+
         h2 {
+            color: #1a3c34;
+            font-size: 2rem;
             text-align: center;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        h3 {
+            color: #1a3c34;
+            font-size: 1.5rem;
+            text-align: center;
+            margin: 30px 0 20px;
+            font-weight: 600;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
             color: #00796b;
+            font-weight: 500;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
         }
-        form {
-            margin-top: 20px;
+
+        .back-link i {
+            margin-right: 8px;
         }
-        select, input[type="text"], input[type="number"], button {
-            padding: 10px;
+
+        .back-link:hover {
+            color: #004d40;
+        }
+
+        .success-message, .error-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success-message {
+            background: #e6f8e6;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .error-message {
+            background: #ffeaea;
+            color: #d9534f;
+            border-left: 4px solid #c62828;
+        }
+
+        .add-question {
+            display: inline-flex;
+            align-items: center;
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s ease, transform 0.2s ease;
             margin: 10px 0;
-            width: 100%;
-            box-sizing: border-box;
-            border-radius: 6px;
-            border: 1px solid #ccc;
         }
+
+        .add-question i {
+            margin-right: 8px;
+        }
+
+        .add-question:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
         table {
             width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-top: 20px;
-            border-collapse: collapse;
+            background: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
         }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
+
         th, td {
-            padding: 10px;
+            padding: 14px 16px;
             text-align: left;
+            border-bottom: 1px solid #e0e0e0;
         }
+
         th {
-            background: #f0f0f0;
+            background: #e3f2fd;
+            color: #1a3c34;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
         }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-left: 5px solid;
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f1f8ff;
+        }
+
+        td img {
+            max-width: 80px;
+            height: auto;
             border-radius: 4px;
+            display: block;
         }
-        .message[style*="green"] {
-            background: #e8f5e9;
-            border-color: green;
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-right: 8px;
+            transition: background 0.3s ease, transform 0.2s ease;
         }
-        .message[style*="red"] {
-            background: #ffebee;
-            border-color: red;
-        }
-        button.edit, button.delete {
-            width: auto;
-            background: #4caf50;
+
+        .btn.view {
+            background: #007bff;
             color: white;
-            margin-right: 5px;
+        }
+
+        .btn.view:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .btn.edit {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn.edit:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+
+        .btn.delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn.delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .btn i {
+            margin-right: 6px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            color: #1a3c34;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            color: #333;
             cursor: pointer;
+        }
+
+        .modal-content form label {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+            display: block;
+            font-weight: 600;
+        }
+
+        .modal-content form select,
+        .modal-content form input[type="text"],
+        .modal-content form textarea,
+        .modal-content form input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .modal-content form textarea {
+            height: 60px;
+            resize: vertical;
+        }
+
+        .modal-content form button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
             border: none;
             border-radius: 4px;
-            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
         }
-        button.delete {
-            background: #f44336;
+
+        .modal-content form button:hover {
+            background: #45a049;
         }
-        button.edit:hover, button.delete:hover {
-            opacity: 0.8;
+
+        .modal-content img {
+            max-width: 100px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            h3 {
+                font-size: 1.3rem;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.85rem;
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .add-question {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            h3 {
+                font-size: 1.1rem;
+            }
+
+            .back-link, .add-question {
+                font-size: 0.85rem;
+            }
+
+            td img {
+                max-width: 60px;
+            }
+
+            .modal-content form label,
+            .modal-content form select,
+            .modal-content form input,
+            .modal-content form textarea,
+            .modal-content form button {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>Quản lý Bài Test theo Khóa học</h2>
-
-    <?= $message ?>
-
-    <!-- Chọn khóa học -->
-    <form method="get">
-        <label>Chọn khóa học:</label>
-        <select name="id_khoa" onchange="this.form.submit()">
-            <option value="0">-- Chọn --</option>
-            <?php foreach ($khoa_hoc as $k): ?>
-                <option value="<?= $k['id'] ?>" <?= $k['id'] == $id_khoa ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($k['khoa_hoc']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </form>
-
-    <!-- Thêm bài test -->
-    <?php if ($id_khoa > 0): ?>
-    <form method="post">
-        <input type="hidden" name="id_khoa" value="<?= $id_khoa ?>">
-        <label>Tên bài test:</label>
-        <input type="text" name="ten_test" placeholder="Nhập tên bài test">
-        <label>Lần thử:</label>
-        <input type="number" name="lan_thu" value="1" min="1">
-        <button type="submit" name="add_test">Thêm bài test</button>
-    </form>
-    <div>
-        <button type="button" onclick="window.location.href='question.php'" class="btn btn-secondary">Danh sách câu hỏi</button>
-    </div>
-
-    <!-- Danh sách bài test -->
-    <h3>Danh sách bài test đã thêm</h3>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Tên test</th>
-            <th>Lần thử</th>
-            <th>Thao tác</th>
-        </tr>
-        <?php if (empty($ds_test)): ?>
-            <tr><td colspan="4">Chưa có bài test nào.</td></tr>
-        <?php else: ?>
-            <?php foreach ($ds_test as $t): ?>
-            <tr>
-                <td><?= $t['id_test'] ?></td>
-                <td><?= htmlspecialchars($t['ten_test']) ?></td>
-                <td><?= $t['lan_thu'] ?></td>
-                <td>
-                    <!-- Sửa bài test -->
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="id_test_edit" value="<?= $t['id_test'] ?>">
-                        <input type="text" name="ten_test_edit" value="<?= htmlspecialchars($t['ten_test']) ?>" required>
-                        <input type="number" name="lan_thu_edit" value="<?= $t['lan_thu'] ?>" min="1" required>
-                        <button type="submit" name="edit_test" class="edit">Sửa</button>
-                    </form>
-                    <!-- Xóa bài test -->
-                    <a href="?id_khoa=<?= $id_khoa ?>&delete_test=<?= $t['id_test'] ?>"><button class="delete">Xóa</button></a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
+    <div class="container">
+        <h2>Quản lý câu hỏi - Môn: <?= htmlspecialchars($ten_khoa) ?></h2>
+        <a href="add_khoahoc.php" class="back-link"><i class="fas fa-arrow-left"></i>Quay lại danh sách môn học</a>
+        <?php if (!empty($message)): ?>
+            <div class="<?= strpos($message, 'thành công') !== false ? 'success-message' : 'error-message' ?>">
+                <?= htmlspecialchars($message) ?>
+            </div>
         <?php endif; ?>
-    </table>
+        <a href="add_question.php" class="add-question"><i class="fas fa-plus"></i>Thêm câu hỏi mới</a>
 
-    <!-- Danh sách câu hỏi thuộc khóa học -->
-    <h3>Danh sách câu hỏi thuộc khóa học</h3>
-    <?php if (empty($cau_hoi_theo_khoa)): ?>
-        <p>Chưa có câu hỏi nào trong khóa học này.</p>
-    <?php else: ?>
+        <h3>Danh sách câu hỏi</h3>
+        <?php if (empty($cau_hoi)): ?>
+            <p class="empty">Chưa có câu hỏi nào cho môn học này.</p>
+        <?php else: ?>
         <table>
-            <tr>
-                <th>ID</th>
-                <th>Câu hỏi</th>
-                <th>Khóa học</th>
-                <th>Thao tác</th>
-            </tr>
-            <?php foreach ($cau_hoi_theo_khoa as $c): ?>
+            <thead>
                 <tr>
-                    <td><?= $c['Id_cauhoi'] ?></td>
+                    <th>ID</th>
+                    <th>Loại bài test</th>
+                    <th>Câu hỏi</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($cau_hoi as $ch): ?>
+                <tr>
+                    <td><?= $ch['Id_cauhoi'] ?></td>
+                    <td><?= htmlspecialchars($ch['id_baitest']) ?></td>
+                    <td><?= htmlspecialchars($ch['cauhoi']) ?></td>
                     <td>
-                        <!-- Form sửa câu hỏi -->
-                        <form method="post" style="display:inline;">
-                            <input type="hidden" name="id_cauhoi_edit" value="<?= $c['Id_cauhoi'] ?>">
-                            <input type="text" name="cauhoi_edit" value="<?= htmlspecialchars($c['cauhoi']) ?>" required>
-                    </td>
-                    <td><?= htmlspecialchars($c['khoa_hoc']) ?></td>
-                    <td>
-                            <button type="submit" name="edit_question" class="edit">Sửa</button>
-                        </form>
-                        <!-- Xóa câu hỏi -->
-                        <a href="?id_khoa=<?= $id_khoa ?>&delete_question=<?= $c['Id_cauhoi'] ?>"><button class="delete">Xóa</button></a>
+                        <a class="btn view" href="question.php"><i class="fas fa-eye"></i>Xem</a>
+                        <a class="btn edit" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&edit=<?= $ch['Id_cauhoi'] ?>" onclick="openModal(<?= $ch['Id_cauhoi'] ?>)"><i class="fas fa-edit"></i>Sửa</a>
+                        <a class="btn delete" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&delete=<?= $ch['Id_cauhoi'] ?>" onclick="return confirm('Xác nhận xóa câu hỏi?')"><i class="fas fa-trash"></i>Xóa</a>
                     </td>
                 </tr>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </tbody>
         </table>
-    <?php endif; ?>
-    <?php endif; ?>
-</div>
+        <?php endif; ?>
+
+        <!-- Modal sửa câu hỏi -->
+        <?php if ($edit_cauhoi): ?>
+        <div class="modal" id="editModal-<?= $edit_cauhoi['Id_cauhoi'] ?>">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal(<?= $edit_cauhoi['Id_cauhoi'] ?>)">&times;</span>
+                <h3>Sửa câu hỏi</h3>
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="id" value="<?= $edit_cauhoi['Id_cauhoi'] ?>">
+                    <input type="hidden" name="current_image" value="<?= htmlspecialchars($edit_cauhoi['hinhanh']) ?>">
+                    <label for="id_baitest">Loại bài test:</label>
+                    <select id="id_baitest" name="id_baitest" required>
+                        <option value="Giữa kỳ" <?= $edit_cauhoi['id_baitest'] === 'Giữa kỳ' ? 'selected' : '' ?>>Giữa kỳ</option>
+                        <option value="Cuối kỳ" <?= $edit_cauhoi['id_baitest'] === 'Cuối kỳ' ? 'selected' : '' ?>>Cuối kỳ</option>
+                    </select>
+                    <label for="ten_khoa">Tên môn học:</label>
+                    <input type="text" id="ten_khoa" name="ten_khoa" value="<?= htmlspecialchars($edit_cauhoi['ten_khoa']) ?>" required>
+                    <label for="question_text">Câu hỏi:</label>
+                    <textarea id="question_text" name="question_text" required><?= htmlspecialchars($edit_cauhoi['cauhoi']) ?></textarea>
+                    <label for="choice_a">Đáp án A:</label>
+                    <input type="text" id="choice_a" name="choice_a" value="<?= htmlspecialchars($edit_cauhoi['cau_a']) ?>" required>
+                    <label for="explain_a">Giải thích A:</label>
+                    <textarea id="explain_a" name="explain_a" required><?= htmlspecialchars($edit_cauhoi['giaithich_a']) ?></textarea>
+                    <label for="choice_b">Đáp án B:</label>
+                    <input type="text" id="choice_b" name="choice_b" value="<?= htmlspecialchars($edit_cauhoi['cau_b']) ?>" required>
+                    <label for="explain_b">Giải thích B:</label>
+                    <textarea id="explain_b" name="explain_b" required><?= htmlspecialchars($edit_cauhoi['giaithich_b']) ?></textarea>
+                    <label for="choice_c">Đáp án C:</label>
+                    <input type="text" id="choice_c" name="choice_c" value="<?= htmlspecialchars($edit_cauhoi['cau_c']) ?>" required>
+                    <label for="explain_c">Giải thích C:</label>
+                    <textarea id="explain_c" name="explain_c" required><?= htmlspecialchars($edit_cauhoi['giaithich_c']) ?></textarea>
+                    <label for="choice_d">Đáp án D:</label>
+                    <input type="text" id="choice_d" name="choice_d" value="<?= htmlspecialchars($edit_cauhoi['cau_d']) ?>" required>
+                    <label for="explain_d">Giải thích D:</label>
+                    <textarea id="explain_d" name="explain_d" required><?= htmlspecialchars($edit_cauhoi['giaithich_d']) ?></textarea>
+                    <label for="correct">Đáp án đúng (A, B, C, D):</label>
+                    <input type="text" id="correct" name="correct" value="<?= htmlspecialchars($edit_cauhoi['dap_an']) ?>" required>
+                    <label for="image">Hình ảnh (nếu có):</label>
+                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif">
+                    <?php if ($edit_cauhoi['hinhanh']): ?>
+                        <p>Hình ảnh hiện tại: <img src="<?= htmlspecialchars($edit_cauhoi['hinhanh']) ?>" alt="Hình ảnh câu hỏi"></p>
+                    <?php endif; ?>
+                    <button type="submit" name="update_question">Cập nhật câu hỏi</button>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <script>
+        function openModal(id) {
+            document.getElementById('editModal-' + id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById('editModal-' + id).style.display = 'none';
+        }
+
+        // Tự động mở modal nếu có edit
+        <?php if ($edit_cauhoi): ?>
+            openModal(<?= $edit_cauhoi['Id_cauhoi'] ?>);
+        <?php endif; ?>
+    </script>
 </body>
 </html>
