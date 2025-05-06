@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th5 05, 2025 lúc 07:28 PM
+-- Thời gian đã tạo: Th5 06, 2025 lúc 07:38 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -39,7 +39,9 @@ CREATE TABLE `khoa_hoc` (
 INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
 (1, 'Python cơ bản'),
 (2, 'Python nâng cao'),
-(3, 'YOLO');
+(3, 'YOLO'),
+(10, 'Văn'),
+(11, 'Toán');
 
 -- --------------------------------------------------------
 
@@ -70,10 +72,14 @@ CREATE TABLE `quiz` (
 
 INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
 (1, 'Giữa kỳ', 'python cơ bản', 'Trong JavaScript, phương thức nào dùng để thêm phần tử vào cuối mảng?', NULL, 'push()', 'Phương thức push() thêm phần tử vào cuối mảng', 'pop()', 'pop() xóa phần tử cuối mảng', 'shift()', 'shift() xóa phần tử đầu mảng', 'unshift()', 'unshift() thêm phần tử vào đầu mảng', 'A'),
-(2, 'Cuối kỳ', 'python nâng cao', 'Kết quả của đoạn code C sau là gì? ```int main() { int x = 3; printf(\"%d\", x++); return 0; }```', 'uploads/c_code.png', '3', 'x++ tăng x sau khi in, nên in 3', '4', 'Sai: x++ tăng sau khi in, không phải ++x', '0', 'Sai: code không trả về 0', 'Lỗi cú pháp', 'Code không có lỗi cú pháp', 'A'),
+(2, 'Cuối kỳ', 'python nâng cao', '', 'uploads/c_code.png', '', 'x++ tăng x sau khi in, nên in 3', '', 'Sai: x++ tăng sau khi in, không phải ++x', '', 'Sai: code không trả về 0', '', 'Code không có lỗi cú pháp', ''),
 (3, 'Giữa kỳ', 'Yolo', 'Trong lập trình, \"đệ quy\" là gì?', NULL, 'Hàm gọi chính nó', 'Đệ quy là khi hàm tự gọi lại với tham số khác', 'Vòng lặp vô hạn', 'Sai: đệ quy không phải vòng lặp vô hạn', 'Hàm không trả về', 'Sai: đệ quy không liên quan đến việc không trả về', 'Gọi hàm khác', 'Sai: đệ quy là gọi chính hàm đó', 'A'),
 (4, 'Cuối kỳ', 'Python cơ bản', 'Trong Java, từ khóa nào dùng để tạo đối tượng mới?', 'uploads/java_new.png', 'new', 'Từ khóa new cấp phát bộ nhớ cho đối tượng', 'create', 'Sai: Java không có từ khóa create', 'instance', 'Sai: instance không phải từ khóa', 'object', 'Sai: object không phải từ khóa tạo đối tượng', 'A'),
-(5, 'Giữa kỳ', 'Yolo', 'Thuật toán tìm kiếm nào hiệu quả nhất cho mảng đã sắp xếp?', NULL, 'Binary Search', 'Binary Search có độ phức tạp O(log n) cho mảng đã sắp xếp', 'Linear Search', 'Linear Search có O(n), kém hiệu quả hơn', 'Bubble Search', 'Sai: không có thuật toán Bubble Search', 'Quick Search', 'Sai: Quick Search không tồn tại', 'A');
+(5, 'Giữa kỳ', 'Yolo', 'Thuật toán tìm kiếm nào hiệu quả nhất cho mảng đã sắp xếp?', NULL, 'Binary Search', 'Binary Search có độ phức tạp O(log n) cho mảng đã sắp xếp', 'Linear Search', 'Linear Search có O(n), kém hiệu quả hơn', 'Bubble Search', 'Sai: không có thuật toán Bubble Search', 'Quick Search', 'Sai: Quick Search không tồn tại', 'A'),
+(6, 'Giữa kỳ', 'Văn', 'Trong tác phẩm \"Chí Phèo\" của Nam Cao, nhân vật nào là trung tâm của câu chuyện?', NULL, 'Chí Phèo', 'Chí Phèo là nhân vật chính, biểu tượng cho số phận khốn cùng', 'Bá Kiến', 'Bá Kiến là nhân vật quan trọng nhưng không phải trung tâm', 'Thị Nở', 'Thị Nở có vai trò quan trọng nhưng không phải trung tâm', 'Nhân vật khác', 'Sai: không có nhân vật nào ngoài Chí Phèo là trung tâm', 'A'),
+(7, 'Cuối kỳ', 'Toán', 'Kết quả của biểu thức (2 + 3 * 4) / 5 là gì?', NULL, '2', 'Do phép nhân được thực hiện trước phép cộng và chia', '3', 'Sai: phép tính không đúng thứ tự', '4', 'Sai: phép tính không đúng thứ tự', '5', 'Sai: phép tính không đúng thứ tự', 'A'),
+(8, 'Giữa kỳ', 'Văn', 'Ai là tác giả của bài thơ \"Tây Tiến\"?', NULL, 'Quang Dũng', 'Quang Dũng là tác giả của \"Tây Tiến\", một tác phẩm nổi tiếng', 'Tố Hữu', 'Sai: Tố Hữu không phải tác giả của \"Tây Tiến\"', 'Chế Lan Viên', 'Sai: Chế Lan Viên không phải tác giả của \"Tây Tiến\"', 'Xuân Diệu', 'Sai: Xuân Diệu không phải tác giả của \"Tây Tiến\"', 'A'),
+(9, 'Cuối kỳ', 'Toán', 'Tính giá trị của biểu thức: 4^2 - 3^2?', NULL, '7', '4^2 = 16 và 3^2 = 9, 16 - 9 = 7', '5', 'Sai: phép tính không chính xác', '6', 'Sai: phép tính không chính xác', '8', 'Sai: phép tính không chính xác', 'A');
 
 -- --------------------------------------------------------
 
@@ -93,8 +99,8 @@ CREATE TABLE `test` (
 --
 
 INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`) VALUES
-(1, 1, 'Giữa kỳ', 1),
-(2, 2, 'Giữa kỳ', 1),
+(1, 1, 'Giữa kỳ', 6),
+(2, 2, 'Giữa kỳ', 6),
 (3, 3, 'Cuối kỳ', 5),
 (4, 1, 'cuôi kỳ', 5);
 
@@ -129,13 +135,13 @@ ALTER TABLE `test`
 -- AUTO_INCREMENT cho bảng `khoa_hoc`
 --
 ALTER TABLE `khoa_hoc`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT cho bảng `quiz`
 --
 ALTER TABLE `quiz`
-  MODIFY `Id_cauhoi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `Id_cauhoi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT cho bảng `test`
