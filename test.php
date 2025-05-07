@@ -1,80 +1,122 @@
 <?php
-// Giả sử bạn đã kết nối CSDL ở đây
-include 'db_connection.php'; // nếu cần
+// Kết nối cơ sở dữ liệu
+function dbconnect() {
+    $conn = new mysqli("localhost", "root", "", "study");
+    if ($conn->connect_error) {
+        die("Lỗi kết nối CSDL: " . $conn->connect_error);
+    }
+    return $conn;
+}
 
-if (isset($_POST['save_question'])) {
-    // Lấy dữ liệu từ form
-    $question = $_POST['question'] ?? '';
-    $option_a = $_POST['option_a'] ?? '';
-    $option_b = $_POST['option_b'] ?? '';
-    $option_c = $_POST['option_c'] ?? '';
-    $option_d = $_POST['option_d'] ?? '';
-    $correct = $_POST['correct'] ?? '';
+$conn = dbconnect();
+$message = "";
 
-    // Lưu vào CSDL (ví dụ sử dụng MySQLi)
-    $stmt = $conn->prepare("INSERT INTO questions (question, option_a, option_b, option_c, option_d, correct_answer) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssss", $question, $option_a, $option_b, $option_c, $option_d, $correct);
-    $stmt->execute();
-    $stmt->close();
+// Lấy danh sách khóa học
+$khoa_hoc = [];
+$sql_khoa = "SELECT id, khoa_hoc FROM khoa_hoc";
+$result_khoa = $conn->query($sql_khoa);
+while ($row = $result_khoa->fetch_assoc()) {
+    $khoa_hoc[$row['id']] = $row['khoa_hoc'];
+}
 
-    // Chuyển hướng sang trang danh sách câu hỏi
-    header("Location: question.php");
-    exit();
+// Lấy danh sách bài test
+$tests = [];
+$sql_test = "SELECT id_test, id_khoa, ten_test, lan_thu FROM test";
+$result_test = $conn->query($sql_test);
+while ($row = $result_test->fetch_assoc()) {
+    $tests[] = $row;
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Thêm câu hỏi</title>
+    <title>Quản lý lần thử bài test & Khóa học</title>
     <style>
-        input, select, button {
-            margin: 8px 0;
-            padding: 8px;
-            font-size: 16px;
-        }
-        .btn {
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            color: white;
-            cursor: pointer;
-        }
-        .btn-primary { background-color: #007bff; }
-        .btn-secondary { background-color: #6c757d; }
-        .btn:hover { opacity: 0.9; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .message { margin: 10px 0; }
+        .btn { padding: 5px 10px; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: #fff; margin: 50px auto; padding: 20px; width: 300px; }
     </style>
 </head>
 <body>
-    <h2>Thêm câu hỏi</h2>
-    <form method="POST">
-        Câu hỏi:<br>
-        <input type="text" name="question" required><br>
+    <h2>Quản lý lần thử bài test</h2>
 
-        Đáp án A:<br>
-        <input type="text" name="option_a" required><br>
+    <!-- Hiển thị thông báo -->
+    <?php echo $message; ?>
 
-        Đáp án B:<br>
-        <input type="text" name="option_b" required><br>
+    <!-- Hiển thị danh sách bài test -->
+    <table>
+        <tr>
+            <th>ID Test</th>
+            <th>Khóa học</th>
+            <th>Tên Test</th>
+            <th>Lần thử</th>
+            <th>Hành động</th>
+        </tr>
+        <?php foreach ($tests as $test): ?>
+        <tr>
+            <td><?php echo $test['id_test']; ?></td>
+            <td><?php echo htmlspecialchars($khoa_hoc[$test['id_khoa']]); ?></td>
+            <td><?php echo htmlspecialchars($test['ten_test']); ?></td>
+            <td><?php echo $test['lan_thu']; ?></td>
+            <td>
+                <button class="btn" onclick="editTest(<?php echo $test['id_test']; ?>, <?php echo $test['lan_thu']; ?>)">Sửa</button>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
 
-        Đáp án C:<br>
-        <input type="text" name="option_c" required><br>
+    <!-- Modal sửa lần thử -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Sửa lần thử</h3>
+            <form id="editForm" method="post">
+                <input type="hidden" name="update_id" id="update_id">
+                <label>Lần thử:</label><br>
+                <input type="number" name="lan_thu" id="edit_lan_thu" min="1" required><br>
+                <button type="submit">Lưu</button>
+                <button type="button" onclick="closeModal()">Hủy</button>
+            </form>
+        </div>
+    </div>
 
-        Đáp án D:<br>
-        <input type="text" name="option_d" required><br>
+    <script>
+        function editTest(id, lan_thu) {
+            document.getElementById('update_id').value = id;
+            document.getElementById('edit_lan_thu').value = lan_thu;
+            document.getElementById('editModal').style.display = 'block';
+        }
 
-        Đáp án đúng:<br>
-        <select name="correct" required>
-            <option value="">-- Chọn --</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="D">D</option>
-        </select><br><br>
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
 
-        <button type="submit" name="save_question" class="btn btn-primary">Lưu câu hỏi</button>
-        <button type="button" onclick="window.location.href='question.php'" class="btn btn-secondary">Danh sách câu hỏi</button>
-    </form>
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) {
+                closeModal();
+            }
+        };
+    </script>
+
+    <!-- Hiển thị danh sách Khóa học -->
+    <h2>Danh sách Khóa học</h2>
+    <table>
+        <tr>
+            <th>ID Khóa học</th>
+            <th>Tên Khóa học</th>
+        </tr>
+        <?php foreach ($khoa_hoc as $id => $tenKhoa): ?>
+        <tr>
+            <td><?php echo $id; ?></td>
+            <td><?php echo htmlspecialchars($tenKhoa); ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
+
 </body>
 </html>

@@ -129,7 +129,7 @@ if (isset($_GET['edit'])) {
                         <br>
                         <a href="?edit=<?= $kh['id'] ?>"> Sửa</a> |
                         <a href="?delete=<?= $kh['id'] ?>" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"> Xóa</a> |
-                        <a href="khoahoc.php?ten_khoa=<?= urlencode($kh['khoa_hoc']) ?>" class="btn">Xem test</a>
+                        <a href="baihoc.php?ten_khoa=<?= urlencode($kh['khoa_hoc']) ?>" class="btn">Xem test</a>
                     </li>
                 <?php endforeach; ?>
             </ul>

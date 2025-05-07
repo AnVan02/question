@@ -1,11 +1,11 @@
 <?php
 session_start();
 
-// Kết nối cơ sở dữ liệu
+// Kết nối cơ sở dữ liệu MySQL
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "study"); // Đổi thông tin kết nối nếu cần
     if ($conn->connect_error) {
-        die("Kết nối cơ sở dữ liệu thất bại: " . $conn->connect_error);
+        die("Kết nối thất bại: " . $conn->connect_error);
     }
     return $conn;
 }
@@ -18,6 +18,7 @@ function getQuestionsFromDB() {
     $questions = [];
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            // Lưu câu hỏi vào mảng 
             $questions[] = [
                 'id' => $row['Id_cauhoi'],
                 'cauhoi' => $row['cauhoi'],
@@ -31,12 +32,13 @@ function getQuestionsFromDB() {
                 'cau_d' => $row['cau_d'],
                 'giaithich_d' => $row['giaithich_d'],
                 'dap_an' => $row['dap_an']
+
             ];
         }
     }
     $conn->close();
-    if (empty($questions)) {
-        die("Lỗi: Không có câu hỏi nào trong cơ sở dữ liệu.");
+    if (empty ($questions)) {
+        die ("Lỗi: không có câu nào tron cơ sở dữ liệu.");
     }
     return $questions;
 }
@@ -51,24 +53,26 @@ $time = htmlspecialchars($_SESSION["time"] ?? date("d-m-Y H:i:s"));
 $answers = $_SESSION["answers"] ?? [];
 $selected_question_indices = $_SESSION["selected_questions"] ?? [];
 $total = count($selected_question_indices);
-?>
 
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kết quả Quiz</title>
+   
 </head>
 <body>
     <div class="container">
-        <h1>🎉 Kết quả Quiz Lập Trình 🎉</h1>
-        <p><strong>Bài test về môn Lập Trình</strong></p>
+        <h1> Kết Quả Môn Lập Trình </h1>
+        <p><strong>Bài Quiz Về Môn Lập Trình</strong></p>
         
         <p><strong>Tổng điểm:</strong> <?= $score ?> / <?= $total ?></p>
         <p><strong>Điểm cao nhất:</strong> <?= $highest ?> / <?= $total ?></p>
         <p><strong>Ngày làm bài:</strong> <?= $time ?></p>
         <p><strong>Số lần làm bài:</strong> <?= $attempts ?> / 3</p>
+
         <hr>
 
         <h2>Chi tiết câu trả lời</h2>
@@ -85,9 +89,6 @@ $total = count($selected_question_indices);
                 <?php $isCorrect = isset($answers[$index]["is_correct"]) ? $answers[$index]["is_correct"] : false; ?>
                 <div class="question-block">
                     <p class="question-text">Câu <?= $index + 1 ?>: <?= htmlspecialchars($question_data["cauhoi"]) ?></p>
-                    <?php if (!empty($question_data['hinhanh'])): ?>
-                        <img src="<?= htmlspecialchars($question_data['hinhanh']) ?>" alt="Hình ảnh câu hỏi" style="max-width: 100%; margin-top: 10px;">
-                    <?php endif; ?>
                     <ul>
                         <?php
                         $choices = [
@@ -101,6 +102,7 @@ $total = count($selected_question_indices);
                             'B' => $question_data["giaithich_b"],
                             'C' => $question_data["giaithich_c"],
                             'D' => $question_data["giaithich_d"]
+
                         ];
                         foreach ($choices as $key => $value) {
                             $style = '';
@@ -118,15 +120,16 @@ $total = count($selected_question_indices);
                     <?php if ($userAnswer !== null): ?>
                         <div class="explanation-block" style="border-color: <?= $isCorrect ? 'green' : 'red' ?>;">
                             <?php if ($isCorrect): ?>
-                                <p><strong>🥰👍 Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
+                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
                             <?php else: ?>
-                                <p><strong>😱👎 Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
-                                <p><strong>Bạn chọn:</strong> <?= htmlspecialchars($choices[$userAnswer]) ?> (Giải thích: <?= htmlspecialchars($explanations[$userAnswer]) ?>)</p>
+                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
+                                <!-- <p><strong>Bạn chọn:</strong> <?= htmlspecialchars($choices[$userAnswer]) ?> (Giải thích: <?= htmlspecialchars($explanations[$userAnswer]) ?>)</p> -->
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
+
                         <div class="explanation-block" style="border-color: orange;">
-                            <p style="color: orange; font-weight: bold;">⚠️ Bạn chưa trả lời câu hỏi này!</p>
+                            <p style="color: orange; font-weight: bold;"> Bạn chưa trả lời câu hỏi này!</p>
                             <p><strong>Đáp án đúng:</strong> <span class="correct-answer"><?= $question_data["dap_an"] ?>. <?= htmlspecialchars($choices[$question_data["dap_an"]]) ?></span></p>
                             <p><strong>Giải thích:</strong> <?= htmlspecialchars($explanations[$question_data["dap_an"]]) ?></p>
                         </div>
@@ -138,12 +141,10 @@ $total = count($selected_question_indices);
 
         <a href="<?= $attempts >= 3 ? '#' : 'FAQ.php?reset=1' ?>" class="try-again <?= $attempts >= 3 ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / 3)</a>
     </div>
-</body>
-</html>
 
-<Style>
+    <Style>
     body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
     background-color: #f4f7fa;
     margin: 0;
     padding: 20px;
@@ -151,7 +152,7 @@ $total = count($selected_question_indices);
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1000px;
     margin: auto;
     background-color: #ffffff;
     padding: 30px;

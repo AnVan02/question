@@ -510,7 +510,7 @@ $conn->close();
                     <th>Khoá học</th>
                     <th>Câu hỏi</th>
                     <th>Thao tác</th>
-                    <th>Bài kiểm tra </th>
+                   
                 </tr>
             </thead>
             <tbody>
@@ -520,16 +520,16 @@ $conn->close();
                     <td><?= htmlspecialchars($ch['id_baitest']) ?></td>
                     <td><?= htmlspecialchars($ch['cauhoi']) ?></td>
                     <td>
-                        <a class="btn view" href="question.php"><i class="fas fa-eye"></i>Xem</a>
                         <a class="btn edit" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&edit=<?= $ch['Id_cauhoi'] ?>" onclick="openModal(<?= $ch['Id_cauhoi'] ?>)"><i class="fas fa-edit"></i>Sửa</a>
                         <a class="btn delete" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&delete=<?= $ch['Id_cauhoi'] ?>" onclick="return confirm('Xác nhận xóa câu hỏi?')"><i class="fas fa-trash"></i>Xóa</a>
+                        <a class="btn view" href="question.php"><i class="fas fa-eye"></i>Xem câu hỏi</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
         <?php endif; ?>
-
+        
         <!-- Modal sửa câu hỏi -->
         <?php if ($edit_cauhoi): ?>
         <div class="modal" id="editModal-<?= $edit_cauhoi['Id_cauhoi'] ?>">
