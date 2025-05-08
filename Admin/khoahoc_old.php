@@ -48,7 +48,7 @@ $editing = false;
 $edit_test = null;
 if (isset($_GET['edit_test']) && $id_khoa > 0) {
     $id_test = (int)$_GET['edit_test'];
-    $stmt = $conn->prepare("SELECT id_test, ten_test FROM test WHERE id_test = ? AND id_khoa = ?");
+    $stmt = $conn->prepare("SELECT id_test, ten_test, lan_thu FROM test WHERE id_test = ? AND id_khoa = ?");
     if (!$stmt) {
         $error_message = "<p>Lỗi chuẩn bị truy vấn sửa: " . $conn->error . "</p>";
     } else {
@@ -69,15 +69,18 @@ if (isset($_GET['edit_test']) && $id_khoa > 0) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_khoa > 0) {
     $id_test = (int)$_POST['id_test'];
     $ten_test = trim($_POST['ten_test']);
+    $lan_thu = isset($_POST['lan_thu']) ? (int)$_POST['lan_thu'] : 1;
 
     if (empty($ten_test)) {
         $error_message = "<p>Lỗi: Vui lòng nhập tên bài kiểm tra!</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số dương!</p>";
     } else {
-        $stmt = $conn->prepare("UPDATE test SET ten_test = ? WHERE id_test = ? AND id_khoa = ?");
+        $stmt = $conn->prepare("UPDATE test SET ten_test = ?, lan_thu = ? WHERE id_test = ? AND id_khoa = ?");
         if (!$stmt) {
             $error_message = "<p>Lỗi chuẩn bị truy vấn cập nhật: " . $conn->error . "</p>";
         } else {
-            $stmt->bind_param("sii", $ten_test, $id_test, $id_khoa);
+            $stmt->bind_param("siii", $ten_test, $lan_thu, $id_test, $id_khoa);
             if ($stmt->execute()) {
                 $success_message = "<p>Cập nhật bài kiểm tra thành công!</p>";
                 header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
@@ -114,16 +117,19 @@ if ($id_khoa > 0) {
 // Xử lý thêm bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
     $ten_test = trim($_POST['ten_test']);
+    $lan_thu = isset($_POST['lan_thu']) ? (int)$_POST['lan_thu'] : 1;
 
     if (empty($ten_test)) {
         $error_message = "<p>Lỗi: Vui lòng nhập tên bài kiểm tra!</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số dương!</p>";
     } else {
-        $sql = "INSERT INTO test (id_khoa, ten_test) VALUES (?, ?)";
+        $sql = "INSERT INTO test (id_khoa, ten_test, lan_thu) VALUES (?, ?, ?)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
         } else {
-            $stmt->bind_param("is", $id_khoa, $ten_test);
+            $stmt->bind_param("isi", $id_khoa, $ten_test, $lan_thu);
             if ($stmt->execute()) {
                 $success_message = "<p>Thêm bài kiểm tra thành công!</p>";
                 header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
@@ -139,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
 // Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
 $result = null;
 if ($id_khoa > 0 && $khoa_hoc) {
-    $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, k.khoa_hoc 
+    $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, k.khoa_hoc 
             FROM test t 
             LEFT JOIN khoa_hoc k ON t.id_khoa = k.id 
             WHERE t.id_khoa = ?";
@@ -176,6 +182,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
             background-color: #f9fafb;
             color: #333;
             line-height: 1.6;
+            /* padding: 15px; */
         }
 
         /* Typography */
@@ -238,7 +245,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
             font-size: 14px;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        input[type="number"] {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #e2e8f0;
@@ -413,7 +421,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 padding: 15px;
             }
 
-            input[type="text"] {
+            input[type="text"],
+            input[type="number"] {
                 font-size: 13px;
                 padding: 8px;
             }
@@ -451,6 +460,10 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 <label for="ten_test">Tên Test:</label>
                 <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
             </div>
+            <div class="form-group">
+                <label for="lan_thu">Lần thứ:</label>
+                <input type="number" id="lan_thu" name="lan_thu" value="<?php echo $editing ? htmlspecialchars($edit_test['lan_thu']) : '1'; ?>" min="1" required>
+            </div>
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
                 <button type="submit" name="update_test">Cập nhật</button>
@@ -467,6 +480,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     <th>ID Test</th>
                     <th>Khóa học</th>
                     <th>Tên Test</th>
+                    <th>Lần thứ</th>
                     <th>Hành động</th>
                 </tr>
                 <?php while ($row = $result->fetch_assoc()): ?>
@@ -474,6 +488,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['id_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
                         <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
+                        <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
                         <td>
                             <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
