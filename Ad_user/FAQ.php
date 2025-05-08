@@ -199,7 +199,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["next"])) {
         $_SESSION["feedback"] = "<div style='color: orange;'>⚠️ Vui lòng chọn một đáp án!</div>";
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
     if ($_SESSION["current"] > 0) {
         $_SESSION["current"]--;

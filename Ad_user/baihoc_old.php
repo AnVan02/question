@@ -1,135 +1,144 @@
+
 <?php
+// Database connection
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "study");
     if ($conn->connect_error) {
         die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }
+    $conn->set_charset("utf8");
     return $conn;
 }
 
+// Initialize variables
 $conn = dbconnect();
-$message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
-
-// Lấy ten_khoa từ GET
+$message = isset($_GET['message']) ? urldecode($_GET['message']) : '';
 $ten_khoa = isset($_GET['ten_khoa']) ? trim(urldecode($_GET['ten_khoa'])) : '';
+$cau_hoi = [];
+$edit_cauhoi = null;
 
-// Kiểm tra ten_khoa hợp lệ
+// Validate ten_khoa
 if (empty($ten_khoa)) {
-    echo "<p>Tên môn học không hợp lệ.</p>";
-    exit;
+    $message = "<div class='error-message'>Tên môn học không hợp lệ.</div>";
+    $ten_khoa = '';
 }
 
-// Xử lý xóa câu hỏi
-if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
+// Handle deletion
+if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
+    $delete_id = (int)$_GET['delete'];
     $stmt = $conn->prepare("DELETE FROM quiz WHERE Id_cauhoi = ?");
-    $stmt->bind_param("i", $id);
+    $stmt->bind_param("i", $delete_id);
     if ($stmt->execute()) {
-        $message = $stmt->affected_rows > 0 ? "Xóa câu hỏi thành công!" : "Câu hỏi không tồn tại!";
+        $message = $stmt->affected_rows > 0
+            ? "<div class='success-message'>Xóa câu hỏi thành công!</div>"
+            : "<div class='error-message'>Câu hỏi không tồn tại!</div>";
     } else {
-        $message = "Lỗi khi xóa: " . $stmt->error;
+        $message = "<div class='error-message'>Lỗi khi xóa: " . $stmt->error . "</div>";
     }
     $stmt->close();
-    header("Location: baitest.php?ten_khoa=" . urlencode($ten_khoa) . "&message=" . urlencode($message));
+    header("Location: ?ten_khoa=" . urlencode($ten_khoa));
     exit;
 }
 
-// Xử lý sửa câu hỏi
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_question"])) {
-    $id = (int)$_POST["id"];
-    $id_baitest = trim($_POST["id_baitest"]);
-    $ten_khoa = trim($_POST["ten_khoa"]);
-    $question_text = trim($_POST["question_text"]);
+// Handle AJAX update (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
+    $stmt = $conn->prepare("UPDATE quiz SET cauhoi=?, cau_a=?, cau_b=?, cau_c=?, cau_d=?, dap_an=? WHERE Id_cauhoi=?");
+    $stmt->bind_param("ssssssi", $_POST['cauhoi'], $_POST['cau_a'], $_POST['cau_b'], $_POST['cau_c'], $_POST['cau_d'], $_POST['dap_an'], $_POST['update_id']);
+    echo $stmt->execute() ? "success" : "error";
+    $stmt->close();
+    exit;
+}
+
+// Handle form-based update (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_question'])) {
+    $id = (int)$_POST['id'];
+    $id_baitest = trim($_POST['id_baitest']);
+    $ten_khoa = trim($_POST['ten_khoa']);
+    $question_text = trim($_POST['question_text']);
     $choices = [
-        'A' => trim($_POST["choice_a"]),
-        'B' => trim($_POST["choice_b"]),
-        'C' => trim($_POST["choice_c"]),
-        'D' => trim($_POST["choice_d"])
+        'A' => trim($_POST['choice_a']),
+        'B' => trim($_POST['choice_b']),
+        'C' => trim($_POST['choice_c']),
+        'D' => trim($_POST['choice_d'])
     ];
     $explanations = [
-        'A' => trim($_POST["explain_a"]),
-        'B' => trim($_POST["explain_b"]),
-        'C' => trim($_POST["explain_c"]),
-        'D' => trim($_POST["explain_d"])
+        'A' => trim($_POST['explain_a']),
+        'B' => trim($_POST['explain_b']),
+        'C' => trim($_POST['explain_c']),
+        'D' => trim($_POST['explain_d'])
     ];
-    $correct = strtoupper(trim($_POST["correct"]));
+    $correct = strtoupper(trim($_POST['correct']));
+    $image_path = $_POST['current_image'];
 
-    // Kiểm tra dữ liệu
-    if (empty($id_baitest) || empty($ten_khoa) || empty($question_text) || 
-        empty($choices['A']) || empty($choices['B']) || empty($choices['C']) || empty($choices['D']) || 
-        empty($explanations['A']) || empty($explanations['B']) || empty($explanations['C']) || empty($explanations['D']) || 
+    // Validate inputs
+    if (empty($id_baitest) || empty($ten_khoa) || empty($question_text) ||
+        empty($choices['A']) || empty($choices['B']) || empty($choices['C']) || empty($choices['D']) ||
+        empty($explanations['A']) || empty($explanations['B']) || empty($explanations['C']) || empty($explanations['D']) ||
         empty($correct)) {
-        $message = "Vui lòng điền đầy đủ thông tin!";
+        $message = "<div class='error-message'>Vui lòng điền đầy đủ thông tin!</div>";
     } elseif (!in_array($id_baitest, ['Giữa kỳ', 'Cuối kỳ'])) {
-        $message = "Loại bài test phải là Giữa kỳ hoặc Cuối kỳ!";
+        $message = "<div class='error-message'>Loại bài test phải là Giữa kỳ hoặc Cuối kỳ!</div>";
     } elseif (!in_array($correct, ['A', 'B', 'C', 'D'])) {
-        $message = "Đáp án đúng phải là A, B, C hoặc D!";
+        $message = "<div class='error-message'>Đáp án đúng phải là A, B, C hoặc D!</div>";
     } else {
-        // Xử lý hình ảnh
-        $image_path = $_POST["current_image"];
-        if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
+        // Handle file upload
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
             $max_size = 5 * 1024 * 1024; // 5MB
-            if (!in_array($_FILES["image"]["type"], $allowed_types)) {
-                $message = "Chỉ hỗ trợ định dạng JPG, PNG, GIF!";
-            } elseif ($_FILES["image"]["size"] > $max_size) {
-                $message = "Hình ảnh không được vượt quá 5MB!";
+            if (!in_array($_FILES['image']['type'], $allowed_types)) {
+                $message = "<div class='error-message'>Chỉ hỗ trợ định dạng JPG, PNG, GIF!</div>";
+            } elseif ($_FILES['image']['size'] > $max_size) {
+                $message = "<div class='error-message'>Hình ảnh không được vượt quá 5MB!</div>";
             } else {
-                $image_path = 'uploads/' . time() . '_' . basename($_FILES["image"]["name"]);
-                if (!move_uploaded_file($_FILES["image"]["tmp_name"], $image_path)) {
-                    $message = "Lỗi khi tải hình ảnh!";
-                    $image_path = $_POST["current_image"];
+                $image_path = 'uploads/' . time() . '_' . basename($_FILES['image']['name']);
+                if (!move_uploaded_file($_FILES['image']['tmp_name'], $image_path)) {
+                    $message = "<div class='error-message'>Lỗi khi tải hình ảnh!</div>";
+                    $image_path = $_POST['current_image'];
                 }
             }
         }
 
         if (empty($message)) {
-            // Cập nhật câu hỏi
-            $sql = "UPDATE quiz SET id_baitest = ?, ten_khoa = ?, cauhoi = ?, hinhanh = ?, 
-                    cau_a = ?, giaithich_a = ?, cau_b = ?, giaithich_b = ?, 
-                    cau_c = ?, giaithich_c = ?, cau_d = ?, giaithich_d = ?, dap_an = ? 
-                    WHERE Id_cauhoi = ?";
+            $sql = "UPDATE quiz SET id_baitest=?, ten_khoa=?, cauhoi=?, hinhanh=?, 
+                    cau_a=?, giaithich_a=?, cau_b=?, giaithich_b=?, 
+                    cau_c=?, giaithich_c=?, cau_d=?, giaithich_d=?, dap_an=? 
+                    WHERE Id_cauhoi=?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("sssssssssssssi", $id_baitest, $ten_khoa, $question_text, $image_path,
                 $choices['A'], $explanations['A'], $choices['B'], $explanations['B'],
                 $choices['C'], $explanations['C'], $choices['D'], $explanations['D'], $correct, $id);
 
             if ($stmt->execute()) {
-                $message = "Cập nhật câu hỏi thành công!";
+                $message = "<div class='success-message'>Cập nhật câu hỏi thành công!</div>";
             } else {
-                $message = "Lỗi khi cập nhật: " . $stmt->error;
+                $message = "<div class='error-message'>Lỗi khi cập nhật: " . $stmt->error . "</div>";
             }
             $stmt->close();
-            header("Location: baitest.php?ten_khoa=" . urlencode($ten_khoa) . "&message=" . urlencode($message));
+            header("Location: ?ten_khoa=" . urlencode($ten_khoa));
             exit;
         }
     }
 }
 
-// Lấy tất cả câu hỏi thuộc ten_khoa
-$cau_hoi = [];
-$stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ?");
-$stmt->bind_param("s", $ten_khoa);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $cau_hoi[] = $row;
+// Fetch questions for the course
+if ($ten_khoa) {
+    $stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ?");
+    $stmt->bind_param("s", $ten_khoa);
+    $stmt->execute();
+    $cau_hoi = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 }
-$stmt->close();
 
-// Lấy thông tin câu hỏi để sửa (khi nhấn nút Sửa)
-$edit_cauhoi = null;
-if (isset($_GET['edit'])) {
+// Fetch question for editing
+if (isset($_GET['edit']) && is_numeric($_GET['edit'])) {
     $edit_id = (int)$_GET['edit'];
     $stmt = $conn->prepare("SELECT * FROM quiz WHERE Id_cauhoi = ?");
     $stmt->bind_param("i", $edit_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $edit_cauhoi = $result->fetch_assoc();
-    }
+    $edit_cauhoi = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 }
+
 $conn->close();
 ?>
 
@@ -254,6 +263,7 @@ $conn->close();
             padding: 14px 16px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
         }
 
         th {
@@ -273,11 +283,24 @@ $conn->close();
             background: #f1f8ff;
         }
 
-        td img {
-            max-width: 80px;
+        .question-details {
+            max-width: 600px;
+        }
+
+        .question-details p {
+            margin: 5px 0;
+        }
+
+        .question-details img {
+            max-width: 150px;
             height: auto;
             border-radius: 4px;
-            display: block;
+            margin-top: 10px;
+        }
+
+        .correct-answer {
+            color: #2e7d32;
+            font-weight: bold;
         }
 
         .btn {
@@ -293,13 +316,23 @@ $conn->close();
         }
 
         .btn.view {
-            background: #0056b3;
+            background: #007bff;
             color: white;
         }
 
+        .btn.view:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
         .btn.edit {
-            background:  #e0a800;
+            background: #ffc107;
             color: #333;
+        }
+
+        .btn.edit:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
         }
 
         .btn.delete {
@@ -307,7 +340,10 @@ $conn->close();
             color: white;
         }
 
-        
+        .btn.delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
 
         .btn i {
             margin-right: 6px;
@@ -432,6 +468,10 @@ $conn->close();
                 font-size: 0.85rem;
             }
 
+            .question-details img {
+                max-width: 100px;
+            }
+
             .btn {
                 padding: 6px 12px;
                 font-size: 0.8rem;
@@ -461,8 +501,8 @@ $conn->close();
                 font-size: 0.85rem;
             }
 
-            td img {
-                max-width: 60px;
+            .question-details img {
+                max-width: 80px;
             }
 
             .modal-content form label,
@@ -476,86 +516,82 @@ $conn->close();
     </style>
 </head>
 <body>
-    <div class="container">
-        <h3>Test Câu Hỏi Môn: <?= htmlspecialchars($ten_khoa) ?></h3>
-        <a href="add_khoahoc.php" class="back-link"><i class="fas fa-arrow-left"></i>Quay lại danh sách môn học</a>
-        <?php if (!empty($message)): ?>
-            <div class="<?= sstrpos($message, 'thành công') !== false ? 'success-message' : 'error-message' ?>">
-                <?= htmlspecialchars($message) ?>
-            </div>
-        <?php endif; ?>
-        <a href="add_question.php" class="add-question"><i class="fas fa-plus"></i>Thêm câu hỏi mới</a>
-        <!-- <a href="question.php " class="add-question"><i class="fas fa-plus"></i>Xem câu hỏi</a> -->
-        
-        <!-- <h3>Câu hỏi môn: <?= htmlspecialchars($ten_khoa)?></h3> -->
-        <?php if (empty($cau_hoi)): ?>
-            <p class="empty">Chưa có câu hỏi nào cho môn học này.</p>
+<div class="container">
+    <h3>Test Câu Hỏi Môn: <?= htmlspecialchars($ten_khoa) ?></h3>
+    <a class="btn view" href="add_khoahoc.php"><i class="fas fa-arrow-left"></i> Quay lại danh sách môn học</a><br><br>
+    <?php if (!empty($message)): ?>
+        <div class="<?= strpos($message, 'thành công') !== false ? 'success-message' : 'error-message' ?>">
+            <?= htmlspecialchars($message) ?>
+        </div>
+    <?php endif; ?>
+    <a href ="add_question.php "class="add-question"><i class="fas fa-plus"></i>Thêm câu hỏi mới </a>
+        <?php iF(empty ($cau_hoi)):?>
+            <p class ="empty">Chưa có câu hỏi nào cho môn học này </p>
         <?php else: ?>
-        
         <table>
             <thead>
                 <tr>
-                    <!-- <th>ID</th> -->
-                    <!-- <th>Khoá học</th> -->
+                    <th>Id</th>
+                    <th>Bai Test</th>
                     <th>Câu hỏi</th>
                     <th>Thao tác</th>
-                   
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($cau_hoi as $ch): ?>
-                <tr>
-                    <!-- <td><?= $ch['Id_cauhoi'] ?></td> -->
-                    <!-- <td><?= htmlspecialchars($ch['id_baitest']) ?></td> -->
-                    <td><?= htmlspecialchars($ch['cauhoi']) ?></td>
-                    <td>
-                        <a class="btn edit" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&edit=<?= $ch['Id_cauhoi'] ?>" onclick="openModal(<?= $ch['Id_cauhoi'] ?>)">Sửa</a>
-                        <a class="btn delete" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&delete=<?= $ch['Id_cauhoi'] ?>" onclick="return confirm('Xác nhận xóa câu hỏi?')">Xóa</a>
-                        <a class="btn view" href="question.php">Xem câu hỏi</a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td><?= $ch ['Id_cauhoi']?></td>
+                        <td><?= htmlspecialchars ($ch ['id_baitest']) ?></td>
+                        <td><?= htmlspecialchars($ch['cauhoi']) ?></td>
+                        <td>
+                            <a class="btn edit" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&id_baitest=<?= urlencode($id_baitest) ?>&edit=<?= $ch['Id_cauhoi'] ?>"><i class="fas fa-edit"></i> Sửa</a>
+                            <a class="btn delete" href="?ten_khoa=<?= urlencode($ten_khoa) ?>&id_baitest=<?= urlencode($id_baitest) ?>&delete=<?= $ch['Id_cauhoi'] ?>" onclick="return confirm('Xác nhận xóa câu hỏi?')"><i class="fas fa-trash"></i> Xóa</a>
+                            <a class="btn view" href="question.php?id=<?= $ch['Id_cauhoi'] ?>"><i class="fas fa-eye"></i> Xem</a>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <?php endif; ?>
-        <!-- Modal sửa câu hỏi -->
-        <?php if ($edit_cauhoi): ?>
-        <div class="modal" id="editModal-<?= $edit_cauhoi['Id_cauhoi'] ?>">
+    <?php endif; ?>
+
+    <!-- Edit Modal -->
+    <?php if ($edit_cauhoi): ?>
+        <div class="modal" id="editModal-<?= $edit_cauhoi['Id_cauhoi'] ?>" style="display: flex;">
             <div class="modal-content">
-                <span class="close" onclick="closeModal(<?= $edit_cauhoi['Id_cauhoi'] ?>)">&times;</span>
+                <span class="close" onclick="closeModal(<?= $edit_cauhoi['Id_cauhoi'] ?>)">×</span>
                 <h3>Sửa câu hỏi</h3>
                 <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="id" value="<?= $edit_cauhoi['Id_cauhoi'] ?>">
                     <input type="hidden" name="current_image" value="<?= htmlspecialchars($edit_cauhoi['hinhanh']) ?>">
-                    <label for="id_baitest">Loại bài test:</label>
-                    <select id="id_baitest" name="id_baitest" required>
+                    <label>Bài test:</label>
+                    <select name="id_baitest" required>
                         <option value="Giữa kỳ" <?= $edit_cauhoi['id_baitest'] === 'Giữa kỳ' ? 'selected' : '' ?>>Giữa kỳ</option>
                         <option value="Cuối kỳ" <?= $edit_cauhoi['id_baitest'] === 'Cuối kỳ' ? 'selected' : '' ?>>Cuối kỳ</option>
                     </select>
-                    <label for="ten_khoa">Tên môn học:</label>
-                    <input type="text" id="ten_khoa" name="ten_khoa" value="<?= htmlspecialchars($edit_cauhoi['ten_khoa']) ?>" required>
-                    <label for="question_text">Câu hỏi:</label>
-                    <textarea id="question_text" name="question_text" required><?= htmlspecialchars($edit_cauhoi['cauhoi']) ?></textarea>
-                    <label for="choice_a">Đáp án A:</label>
-                    <input type="text" id="choice_a" name="choice_a" value="<?= htmlspecialchars($edit_cauhoi['cau_a']) ?>" required>
-                    <label for="explain_a">Giải thích A:</label>
-                    <textarea id="explain_a" name="explain_a" required><?= htmlspecialchars($edit_cauhoi['giaithich_a']) ?></textarea>
-                    <label for="choice_b">Đáp án B:</label>
-                    <input type="text" id="choice_b" name="choice_b" value="<?= htmlspecialchars($edit_cauhoi['cau_b']) ?>" required>
-                    <label for="explain_b">Giải thích B:</label>
-                    <textarea id="explain_b" name="explain_b" required><?= htmlspecialchars($edit_cauhoi['giaithich_b']) ?></textarea>
-                    <label for="choice_c">Đáp án C:</label>
-                    <input type="text" id="choice_c" name="choice_c" value="<?= htmlspecialchars($edit_cauhoi['cau_c']) ?>" required>
-                    <label for="explain_c">Giải thích C:</label>
-                    <textarea id="explain_c" name="explain_c" required><?= htmlspecialchars($edit_cauhoi['giaithich_c']) ?></textarea>
-                    <label for="choice_d">Đáp án D:</label>
-                    <input type="text" id="choice_d" name="choice_d" value="<?= htmlspecialchars($edit_cauhoi['cau_d']) ?>" required>
-                    <label for="explain_d">Giải thích D:</label>
-                    <textarea id="explain_d" name="explain_d" required><?= htmlspecialchars($edit_cauhoi['giaithich_d']) ?></textarea>
-                    <label for="correct">Đáp án đúng (A, B, C, D):</label>
-                    <input type="text" id="correct" name="correct" value="<?= htmlspecialchars($edit_cauhoi['dap_an']) ?>" required>
-                    <label for="image">Hình ảnh (nếu có):</label>
-                    <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif">
+                    <label>Tên môn học:</label>
+                    <input type="text" name="ten_khoa" value="<?= htmlspecialchars($edit_cauhoi['ten_khoa']) ?>" required>
+                    <label>Câu hỏi:</label>
+                    <textarea name="question_text" required><?= htmlspecialchars($edit_cauhoi['cauhoi']) ?></textarea>
+                    <label>Đáp án A:</label>
+                    <input type="text" name="choice_a" value="<?= htmlspecialchars($edit_cauhoi['cau_a']) ?>" required>
+                    <label>Giải thích A:</label>
+                    <textarea name="explain_a" required><?= htmlspecialchars($edit_cauhoi['giaithich_a']) ?></textarea>
+                    <label>Đáp án B:</label>
+                    <input type="text" name="choice_b" value="<?= htmlspecialchars($edit_cauhoi['cau_b']) ?>" required>
+                    <label>Giải thích B:</label>
+                    <textarea name="explain_b" required><?= htmlspecialchars($edit_cauhoi['giaithich_b']) ?></textarea>
+                    <label>Đáp án C:</label>
+                    <input type="text" name="choice_c" value="<?= htmlspecialchars($edit_cauhoi['cau_c']) ?>" required>
+                    <label>Giải thích C:</label>
+                    <textarea name="explain_c" required><?= htmlspecialchars($edit_cauhoi['giaithich_c']) ?></textarea>
+                    <label>Đáp án D:</label>
+                    <input type="text" name="choice_d" value="<?= htmlspecialchars($edit_cauhoi['cau_d']) ?>" required>
+                    <label>Giải thích D:</label>
+                    <textarea name="explain_d" required><?= htmlspecialchars($edit_cauhoi['giaithich_d']) ?></textarea>
+                    <label>Đáp án đúng (A, B, C, D):</label>
+                    <input type="text" name="correct" value="<?= htmlspecialchars($edit_cauhoi['dap_an']) ?>" required>
+                    <label>Hình ảnh (nếu có):</label>
+                    <input type="file" name="image" accept="image/jpeg,image/png,image/gif">
                     <?php if ($edit_cauhoi['hinhanh']): ?>
                         <p>Hình ảnh hiện tại: <img src="<?= htmlspecialchars($edit_cauhoi['hinhanh']) ?>" alt="Hình ảnh câu hỏi"></p>
                     <?php endif; ?>
@@ -563,22 +599,17 @@ $conn->close();
                 </form>
             </div>
         </div>
-        <?php endif; ?>
-    </div>
+    <?php endif; ?>
+</div>
 
-    <script>
-        function openModal(id) {
-            document.getElementById('editModal-' + id).style.display = 'flex';
-        }
+<script>
+    function openModal(id) {
+        document.getElementById('editModal-' + id).style.display = 'flex';
+    }
 
-        function closeModal(id) {
-            document.getElementById('editModal-' + id).style.display = 'none';
-        }
-
-        // Tự động mở modal nếu có edit
-        <?php if ($edit_cauhoi): ?>
-            openModal(<?= $edit_cauhoi['Id_cauhoi'] ?>);
-        <?php endif; ?>
-    </script>
+    function closeModal(id) {
+        document.getElementById('editModal-' + id).style.display = 'none';
+    }
+</script>
 </body>
 </html>

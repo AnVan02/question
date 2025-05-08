@@ -116,7 +116,7 @@ if (isset($_GET['edit'])) {
                 <button type="submit" name="add_course">Thêm khóa học</button>
             <?php endif; ?>
         </form>
-
+        
         <h3 style="margin-top:40px;">Danh sách khóa học</h3>
         <?php if (empty($khoa_hoc_list)): ?>
             <p>Chưa có khóa học nào.</p>
@@ -185,6 +185,13 @@ form input[type="text"]:focus {
     background-color: #f1fefc;
 }
 
+form input [type="test"]:focus{
+    border-color : #009688;
+    outline:none;
+    background-color: #f1fefc;
+}
+
+
 button {
     display: block;
     width: 100%;
@@ -210,9 +217,6 @@ a {
     transition: color 0.3s;
 }
 
-a:hover {
-    color: #004d40;
-}
 
 ul {
     list-style-type: none;
@@ -251,6 +255,7 @@ div[style^="color:red"] {
     border-radius: 6px;
 }
 
+
 div[style^="color:green"] {
     background-color: #e0fbe7;
     color: #2e7d32;
@@ -287,4 +292,6 @@ a.btn {
 a.btn:hover {
     background-color: #1565c0;
 }
+
+
 </style>

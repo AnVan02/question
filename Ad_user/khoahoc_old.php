@@ -34,7 +34,7 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
 
 // Xử lý sửa (AJAX POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
-    $stmt = $conn->prepare("UPDATE quiz SET cauhoi=?,cau_a=?, cau_b=?, cau_c=?, cau_d=?, dap_an=? WHERE Id_cauhoi=?");
+    $stmt = $conn->prepare("UPDATE quiz SET cauhoi=?, cau_a=?, cau_b=?, cau_c=?, cau_d=?, dap_an=? WHERE Id_cauhoi=?");
     $stmt->bind_param("ssssssi", $_POST['cauhoi'], $_POST['cau_a'], $_POST['cau_b'], $_POST['cau_c'], $_POST['cau_d'], $_POST['dap_an'], $_POST['update_id']);
     if ($stmt->execute()) {
         echo "success";
@@ -43,27 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_id'])) {
     }
     exit;
 }
-
-// xứ ly thêm test
-if($_SERVER ["REQUESR_METHOS"] === "POST" && isset ($_POST ["add_course"])) {
-    $id_baitest = trim ($_POST["id_baitest"]);
-    if (empty ($id_baitest)) {
-        $messege ="<div style='color:red;'>Vui lòng nhập tên bai test! </div>";
-    } else {
-        $conn =dbconnect ();
-        $stmt = $conn-> prepare ("INSERT INTO id_baitest (id_baitest) VALUES (?)");
-        $stmt -> bind_param ("s" ,$ten_khoahoc);
-        if($stmt_execute()){
-            $messege ="<div style='color :red;'>Đã thêm test thành công!</div>";
-        } else {
-            $messege = "<div style='color: red ;'>Lỗi khi thêm :".$stmt->error ."</div>";
-
-        }
-        $stmt -> close ();
-        $conn -> close ();
-    }
-}
-
 // Dữ liệu lọc
 $ten_khoa = $_GET['ten_khoa'] ?? '';
 $id_baitest = $_GET['id_baitest'] ?? '';
@@ -110,18 +89,9 @@ if ($ten_khoa !== '' && $id_baitest !== '') {
 <body>
 <div class="container">
     <h3>Những Câu Hỏi Môn: <?= htmlspecialchars($ten_khoa) ?></h3>
-    <form method="POST">
-        <label>Tên_test:</label>
-        <input type="text" name="edit_id_baitest" placeholder="Nhập tên bài test" value="<?= htmlspecialchars($edit_id_baitest) ?>">
-        <?php if ($editing): ?>
-            <input type="hidden" name="course_id" value="<?= $edit_id_baitest ?>">
-            <button type="submit" name="update_course">Cập nhật</button>
-            <a href="add_khoahoc.php" style="display:block;margin-top:10px;text-align:center;">Huỷ</a>
-        <?php else: ?>
-            <button type="submit" name="add_course">Thêm khóa học</button>
-        <?php endif; ?>
-    </form>
     <a class="btn view" href="add_khoahoc.php"><i class="fas fa-eye"></i> Quay lại danh sách môn học</a><br><br>
+
+    <?= $messege ?>
 
     <?php if ($ten_khoa !== ''): ?>
     <form method="get">
@@ -139,7 +109,6 @@ if ($ten_khoa !== '' && $id_baitest !== '') {
     </form>
     <?php endif; ?>
 
-
     <?php if (!empty($cau_hoi)): ?>
     <!-- <h3>Danh sách câu hỏi</h3> -->
     <table>
@@ -152,7 +121,6 @@ if ($ten_khoa !== '' && $id_baitest !== '') {
         <tr>
             <td><?= $ch['Id_cauhoi'] ?></td>
             <td><?= htmlspecialchars($ch['cauhoi']) ?></td>
-            <!-- <td><?= htmlspecialchars($ch['id_baitest'])?></td> -->
             <td>
                 <button class="btn editBtn"
                         data-id="<?= $ch['Id_cauhoi'] ?>"
@@ -204,7 +172,6 @@ document.querySelectorAll(".editBtn").forEach(btn => {
     btn.onclick = () => {
         document.getElementById("update_id").value = btn.dataset.id;
         document.getElementById("cauhoi").value = btn.dataset.cauhoi;
-        document.getElementById("id_baitest").value= btn.dataset.cauhoi;
         document.getElementById("cau_a").value = btn.dataset.a;
         document.getElementById("cau_b").value = btn.dataset.b;
         document.getElementById("cau_c").value = btn.dataset.c;
@@ -528,4 +495,3 @@ button.btn[onclick*="delete"]:hover {
 </style>
 </body>
 </html>
-
