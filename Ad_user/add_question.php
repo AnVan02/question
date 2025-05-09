@@ -6,7 +6,7 @@ function dbconnect() {
     }
     return $conn;
 }
-
+// lấy dữ liệu câu hỏi để chỉnh sữa (nếu có )
 $question_data = [];
 $question_id = isset($_GET['question_id']) && is_numeric($_GET['question_id']) ? (int)$_GET['question_id'] : null;
 $message = "";
@@ -26,6 +26,7 @@ if ($question_id) {
     $stmt->close();
     $conn->close();
 }
+
 
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $message = "<div style='color:green;'>Câu hỏi đã được lưu vào cơ sở dữ liệu!</div>";
@@ -55,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0755, true);
     }
-
+    // Xử lý hình ảnh
     if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
         $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
         $file_ext = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
@@ -76,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             }
         }
     }
-
+    // Xử lý câu hỏi 
     if (empty($id_baitest) || empty($ten_khoa) || empty($question_text) ||
         empty($choices['A']) || empty($choices['B']) || empty($choices['C']) || empty($choices['D']) ||
         empty($explanations['A']) || empty($explanations['B']) || empty($explanations['C']) || empty($explanations['D']) ||

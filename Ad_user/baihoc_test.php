@@ -216,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_question'])) {
         }
     }
 }
-
 // lây tất cả câu hỏi thuộc ten_khoa
 $stmt = $conn->prepare("SELECT DISTINCT ten_khoa FROM quiz");
 $stmt->execute();

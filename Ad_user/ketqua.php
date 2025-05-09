@@ -270,7 +270,6 @@ $total = count($selected_question_indices);
         <p><strong>Ngày làm bài:</strong> <?= $time ?></p>
         <p><strong>Số lần làm bài:</strong> <?= $attempts ?> / <?= $max_attempts ?></p>
         <hr>
-
         <h2>Chi tiết câu trả lời</h2>
         
         <?php if ($total === 0): ?>

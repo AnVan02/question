@@ -82,12 +82,12 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 --
 
 CREATE TABLE `test` (
-  `id_test` int(11) NOT NULL,
+  `id_test` int(11) NOT NULL AUTO_INCREMENT,
   `id_khoa` int(11) NOT NULL,
   `ten_test` varchar(255) NOT NULL,
-  `lan_thu` int(11) DEFAULT 1
+  `lan_thu` int(11) DEFAULT 1,
+  PRIMARY KEY (`id_test`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 --
 -- Đang đổ dữ liệu cho bảng `test`
 --
