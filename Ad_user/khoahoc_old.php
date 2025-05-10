@@ -48,7 +48,7 @@ $editing = false;
 $edit_test = null;
 if (isset($_GET['edit_test']) && $id_khoa > 0) {
     $id_test = (int)$_GET['edit_test'];
-    $stmt = $conn->prepare("SELECT id_test, ten_test FROM test WHERE id_test = ? AND id_khoa = ?");
+    $stmt = $conn->prepare("SELECT id_test, ten_test, lan_thu FROM test WHERE id_test = ? AND id_khoa = ?");
     if (!$stmt) {
         $error_message = "<p>Lỗi chuẩn bị truy vấn sửa: " . $conn->error . "</p>";
     } else {
@@ -69,15 +69,18 @@ if (isset($_GET['edit_test']) && $id_khoa > 0) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_khoa > 0) {
     $id_test = (int)$_POST['id_test'];
     $ten_test = trim($_POST['ten_test']);
+    $lan_thu = isset($_POST['lan_thu']) ? (int)$_POST['lan_thu'] : 1;
 
     if (empty($ten_test)) {
         $error_message = "<p>Lỗi: Vui lòng nhập tên bài kiểm tra!</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số dương!</p>";
     } else {
-        $stmt = $conn->prepare("UPDATE test SET ten_test = ? WHERE id_test = ? AND id_khoa = ?");
+        $stmt = $conn->prepare("UPDATE test SET ten_test = ?, lan_thu = ? WHERE id_test = ? AND id_khoa = ?");
         if (!$stmt) {
             $error_message = "<p>Lỗi chuẩn bị truy vấn cập nhật: " . $conn->error . "</p>";
         } else {
-            $stmt->bind_param("sii", $ten_test, $id_test, $id_khoa);
+            $stmt->bind_param("siii", $ten_test, $lan_thu, $id_test, $id_khoa);
             if ($stmt->execute()) {
                 $success_message = "<p>Cập nhật bài kiểm tra thành công!</p>";
                 header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
@@ -89,6 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
         }
     }
 }
+
 
 // Lấy thông tin khóa học
 $khoa_hoc = null;
@@ -114,16 +118,19 @@ if ($id_khoa > 0) {
 // Xử lý thêm bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
     $ten_test = trim($_POST['ten_test']);
+    $lan_thu = isset($_POST['lan_thu']) ? (int)$_POST['lan_thu'] : 1;
 
     if (empty($ten_test)) {
         $error_message = "<p>Lỗi: Vui lòng nhập tên bài kiểm tra!</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số dương!</p>";
     } else {
-        $sql = "INSERT INTO test (id_khoa, ten_test) VALUES (?, ?)";
+        $sql = "INSERT INTO test (id_khoa, ten_test, lan_thu) VALUES (?, ?, ?)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
         } else {
-            $stmt->bind_param("is", $id_khoa, $ten_test);
+            $stmt->bind_param("isi", $id_khoa, $ten_test, $lan_thu);
             if ($stmt->execute()) {
                 $success_message = "<p>Thêm bài kiểm tra thành công!</p>";
                 header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
@@ -139,7 +146,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
 // Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
 $result = null;
 if ($id_khoa > 0 && $khoa_hoc) {
-    $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, k.khoa_hoc 
+    $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, k.khoa_hoc 
             FROM test t 
             LEFT JOIN khoa_hoc k ON t.id_khoa = k.id 
             WHERE t.id_khoa = ?";
@@ -153,6 +160,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
         $stmt->close();
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -161,7 +169,72 @@ if ($id_khoa > 0 && $khoa_hoc) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhập và hiển thị dữ liệu Test - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></title>
-    <style>
+   
+</head>
+<body>
+    <h2><?php echo $editing ? 'Sửa bài kiểm tra' : 'Nhập dữ liệu bài test'; ?> - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></h2>
+    <a href="add_khoahoc.php" class="back-button">Quay lại danh sách khóa học</a>
+
+    <?php 
+    if ($success_message) echo "<p class='success'>$success_message</p>";
+    if ($error_message) echo "<p class='error'>$error_message</p>";
+    ?>
+    <?php if ($khoa_hoc && $id_khoa > 0): ?>
+        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
+            <div class="form-group">
+                <label for="ten_test">Tên Test:</label>
+                <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="lan_thu">Lần thứ:</label>
+                <input type="number" id="lan_thu" name="lan_thu" value="<?php echo $editing ? htmlspecialchars($edit_test['lan_thu']) : '1'; ?>" min="1" required>
+            </div>
+            <?php if ($editing): ?>
+                <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
+                <button type="submit" name="update_test">Cập nhật</button>
+                <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa); ?>" class="cancel-button">Hủy</a>
+            <?php else: ?>
+                <button type="submit" name="add_test">Thêm</button>
+            <?php endif; ?>
+        </form>
+        
+    
+
+
+        <h2>Danh sách bài test</h2>
+        <?php if ($result && $result->num_rows > 0): ?>
+            <table>
+                <tr>
+                    <th>ID Test</th>
+                    <th>Khóa học</th>
+                    <th>Tên Test</th>
+                    <th>Lần thứ</th>
+                    <th>Hành động</th>
+                </tr>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row['id_test']); ?></td>
+                        <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
+                        <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
+                        <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
+                        <td>
+                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
+                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
+                            <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
+
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </table>
+        <?php else: ?>
+            <p>Chưa có dữ liệu trong bảng Test cho khóa học này.</p>
+        <?php endif; ?>
+    <?php else: ?>
+        <p>Vui lòng chọn một khóa học hợp lệ từ trang danh sách khóa học.</p>
+    <?php endif; ?>
+</body>
+</html>
+<style>
         /* Reset and Base Styles */
         * {
             box-sizing: border-box;
@@ -172,10 +245,11 @@ if ($id_khoa > 0 && $khoa_hoc) {
         body {
             font-family: 'Arial', sans-serif;
             margin: 20px auto;
-            max-width: 900px;
-            background-color: #f9fafb;
+            max-width: 1100px;
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             color: #333;
             line-height: 1.6;
+            /* padding: 15px; */
         }
 
         /* Typography */
@@ -238,7 +312,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
             font-size: 14px;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        input[type="number"] {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #e2e8f0;
@@ -298,23 +373,18 @@ if ($id_khoa > 0 && $khoa_hoc) {
         }
 
         .edit-button {
-            background-color: #ecc94b;
-            color: #744210;
+            background-color: #e3f2fd;
+            color: #0288d1;
         }
 
         .edit-button:hover {
-            background-color: #d69e2e;
+            background-color: #e3f2fd;
             transform: translateY(-1px);
         }
 
         .delete-button {
-            background-color: #e53e3e;
-            color: #fff;
-        }
-
-        .delete-button:hover {
-            background-color: #c53030;
-            transform: translateY(-1px);
+            background-color: #ffebee;
+            color: #c62828;
         }
 
         .action-button:active, .edit-button:active, .delete-button:active {
@@ -331,14 +401,14 @@ if ($id_khoa > 0 && $khoa_hoc) {
         }
 
         .back-button {
-            background-color: #718096;
-            color: #fff;
+            background-color: #e3f2fd;
+            color: #0288d1;
             font-size: 14px;
             margin-bottom: 20px;
         }
 
         .back-button:hover {
-            background-color: #4a5568;
+            background-color:  #e3f2fd;
             transform: translateY(-1px);
         }
 
@@ -413,7 +483,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 padding: 15px;
             }
 
-            input[type="text"] {
+            input[type="text"],
+            input[type="number"] {
                 font-size: 13px;
                 padding: 8px;
             }
@@ -437,87 +508,6 @@ if ($id_khoa > 0 && $khoa_hoc) {
             }
         }
     </style>
-</head>
-<body>
-    <a href="add_khoahoc.php" class="back-button">Quay lại danh sách khóa học</a>
-    <h2><?php echo $editing ? 'Sửa bài kiểm tra' : 'Nhập dữ liệu Test'; ?> - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></h2>
-    <?php 
-    if ($success_message) echo "<p class='success'>$success_message</p>";
-    if ($error_message) echo "<p class='error'>$error_message</p>";
-    ?>
-    <?php if ($khoa_hoc && $id_khoa > 0): ?>
-        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
-            <div class="form-group">
-                <label for="ten_test">Tên Test:</label>
-                <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="lan_thu">Lần thử bài test</label>
-                <input type="text"id="lan_thu" name ="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_lanthu['lanthu']) :'';?>" required>
-            </div>     
-            
-            <div class="form-group">
-                <label for="khoa_hoc">Khoa học</label>
-                <input type="text"id="khoahoc" name ="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_khoahoc['khoahoc']) :'';?>" required>
-            </div>      
-
-            <div class="form-group">
-                <label for="cauhoi">Câu hỏi </label>
-                <input type="text" id="cauhoi" name ="cauhoi" maxlength="255" value="<?php echo $editing ? htmlspecialchars ($edit_cauhoi['caihoi']) : '';?>" required >
-            </div>
-            
-            <div class="form-group">
-                <label for="ten_test">Bài test</label>
-                <input type="text" id="ten_test" name ="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars ($edit_ten_test['ten_test']) : '';?>" required >
-            </div>
-                
-            </div>
-            <?php if ($editing): ?>
-                <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
-                <button type="submit" name="update_test">Cập nhật</button>
-                <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa); ?>" class="cancel-button">Hủy</a>
-            <?php else: ?>
-                <button type="submit" name="add_test">Thêm</button>
-            <?php endif; ?>
-        </form>
-
-        <h2>Danh sách Test</h2>
-        <?php if ($result && $result->num_rows > 0): ?>
-            <table>
-                <tr>
-                    <th>ID Test</th>
-                    <th>Khóa học</th>
-                    <th>Lần Thử</th>
-                    <th>Câu hỏi</th>
-                    <th>Tên Test</th>
-                    <th>Hành động</th>
-                </tr>
-                
-                <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($row['id_test']); ?></td>
-                        <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
-                        <td><?php echo htmlspecialchars($row['lan_thu']) ;?></td>
-                        <td><?php echo htmlspecialchars($row ['cau_hoi']); ?></td>
-                        <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
-                        
-                        <td>
-                            <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
-                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
-                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            </table>
-        <?php else: ?>
-            <p>Chưa có dữ liệu trong bảng Test cho khóa học này.</p>
-        <?php endif; ?>
-    <?php else: ?>
-        <p>Vui lòng chọn một khóa học hợp lệ từ trang danh sách khóa học.</p>
-    <?php endif; ?>
-</body>
-</html>
 
 <?php
 $conn->close();

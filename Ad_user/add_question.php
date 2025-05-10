@@ -141,13 +141,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(to right, rgb(243, 254, 255), rgb(243, 254, 255));
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
         }
         .container {
             background-color: rgb(252, 251, 248);
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 30px;
             border-radius: 15px;

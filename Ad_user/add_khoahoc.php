@@ -119,13 +119,13 @@ if (isset($_GET['edit'])) {
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            /* align-items: center; */
             min-height: 100vh;
         }
 
@@ -317,12 +317,11 @@ if (isset($_GET['edit'])) {
             <?php if ($editing): ?>
                 <input type="hidden" name="course_id" value="<?= $edit_id ?>">
                 <button type="submit" name="update_course">Cập nhật</button>
-                <a href="index.php" class="cancel">Huỷ</a>
+                <a href="add_khoahoc.php" class="cancel">Huỷ</a>
             <?php else: ?>
                 <button type="submit" name="add_course">Thêm khóa học</button>
             <?php endif; ?>
         </form>
-
         <br><h2>Danh sách khóa học</h2>
         <?php if (empty($khoa_hoc_list)): ?>
             <p style="text-align: center; color: #666;">Chưa có khóa học nào.</p>
@@ -330,7 +329,7 @@ if (isset($_GET['edit'])) {
             <ul>
                 <?php foreach ($khoa_hoc_list as $kh): ?>
                     <li>
-                        <strong><?= htmlspecialchars($kh['id']) ?>:</strong>
+                        <strong></strong>
                         <span class="course-name"><?= htmlspecialchars($kh['khoa_hoc']) ?></span>
                         <a href="?edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
                         <a href="?delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
@@ -339,6 +338,9 @@ if (isset($_GET['edit'])) {
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
+        
+        
     </div>
+    
 </body>
 </html>

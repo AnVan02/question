@@ -43,6 +43,7 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
     }
 }
 
+
 // Xử lý sửa bài kiểm tra
 $editing = false;
 $edit_test = null;
@@ -196,6 +197,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 <button type="submit" name="add_test">Thêm</button>
             <?php endif; ?>
         </form>
+        
+    
 
 
         <h2>Danh sách bài test</h2>

@@ -22,7 +22,7 @@ function getCoursesFromDB() {
     $conn->close();
     return $courses;
 }
-
+    
 // Lấy số lần thử từ bảng test
 function getTestInfo($ten_test, $ten_khoa) {
     $conn = dbconnect();
@@ -46,6 +46,7 @@ function getTestInfo($ten_test, $ten_khoa) {
     $conn->close();
     die("Lỗi: Không tìm thấy bài test '$ten_test' cho khóa học '$ten_khoa'");
 }
+
 
 // Lấy câu hỏi từ cơ sở dữ liệu
 function getQuestionsFromDB($ten_khoa, $id_baitest) {

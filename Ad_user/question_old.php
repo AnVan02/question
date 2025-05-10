@@ -6,35 +6,25 @@ function dbconnect() {
     }
     return $conn;
 }
+$id_test = isset ($_GET ['id_test'])?(int)$_GET ['id_test']:0;
 
-// lấy id_test từ URL
-$id_test = isset($_GET ['id_test']) ? (int)$_GET ['id_test'] : 0;
-
-// khởi tạo biến thông báo 
-$message = "";
-
+// Khơi tạo biến thông báo
+$message ="";
 
 // Xử lý xóa câu hỏi
 $message = "";
 if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
     $delete_id = (int)$_GET['delete_id'];
     $conn = dbconnect();
+    
+    // lấy tên_test và khoa_hoc để lọc câu hỏi 
 
-    // lấy ten_test và khoa_học để lọc câu hỏi 
-    $sql = "SELECT $ten_test, k.khoa_hoc
-            FROM $test
-            LEFT JOIN $khoa_hoc on $id_khoa = $id
-            WHERE $id_test =?";
-    $stmt= $conn ->prepare ($sql);
-    $stmt -> bind_param ("i", $id_test);
-    $stmt -> execute();
-    $result = $stmt -> get_result();
-    if($result ->num_rows > 0) {
-        $row = $result ->fetch_assoc();
-        $ten_test = $row ['ten_test'];
-        $khoa_hoc = $row['khoa_hoc'];
-
-    }
+    $sql = "SELECT t.ten_test, k.khoa_học
+            FROM test t
+            LEFT JOIN khoa_hoc k ON t.id_khoa = k.id
+            WHERE t.id_test =?>";
+    $stmt = $conn -> prepare ($sql);
+    
     
     // Kiểm tra xem câu hỏi có hình ảnh không và xóa nếu có
     $sql = "SELECT hinhanh FROM quiz WHERE Id_cauhoi = ?";
@@ -50,20 +40,18 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
     }
     $stmt->close();
 
-    // Xoá câu hỏi 
-    $sql = "DELETE FROM quiz WHERE ID_cauhoi = ? AND id_baitest = ? AND ten_khoa =?";
-    $stmt = $conn->prepare ($sql);
-    $stmt -> bind_param ("iss", $delete_id , $ten_test , $khoa_hoc);
-    $stmt -> execute () ;
-    iF($result -> num_rows >0 ) {
-        while ($row = $result ->fetch_assoc ()) {
-            $questions[] = $row ;
-        }
+    // Xóa câu hỏi khỏi cơ sở dữ liệu
+    $sql = "DELETE FROM quiz WHERE Id_cauhoi = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $delete_id);
+    if ($stmt->execute()) {
+        $message = "<div style='color:green;'>Xóa câu hỏi thành công!</div>";
+    } else {
+        $message = "<div style='color:red;'>Lỗi khi xóa câu hỏi: " . $stmt->error . "</div>";
     }
-    $stmt -> close();
-    $conn -> close();
+    $stmt->close();
+    $conn->close();
 }
-
 
 // Lấy danh sách câu hỏi
 $conn = dbconnect();
@@ -76,76 +64,6 @@ if ($result->num_rows > 0) {
     }
 }
 $conn->close();
-
-// Lấy thông tin bai test
-
-
-// lấy thông tin bài kiểm tra và khoá học
-$test_info = null ;
-$khoa_hoc = null;
-
-if($id_test > 0) {
-    $conn = dbconnect ();
-    $sql = "SELECT t.id_test, t.ten_test , t.id_khoa, k.khoa_hoc
-            FROM test t
-            LEFT JOIN khoa_hoc k ON t.id_khoa = k.id 
-            Where t.id_test =?";
-    $stmt = $conn ->prepre($sql);
-    $stmt -> bind_param ("i", $id_test);
-    $stmt ->execute();
-    $result = $stmt ->prepage ($sql);
-    if ($result -> num_rows > 0) {
-        $test_info = $result-> fetch_assoc ();
-        $khoa_hoc = $test_info ['khoa_hoc'];
-    } else {
-        $message = "<div class='message error'>Bài kiêm tra không ton tại </div>";
-    }
-    $stmt->close();
-
-}
-// lấy danh sách câu hỏi theo ten_test và ten_khoa
-$question = [];
-if($id_test >0 && $test_info && $khoa_hoc) {
-    $conn = dbconnect ();
-    $sql ="SELECT id_cauhoi , id_baitest, ten_khoa, câu hỏi 
-            From quiz 
-            WHERE id_baitest = ? AND ten_khoa =?";
-    $stmt = $conn ->prepare ($sql) ;
-    $stmt -> bind_param ("ss", $test_info ['ten_test'], $khoa_hoc);
-    $stmt -> execute ();
-    $result = $stmt -> get_result ();
-    if($result -> num_rows > 0) {
-        while ($row = $result -> fetch_assoc()) {
-            $question [] = $row;
-
-        }
-    }
-    $stmt -> close();
-    $conn -> close ();
-
-}
-// lấy danh sách câu hỏi theo baihoc 
-
-$question = [];
-if($id_test > 0  && $test_info && $khoa_hoc ) {
-    $conn = dbconnect ();
-    $sql="SELECT ID_cauhoi ,id_baitest, ten_khoa, cauhoi
-          FROM quiz 
-          WHERE id_baitest = ? AND baitest =?";
-    $stmt -> bind_param ("ss", $test_info ['ten_test'], $baitest);
-    $stmt -> execute ();
-    $stmt -> $stmt -> get_result();
-    if($result -> num_rows > 0) {
-        while ($row = $result -> fetch_assoc()) {
-            $question [] = $row;
-        }
-    }
-    $stmt -> close ();
-    $conn -> close ();
-}
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -158,10 +76,17 @@ if($id_test > 0  && $test_info && $khoa_hoc ) {
 </head>
 <body>
     <div class="container">
-        <h2>Danh sách câu hỏi</h2>
-        <?php if (!empty($message)) echo $message; ?>
+        <h2>Danh sách câu hỏi <?php echo htmlspecialchars($test_info['ten_test'] ?? '');?>
+        - <?php echo htmlspecialchars ($khoa_hoc ?? 'không xác định');?></h2>
+        <?php if (!empty ($message)) echo $message ;?>
+        <a href="add_khoahoc.php" class="btn-black">Danh sách khoá học</a>
+        <?php if ($test_info) :?>
+            <a href="khoahoc.php?id_khoa=<?php echo htmlspecialchars ($test_info ['id_khoa']); ?>" class="btn-black">Quay lại danh sách bài test</a>
+        <?php endif ;?>
 
-        <a href="add_question.php" class="btn-add">Thêm câu hỏi mới</a>
+        <?php if ($id_test > 0 && $test_info && $khoa_hoc ):?>
+            <a href="add_khoahoc.php?id_khoa=<?php echo htmlspecialchars($test_info['id_khoa']); ?>" class="btn-back">Thêm bài test</a>
+        <?php endif;?>
 
         <?php if (empty($questions)): ?>
             <p>Chưa có câu hỏi nào trong cơ sở dữ liệu.</p>
@@ -169,9 +94,10 @@ if($id_test > 0  && $test_info && $khoa_hoc ) {
             <table>
                 <thead>
                     <tr>
-                        <th>ID Câu hỏi</th>
-                        <th>ID Bài test</th>
-                        <th>Nội dung câu hỏi</th>
+                        <!-- <th>ID Câu hỏi</th> -->
+                        <th>Bài test</th>
+                        <!-- <th>Nội dung câu hỏi</th> -->
+                        <th>Môn học</th>
                         <th>Đáp án đúng</th>
                         <th>Hành động</th>
                     </tr>
@@ -179,22 +105,28 @@ if($id_test > 0  && $test_info && $khoa_hoc ) {
                 <tbody>
                     <?php foreach ($questions as $question): ?>
                         <tr>
-                            <td><?= htmlspecialchars($question['Id_cauhoi']) ?></td>
+                            <!-- <td><?= htmlspecialchars($question['Id_cauhoi']) ?></td> -->
                             <td><?= htmlspecialchars($question['id_baitest']) ?></td>
                             <td><?= htmlspecialchars($question['cauhoi']) ?></td>
+                            <td><?= htmlspecialchars($question['mon_hoc'])?></td>
                             <td><?= htmlspecialchars($question['dap_an']) ?></td>
+                   
                             <td>
                                 <a href="add_question.php?question_id=<?= $question['Id_cauhoi'] ?>" class="btn-edit">Sửa</a>
                                 <a href="question.php?delete_id=<?= $question['Id_cauhoi'] ?>" 
                                    class="btn-delete" 
                                    onclick="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">Xóa</a>
                             </td>
+                            
+                            
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
     </div>
+    
+
 </body>
 </html>
 
@@ -202,7 +134,7 @@ if($id_test > 0  && $test_info && $khoa_hoc ) {
 body {
     font-family: Arial, sans-serif;
     padding: 20px;
-    background: #f4f4f4;
+    background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
     margin: 0;
 }
 h2 {
