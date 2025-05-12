@@ -138,6 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
         $conn -> clode ();
        }
     }
+    
 }
 ?>
 
@@ -154,6 +155,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
         <h2><?= $question_id ? 'Cập nhật câu hỏi' : 'Thêm câu hỏi mới' ?></h2>
         <?php if (!empty($message)) echo $message; ?>
 
+
         <form method="POST" enctype="multipart/form-data">
             <label>ID câu hỏi</label><br>
             <input type="text" name="id_cauhoi" value="<?= htmlspecialchars ($question_data ['id_cauhoi'] ?? '') ?>"><br><br>
@@ -166,10 +168,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
                 <option value="YOLO"<?= ($question_data ['loai_baitest']??'')=='YOLO' ? 'selected':''?>>YOLO</option>
             </select>
             
+            <label>ID </label><br>
+            <select name="correct" id="custom-select"></select>
+            <input type="text" name="id" value="<?= htmlspecialchars($question_data['id'] ?? '') ?>"><br><br>
+            
             <label>ID bài test:</label><br>
             <select name="correct" class="custom-select"></select>
             <input type="text" name="id_baitest" value="<?= htmlspecialchars($question_data['id_baitest'] ?? '') ?>"><br><br>
-
 
             <label>Nội dung câu hỏi:</label><br>
             <textarea name="question_text" rows="4" cols="50"><?= htmlspecialchars($question_data['cauhoi'] ?? '') ?></textarea><br><br>

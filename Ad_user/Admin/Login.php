@@ -118,7 +118,7 @@ if (isset($_POST['logout'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bài test kiểm tra</title>
+    <title>Hệ thống học tập</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -129,12 +129,10 @@ if (isset($_POST['logout'])) {
             height: 100vh;
             margin: 0;
         }
-
         .container {
-            max-width: 600px;
-            width: 150%;
+            width: 500px;
             background: #fff;
-            padding: 60px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }

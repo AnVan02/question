@@ -22,8 +22,7 @@ function getCoursesFromDB() {
     $conn->close();
     return $courses;
 }
-
-
+    
 // Lấy số lần thử từ bảng test
 function getTestInfo($ten_test, $ten_khoa) {
     $conn = dbconnect();
@@ -47,7 +46,6 @@ function getTestInfo($ten_test, $ten_khoa) {
     $conn->close();
     die("Lỗi: Không tìm thấy bài test '$ten_test' cho khóa học '$ten_khoa'");
 }
-
 
 
 // Lấy câu hỏi từ cơ sở dữ liệu
@@ -120,16 +118,11 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
 }
 
 // Lấy tham số từ URL
-$courses_test_info = getCourseTestInfo();
-$questions = getAllQuestions();
-
+$ten_khoa = $_GET['ten_khoa'] ?? 'Python cơ bản';
+$id_baitest = $_GET['id_baitest'] ?? 'Giữa kỳ';
 
 // Lấy số lần thử tối đa
 $max_attempts = getTestInfo($id_baitest, $ten_khoa);
-
-// lấy dữ liệu từ bang test, khoa_hoc
-$TestInfo = getTestInfo ($id_baitest , $ten_khoa);
-
 
 // Lấy danh sách câu hỏi
 $questions = getQuestionsFromDB($ten_khoa, $id_baitest);
@@ -142,10 +135,8 @@ $time = htmlspecialchars($_SESSION["time"] ?? date("d-m-Y H:i:s"));
 $answers = $_SESSION["answers"] ?? [];
 $selected_question_indices = $_SESSION["selected_questions"] ?? [];
 $total = count($selected_question_indices);
-
-
-
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -328,12 +319,10 @@ $total = count($selected_question_indices);
                             <p><strong>Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p>
                         </div>
                     <?php endif; ?>
-
                     <hr>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
-        
 
         <a href="<?= $attempts >= $max_attempts ? '#' : 'FAQ.php?reset=1&ten_khoa=' . urlencode($ten_khoa) . '&id_baitest=' . urlencode($id_baitest) ?>" 
            class="try-again <?= $attempts >= $max_attempts ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / <?= $max_attempts ?>)</a>

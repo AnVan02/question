@@ -46,8 +46,8 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id']) && $id_test > 0)
                 unlink($row['hinhanh']);
             }
         }
+        
         $stmt->close();
-
         // Xóa câu hỏi
         $sql = "DELETE FROM quiz WHERE Id_cauhoi = ? AND id_baitest = ? AND ten_khoa = ?";
         $stmt = $conn->prepare($sql);
@@ -63,6 +63,8 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id']) && $id_test > 0)
     $stmt->close();
     $conn->close();
 }
+
+
 
 // Lấy thông tin bài kiểm tra và khóa học
 $test_info = null;
@@ -122,11 +124,9 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
         <h2>Danh sách câu hỏi <?php echo htmlspecialchars($test_info['ten_test'] ?? ''); ?> 
             - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></h2>
         
-        
         <?php if (!empty($message)) echo $message; ?>
         <a href="add_khoahoc.php" class="btn-back">Danh sách khóa học</a>
-        <a href="add_question.php" class="btn-back">Thêm câu hỏi mới </a>
-        
+        <a href="add_question.php" class="btn-back">Danh sách câu hỏi</a>
         <?php if ($test_info): ?>
             <a href="khoahoc.php?id_khoa=<?php echo htmlspecialchars($test_info['id_khoa']); ?>" class="btn-back">Quay lại danh sách bài test</a>
         <?php endif; ?>
@@ -165,19 +165,13 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    
                 </table>
-                <?php foreach ($question as $question) :?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($question ['cauhoi']);?></td>
-                    </tr>
-                <?php endforeach ;?>
             <?php endif; ?>
         <?php else: ?>
             <p>Vui lòng chọn một bài kiểm tra hợp lệ.</p>
         <?php endif; ?>
-        
     </div>
-    
     <style>
         body {
             font-family: Arial, sans-serif;

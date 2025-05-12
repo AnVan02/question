@@ -36,7 +36,6 @@ if (isset($_GET['delete'])) {
     $conn->close();
 }
 
-
 // Xử lý sửa khóa học
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_course"])) {
     $id = (int) $_POST["course_id"];

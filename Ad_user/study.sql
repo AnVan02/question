@@ -24,6 +24,21 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho `accounts`
+--
+
+CREATE TABLE `accounts`(
+  `id` int(11) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar (255) NOT NULL,
+  `bai_hoc` varchar (255) NOT NULL,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+--  Đang đỗ dữ liệu cho bảng `accounts` 
+-- 
+
+--
 -- Cấu trúc bảng cho bảng `khoa_hoc`
 --
 
@@ -88,6 +103,7 @@ CREATE TABLE `test` (
   `lan_thu` int(11) DEFAULT 1,
   PRIMARY KEY (`id_test`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Đang đổ dữ liệu cho bảng `test`
 --
