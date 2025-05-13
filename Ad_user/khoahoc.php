@@ -185,10 +185,13 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 <label for="ten_test">Tên Test:</label>
                 <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
             </div>
+
             <div class="form-group">
                 <label for="lan_thu">Lần thứ:</label>
                 <input type="number" id="lan_thu" name="lan_thu" value="<?php echo $editing ? htmlspecialchars($edit_test['lan_thu']) : '1'; ?>" min="1" required>
             </div>
+
+
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
                 <button type="submit" name="update_test">Cập nhật</button>
@@ -198,9 +201,6 @@ if ($id_khoa > 0 && $khoa_hoc) {
             <?php endif; ?>
         </form>
         
-    
-
-
         <h2>Danh sách bài test</h2>
         <?php if ($result && $result->num_rows > 0): ?>
             <table>
@@ -210,6 +210,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     <th>Tên Test</th>
                     <th>Lần thứ</th>
                     <th>Hành động</th>
+                    <th>Số câu</th>
                 </tr>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
@@ -217,6 +218,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
                         <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
+                       <td><?php echo htmlspecialchars($row['so_cau']); ?></td>
                         <td>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>

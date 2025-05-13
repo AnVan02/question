@@ -102,7 +102,7 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
 
 // Lấy tham số
 $ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
-$id_baitest = $_GET['id_baitest'] ?? 'Giữa kỳ';
+$id_baitest = $_GET['id_baitest'] ?? $_SESSION ['id_baitest'];
 
 
 // Kiểm tra quyền truy cập
@@ -131,7 +131,7 @@ $total = count($selected_question_indices);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kết quả Quiz - <?= htmlspecialchars($ten_khoa) ?> - <?= htmlspecialchars($id_baitest) ?></title>
+    <title>Kết quả Quiz - <?= htmlspecialchars($ten_khoa) ?> thuộc bài  - <?= htmlspecialchars($id_baitest) ?></title>
 </head>
 <body>
     <div class="container">

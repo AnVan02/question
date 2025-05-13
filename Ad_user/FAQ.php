@@ -8,7 +8,7 @@ error_reporting(E_ALL);
 
 // Kiểm tra đăng nhập
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['bai_hoc']) || !isset($_SESSION['ten_khoa'])) {
-    header("Location: index.php");
+    header("Location: FAQ.php");
     exit;
 }
 
@@ -101,7 +101,7 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
 
 // Lấy tham số từ URL
 $ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
-$id_baitest = $_GET['id_baitest'] ?? 'Giữa kỳ';
+$id_baitest = $_GET['id_baitest'] ?? $_SESSION['id_baitest'];
 
 // Kiểm tra ten_khoa có khớp với khóa học của tài khoản
 if ($ten_khoa !== $_SESSION['ten_khoa']) {
@@ -122,6 +122,7 @@ if (!isset($_SESSION["answers"])) $_SESSION["answers"] = [];
 if (!isset($_SESSION["attempts"])) $_SESSION["attempts"] = 0;
 if (!isset($_SESSION["highest_score"])) $_SESSION["highest_score"] = 0;
 if (!isset($_SESSION["time"])) $_SESSION["time"] = date("d-m-Y H:i:s");
+
 
 // Chọn ngẫu nhiên 5 câu hỏi
 if (!isset($_SESSION["selected_questions"])) {
