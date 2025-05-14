@@ -1,0 +1,23 @@
+[14-May-2025 19:58:02 Europe/Berlin] Khoahoc IDs for student 2: Array
+(
+)
+
+[14-May-2025 19:58:04 Europe/Berlin] Fetched courses for student 2: Array
+(
+    [0] => 4
+    [1] => 5
+)
+
+[14-May-2025 19:58:07 Europe/Berlin] Received save_courses request: student_id=2, khoa_hoc_ids=Array
+(
+    [0] => 6
+)
+
+[14-May-2025 19:58:07 Europe/Berlin] Generated khoa_hoc_string: 6
+[14-May-2025 19:58:07 Europe/Berlin] Updated Khoahoc for student 2: 6
+[14-May-2025 19:58:07 Europe/Berlin] Deleted old kiem_tra records for student: 2
+[14-May-2025 19:58:07 Europe/Berlin] Inserted kiem_tra record for student 2, course: 6
+[14-May-2025 19:58:19 Europe/Berlin] Khoahoc IDs for student 2: Array
+(
+)
+
