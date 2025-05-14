@@ -209,8 +209,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     <th>Khóa học</th>
                     <th>Tên Test</th>
                     <th>Lần thứ</th>
+                    <!-- <th>Số câu </th> -->
                     <th>Hành động</th>
-                    <th>Số câu</th>
                 </tr>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <tr>
@@ -218,12 +218,12 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
                         <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
-                       <td><?php echo htmlspecialchars($row['so_cau']); ?></td>
+                        <!-- <td><?php echo htmlspecialchars($row['so_câu'])?></td> -->
+
                         <td>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
                             <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
-
                         </td>
                     </tr>
                 <?php endwhile; ?>

@@ -43,6 +43,7 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
     }
 }
 
+
 // Xử lý sửa bài kiểm tra
 $editing = false;
 $edit_test = null;
@@ -92,7 +93,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
         }
     }
 }
-
 
 // Lấy thông tin khóa học
 $khoa_hoc = null;
@@ -185,10 +185,13 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 <label for="ten_test">Tên Test:</label>
                 <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
             </div>
+
             <div class="form-group">
                 <label for="lan_thu">Lần thứ:</label>
                 <input type="number" id="lan_thu" name="lan_thu" value="<?php echo $editing ? htmlspecialchars($edit_test['lan_thu']) : '1'; ?>" min="1" required>
             </div>
+
+
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
                 <button type="submit" name="update_test">Cập nhật</button>
@@ -198,9 +201,6 @@ if ($id_khoa > 0 && $khoa_hoc) {
             <?php endif; ?>
         </form>
         
-    
-
-
         <h2>Danh sách bài test</h2>
         <?php if ($result && $result->num_rows > 0): ?>
             <table>
@@ -209,6 +209,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     <th>Khóa học</th>
                     <th>Tên Test</th>
                     <th>Lần thứ</th>
+                    <!-- <th>Số câu </th> -->
                     <th>Hành động</th>
                 </tr>
                 <?php while ($row = $result->fetch_assoc()): ?>
@@ -217,11 +218,12 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
                         <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
+                        <!-- <td><?php echo htmlspecialchars($row['so_câu'])?></td> -->
+
                         <td>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
                             <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
-
                         </td>
                     </tr>
                 <?php endwhile; ?>

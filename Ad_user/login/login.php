@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set ('display_errors',1);
 session_start();
 
 // Danh sách người dùng cố định (thay thế bằng cơ sở dữ liệu trong thực tế)
@@ -6,6 +8,15 @@ $users = [
     'admin' => '123456',
     'user' => '456789'
 ];
+function dbconnect () {
+    $conn = new mysql ("localhost" . "root" . "" , "study");
+    if($conn -> connect_error) {
+        die("Lỗi kết nối CSDL: " .$conn -> connect_error);
+    }
+    $conn -> set_charset("UTF8MB4");
+    return $conn ;
+
+}
 
 // Xử lý đăng nhập
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,6 +37,8 @@ if (isset($_SESSION['username'])) {
     header('Location: content1.php');
     exit;
 }
+
+
 ?>
 
 <!DOCTYPE html>

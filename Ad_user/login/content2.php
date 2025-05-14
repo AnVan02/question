@@ -1,4 +1,4 @@
-<?php
+git<?php
 session_start();
 
 // Kiểm tra trạng thái session
@@ -34,4 +34,5 @@ $session_id = session_id(); // Lấy session ID để debug
     <p><a href="logout.php">Đăng xuất</a></p>
 </body>
 </html>
+
 
