@@ -3,20 +3,25 @@ error_reporting(E_ALL);
 ini_set ('display_errors',1);
 session_start();
 
-// Danh sách người dùng cố định (thay thế bằng cơ sở dữ liệu trong thực tế)
-$users = [
-    'admin' => '123456',
-    'user' => '456789'
-];
-function dbconnect () {
-    $conn = new mysql ("localhost" . "root" . "" , "study");
-    if($conn -> connect_error) {
-        die("Lỗi kết nối CSDL: " .$conn -> connect_error);
-    }
-    $conn -> set_charset("UTF8MB4");
-    return $conn ;
 
+function dbconnect () {
+    $conn = new mysqli ("localhost", "root", "", "study");
+    if($conn -> connect_error) {
+        die ("kết nối thất bại: ". $conn -> connect_error);
+
+    }
+    $conn -> set_charset ("utf8mb4");
+    return  $conn ;
 }
+
+
+// Danh sách người dùng cố định (thay thế bằng cơ sở dữ liệu trong thực tế)
+// $users = [
+//     'admin' => '123456',
+//     'user1' => '456789',
+//     'User2' => '1'
+// ];
+
 
 // Xử lý đăng nhập
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

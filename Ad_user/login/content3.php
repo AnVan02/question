@@ -15,7 +15,7 @@ $session_id = session_id(); // Lấy session ID để debug
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python nâng cao</title>
+    <title>YOLO</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; }
         .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
@@ -26,11 +26,11 @@ $session_id = session_id(); // Lấy session ID để debug
 </head>
 <body>
     <div class="header">
-        Người dùng: <?php echo $student_id; ?>
+        Người dùng: <?php echo $student_Id; ?>
     </div>
-    <h2>Xin chào bạn <?php echo $student_id; ?> + Tên khoá hoc: <?php echo $khoa_hoc; ?></h2>
-    <p>Python nâng cao </p>
-    <p><a href="content1.php">Khoá học Python nâng cao</a></p>
+    <h2>Xin chào bạn <?php echo $username; ?> + Tên đăng nhập: <?php echo $khoa_hoc; ?></h2>
+    <p>Yolo</p>
+    <p><a href="content1.php">Khoá học Yolo</a></p>
     <p><a href="logout.php">Đăng xuất</a></p>
 </body>
 </html>

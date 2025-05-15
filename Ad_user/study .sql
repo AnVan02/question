@@ -144,7 +144,8 @@ CREATE TABLE `test` (
   `id_test` int(11) NOT NULL,
   `id_khoa` int(11) NOT NULL,
   `ten_test` varchar(255) NOT NULL,
-  `lan_thu` int(11) DEFAULT 1
+  `lan_thu` int(11) DEFAULT 1,
+  `Pass` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

@@ -1,127 +1,221 @@
-
 <?php
-// Bật hiển thị lỗi để gỡ lỗi (xóa dòng này trong môi trường sản xuất)
-error_reporting(E_ALL);
+// Bật hiển thị lỗi để debug
 ini_set('display_errors', 1);
-
-// Hàm kết nối cơ sở dữ liệu
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
-    if ($conn->connect_error) {
-        die("Lỗi kết nối CSDL: " . $conn->connect_error);
-    }
-    $conn->set_charset("utf8mb4");
-    return $conn;
-}
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // Kết nối cơ sở dữ liệu
-$conn = dbconnect();
-$message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "study";
 
-// Xử lý khi submit form
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['action']) && $_POST['action'] == 'delete') {
-        $student_id = $_POST['student_id'];
-        // Xóa khóa học liên quan trước
-        $stmt = $conn->prepare("DELETE FROM student_khoa_hoc WHERE student_id = ?");
-        $stmt->bind_param("s", $student_id);
-        $stmt->execute();
-        $stmt->close();
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-        // Xóa sinh viên
-        $stmt = $conn->prepare("DELETE FROM students WHERE Student_ID = ?");
-        $stmt->bind_param("s", $student_id);
+// Kiểm tra kết nối
+if ($conn->connect_error) {
+    die("Kết nối thất bại: " . $conn->connect_error);
+}
+
+// Khởi tạo các biến thông báo
+$success_message = '';
+$error_message = '';
+
+// Lấy id_khoa từ URL
+$id_khoa = isset($_GET['id_khoa']) ? (int)$_GET['id_khoa'] : 0;
+
+// Xử lý xóa bài kiểm tra
+if (isset($_GET['delete_test']) && $id_khoa > 0) {
+    $id_test = (int)$_GET['delete_test'];
+    $stmt = $conn->prepare("DELETE FROM test WHERE id_test = ? AND id_khoa = ?");
+    if (!$stmt) {
+        $error_message = "<p>Lỗi chuẩn bị truy vấn xóa: " . $conn->error . "</p>";
+    } else {
+        $stmt->bind_param("ii", $id_test, $id_khoa);
         if ($stmt->execute()) {
-            $message = "Xóa sinh viên thành công!";
+            $success_message = "<p>Xóa bài kiểm tra thành công!</p>";
+            header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
+            exit();
         } else {
-            $message = "Lỗi khi xóa: " . $conn->error;
+            $error_message = "<p>Lỗi khi xóa: " . $conn->error . "</p>";
         }
         $stmt->close();
-    } elseif (isset($_POST['action']) && $_POST['action'] == 'update') {
-        $student_id = $_POST['student_id'];
-        $imei = (int)$_POST['imei'];
-        $mb_id = (int)$_POST['mb_id'];
-        $os_id = (int)$_POST['os_id'];
-        $password = $_POST['password'];
-        $ten = $_POST['ten'];
-        $email = $_POST['email'];
+    }
+}
 
-        $stmt = $conn->prepare("UPDATE students SET IMEI = ?, MB_ID = ?, OS_ID = ?, Password = ?, Ten = ?, Email = ? WHERE Student_ID = ?");
-        $stmt->bind_param("iiissss", $imei, $mb_id, $os_id, $password, $ten, $email, $student_id);
-        if ($stmt->execute()) {
-            $message = "Cập nhật thành công!";
-        } else {
-            $message = "Lỗi khi cập nhật: " . $conn->error;
-        }
-        $stmt->close();
-    } elseif (isset($_POST['action']) && $_POST['action'] == 'add') {
-        $imei = (int)$_POST['imei'];
-        $mb_id = (int)$_POST['mb_id'];
-        $os_id = (int)$_POST['os_id'];
-        $student_id = $_POST['student_id'];
-        $password = $_POST['password'];
-        $ten = $_POST['ten'];
-        $email = $_POST['email'];
-
-        // Kiểm tra Student_ID đã tồn tại
-        $stmt = $conn->prepare("SELECT Student_ID FROM students WHERE Student_ID = ?");
-        $stmt->bind_param("s", $student_id);
+// Xử lý sửa bài kiểm tra
+$editing = false;
+$edit_test = null;
+if (isset($_GET['edit_test']) && $id_khoa > 0) {
+    $id_test = (int)$_GET['edit_test'];
+    $stmt = $conn->prepare("SELECT id_test, ten_test, lan_thu, pass, so_cau_hien_thi, lan_thu_toi_da FROM test WHERE id_test = ? AND id_khoa = ?");
+    if (!$stmt) {
+        $error_message = "<p>Lỗi chuẩn bị truy vấn sửa: " . $conn->error . "</p>";
+    } else {
+        $stmt->bind_param("ii", $id_test, $id_khoa);
         $stmt->execute();
         $result = $stmt->get_result();
         if ($result->num_rows > 0) {
-            $message = "Lỗi: Student_ID đã tồn tại!";
+            $edit_test = $result->fetch_assoc();
+            $editing = true;
         } else {
-            $stmt = $conn->prepare("INSERT INTO students (IMEI, MB_ID, OS_ID, Student_ID, Password, Ten, Email) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iiissss", $imei, $mb_id, $os_id, $student_id, $password, $ten, $email);
-            if ($stmt->execute()) {
-                $message = "Thêm sinh viên thành công!";
-            } else {
-                $message = "Lỗi khi thêm: " . $conn->error;
-            }
+            $error_message = "<p>Bài kiểm tra không tồn tại hoặc không thuộc khóa học này.</p>";
         }
         $stmt->close();
-    } elseif (isset($_POST['action']) && $_POST['action'] == 'save_courses') {
-        $student_id = $_POST['student_id'];
-        $khoa_hoc_ids = isset($_POST['khoa_hoc']) ? $_POST['khoa_hoc'] : [];
-
-        // Xóa các khóa học hiện tại của sinh viên
-        $stmt = $conn->prepare("DELETE FROM student_khoa_hoc WHERE student_id = ?");
-        $stmt->bind_param("s", $student_id);
-        $stmt->execute();
-        $stmt->close();
-
-        // Thêm các khóa học mới
-        if (!empty($khoa_hoc_ids)) {
-            $stmt = $conn->prepare("INSERT INTO student_khoa_hoc (student_id, khoa_hoc_id) VALUES (?, ?)");
-            foreach ($khoa_hoc_ids as $khoa_hoc_id) {
-                $stmt->bind_param("si", $student_id, $khoa_hoc_id);
-                $stmt->execute();
-            }
-            $stmt->close();
-            $message = "Lưu khóa học thành công!";
-        } else {
-            $message = "Không có khóa học nào được chọn.";
-        }
     }
 }
 
-// Kiểm tra chế độ chỉnh sửa
-$mode = isset($_GET['mode']) ? $_GET['mode'] : '';
-$student_id = isset($_GET['student_id']) ? $_GET['student_id'] : '';
-$student_data = [];
-if ($mode == 'edit' && $student_id) {
-    $stmt = $conn->prepare("SELECT * FROM students WHERE Student_ID = ?");
-    $stmt->bind_param("s", $student_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $student_data = $result->fetch_assoc();
+// Xử lý cập nhật bài kiểm tra
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_khoa > 0) {
+    $id_test = (int)$_POST['id_test'];
+    $ten_test = trim($_POST['ten_test']);
+    $pass = trim($_POST['pass']);
+    $lan_thu = isset($_POST['lan_thu']) ? (int)$_POST['lan_thu'] : 1;
+    $lan_thu_toi_da = isset ($_POST ['lan_thu_toi_da']) ? (int) $_POST ['lan_thu_toi_da'] :1;
+    $so_cau_hien_thi = isset($_POST['so_cau_hien_thi']) ? (int)$_POST['so_cau_hien_thi'] : 5;
+
+    if (empty($ten_test)) {
+        $error_message = "<p>Lỗi: Vui lòng nhập tên bài kiểm tra!</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số dương!</p>";
+    } elseif ($so_cau_hien_thi < 1) {
+        $error_message = "<p>Lỗi: Số câu hiển thị phải là số dương!</p>";
     } else {
-        $message = "Không tìm thấy sinh viên với Student_ID: " . htmlspecialchars($student_id);
+        // Kiểm tra số câu hỏi có sẵn trong quiz
+        $test_type = (stripos($ten_test, 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
+        $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau
+                      FROM quiz q
+                      INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc))
+                      WHERE k.id = ? AND q.id_baitest = ?";
+        $stmt_count = $conn->prepare($sql_count);
+        $so_cau = 0;
+        if ($stmt_count) {
+            $stmt_count->bind_param("is", $id_khoa, $test_type);
+            $stmt_count->execute();
+            $result_count = $stmt_count->get_result();
+            if ($row_count = $result_count->fetch_assoc()) {
+                $so_cau = (int)$row_count['so_cau'];
+            }
+            $stmt_count->close();
+        }
+
+        if ($so_cau_hien_thi > $so_cau) {
+            $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
+        } else {
+            $stmt = $conn->prepare("UPDATE test SET ten_test = ?, lan_thu = ?, lan_thu_toi_da = ?, pass = ?, so_cau_hien_thi = ? WHERE id_test = ? AND id_khoa = ?");
+            if (!$stmt) {
+                $error_message = "<p>Lỗi chuẩn bị truy vấn cập nhật: " . $conn->error . "</p>";
+            } else {
+                $stmt->bind_param("sisiii", $ten_test, $lan_thu, $lan_thu_toi_da, $pass, $so_cau_hien_thi, $id_test, $id_khoa);
+                if ($stmt->execute()) {
+                    $success_message = "<p>Cập nhật bài kiểm tra thành công!</p>";
+                    header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
+                    exit();
+                } else {
+                    $error_message = "<p>Lỗi khi cập nhật: " . $conn->error . "</p>";
+                }
+                $stmt->close();
+            }
+        }
     }
-    $stmt->close();
 }
 
+// Lấy thông tin khóa học
+$khoa_hoc = null;
+if ($id_khoa > 0) {
+    $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
+    if (!$stmt) {
+        $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
+    } else {
+        $stmt->bind_param("i", $id_khoa);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $khoa_hoc = $result->fetch_assoc()['khoa_hoc'];
+        } else {
+            $error_message = "<p>Khóa học không tồn tại với ID: $id_khoa.</p>";
+        }
+        $stmt->close();
+    }
+} else {
+    $error_message = "<p>Lỗi: Không có ID khóa học được cung cấp. Vui lòng chọn khóa học từ danh sách.</p>";
+}
+
+// Xử lý thêm bài kiểm tra
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
+    $ten_test = trim($_POST['ten_test']);
+    $pass = trim($_POST['pass']);
+    $lan_thu = isset($_POST['lan_thu']) ? (int)$_POST['lan_thu'] : 1;
+    $lan_thu_toi_da = isset ($_POST ['lan_thử tôi đa'])? (int) $_POST ['Lan_thu_toi_da'] : 1;
+    $so_cau_hien_thi = isset($_POST['so_cau_hien_thi']) ? (int)$_POST['so_cau_hien_thi'] : 5;
+
+    if (empty($ten_test)) {
+        $error_message = "<p>Lỗi: Vui lòng nhập tên bài kiểm tra!</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số dương!</p>";
+    } elseif ($lan_thu_toi_da < 1) {
+        $error_message ="<p>Lỗi: Lần thứ phải là số dương!</p>";
+    }
+    } elseif ($so_cau_hien_thi < 1) {
+        $error_message = "<p>Lỗi: Số câu hiển thị phải là số dương!</p>";
+    } else {
+        // Kiểm tra số câu hỏi có sẵn trong quiz
+        $test_type = (stripos($ten_test, 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
+        $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau
+                      FROM quiz q
+                      INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc))
+                      WHERE k.id = ? AND q.id_baitest = ?";
+        $stmt_count = $conn->prepare($sql_count);
+        $so_cau = 0;
+        if ($stmt_count) {
+            $stmt_count->bind_param("is", $id_khoa, $test_type);
+            $stmt_count->execute();
+            $result_count = $stmt_count->get_result();
+            if ($row_count = $result_count->fetch_assoc()) {
+                $so_cau = (int)$row_count['so_cau'];
+            }
+            $stmt_count->close();
+        }
+
+        if ($so_cau_hien_thi > $so_cau) {
+            $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
+        } else {
+            $sql = "INSERT INTO test (id_khoa, ten_test, lan_thu, lan_thu_toi_da,  pass, so_cau_hien_thi) VALUES (?, ?, ?, ?, ? ,?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
+            } else {
+                $stmt->bind_param("isisi", $id_khoa, $ten_test, $lan_thu, $lan_thu_toi_da, $pass, $so_cau_hien_thi);
+                if ($stmt->execute()) {
+                    $success_message = "<p>Thêm bài kiểm tra thành công!</p>";
+                    header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
+                    exit();
+                } else {
+                    $error_message = "<p>Lỗi khi thêm: " . $conn->error . "</p>";
+                }
+                $stmt->close();
+            }
+        }
+    }
+
+
+// Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
+$result = null;
+if ($id_khoa > 0 && $khoa_hoc) {
+    $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, t.lan_thu_toi_da,t.pass, t.so_cau_hien_thi, k.khoa_hoc 
+            FROM test t 
+            LEFT JOIN khoa_hoc k ON t.id_khoa = k.id 
+            WHERE t.id_khoa = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
+    } else {
+        $stmt->bind_param("i", $id_khoa);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -129,429 +223,392 @@ if ($mode == 'edit' && $student_id) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Sinh Viên</title>
+    <title>Nhập và hiển thị dữ liệu Test - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></title>
 </head>
 <body>
-    <?php if ($mode == 'edit' && !empty($student_data)): ?>
-        <!-- Form chỉnh sửa sinh viên -->
-        <h2>Sửa Thông Tin Sinh Viên</h2>
+    <h2><?php echo $editing ? 'Sửa bài kiểm tra' : 'Nhập dữ liệu bài test'; ?> - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></h2>
+    <a href="add_khoahoc.php" class="back-button">Quay lại danh sách khóa học</a>
 
-        <?php if (!empty($message)): ?>
-            <p class="<?php echo strpos($message, 'Lỗi') === false ? 'message' : 'error'; ?>">
-                <?php echo htmlspecialchars($message); ?>
-            </p>
-        <?php endif; ?>
-
-        <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-            <input type="hidden" name="action" value="update">
-            <input type="hidden" name="student_id" value="<?php echo htmlspecialchars($student_id); ?>">
-            <div class="form-container">
-                <div class="form-left">
-                    <label>IMEI</label>
-                    <input type="number" name="imei" value="<?php echo htmlspecialchars($student_data['IMEI'] ?? ''); ?>" required>
-                    <label>MB_ID</label>
-                    <input type="number" name="mb_id" value="<?php echo htmlspecialchars($student_data['MB_ID'] ?? ''); ?>">
-                    <label>OS_ID</label>
-                    <input type="number" name="os_id" value="<?php echo htmlspecialchars($student_data['OS_ID'] ?? ''); ?>">
-                    <label>Student_ID</label>
-                    <input type="text" name="student_id" value="<?php echo htmlspecialchars($student_data['Student_ID'] ?? ''); ?>" readonly>
-                </div>
-                <div class="form-right">
-                    <label>Mật khẩu</label>
-                    <input type="password" name="password" value="<?php echo htmlspecialchars($student_data['Password'] ?? ''); ?>" required>
-                    <label>Tên</label>
-                    <input type="text" name="ten" value="<?php echo htmlspecialchars($student_data['Ten'] ?? ''); ?>" required>
-                    <label>Email</label>
-                    <input type="email" name="email" value="<?php echo htmlspecialchars($student_data['Email'] ?? ''); ?>" required>
-                </div>
-            </div>
-            <input type="submit" value="Cập Nhật">
-        </form>
-
-    <?php else: ?>
-        <!-- Form thêm sinh viên -->
-        <h2>Nhập Dữ Liệu Sinh Viên</h2>
-
-        <?php if (!empty($message)): ?>
-            <p class="<?php echo strpos($message, 'Lỗi') === false ? 'message' : 'error'; ?>">
-                <?php echo htmlspecialchars($message); ?>
-            </p>
-        <?php endif; ?>
-
-        <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-            <input type="hidden" name="action" value="add">
-            <div class="form-container">
-                <div class="form-left">
-                    <label>IMEI</label>
-                    <input type="number" name="imei" required>
-                    <label>MB_ID</label>
-                    <input type="number" name="mb_id">
-                    <label>OS_ID</label>
-                    <input type="number" name="os_id">
-                    <label>Student_ID</label>
-                    <input type="text" name="student_id" required>
-                </div>
-                <div class="form-right">
-                    <label>Mật khẩu</label>
-                    <input type="password" name="password" required>
-                    <label>Tên</label>
-                    <input type="text" name="ten" required>
-                    <label>Email</label>
-                    <input type="email" name="email" required>
-                </div>
-            </div>
-            <input type="submit" value="Thêm Sinh Viên">
-        </form>
-
-        <!-- Hiển thị danh sách sinh viên -->
-        <?php
-        $stmt = $conn->prepare("SELECT * FROM students");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            echo "<h2>Danh Sách Sinh Viên</h2>";
-            echo "<table>";
-            echo "<tr>
-                    <th>IMEI</th>
-                    <th>MB_ID</th>
-                    <th>OS_ID</th>
-                    <th>Student_ID</th>
-                    <th>Password</th>
-                    <th>Tên</th>
-                    <th>Email</th>
-                    <th>Khóa học</th>
-                    <th>Hành Động</th>
-                  </tr>";
-            while ($row = $result->fetch_assoc()) {
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars($row['IMEI'] ?? '') . "</td>";
-                echo "<td>" . htmlspecialchars($row['MB_ID'] ?? '') . "</td>";
-                echo "<td>" . htmlspecialchars($row['OS_ID'] ?? '') . "</td>";
-                echo "<td>" . htmlspecialchars($row['Student_ID'] ?? '') . "</td>";
-                echo "<td>" . htmlspecialchars($row['Password'] ?? '') . "</td>";
-                echo "<td>" . htmlspecialchars($row['Ten'] ?? '') . "</td>";
-                echo "<td>" . htmlspecialchars($row['Email'] ?? '') . "</td>";
-
-                // Lấy danh sách khóa học của sinh viên
-                $khoa_hoc_stmt = $conn->prepare("
-                    SELECT kh.khoa_hoc 
-                    FROM student_khoa_hoc skh 
-                    JOIN khoa_hoc kh ON skh.khoa_hoc_id = kh.id 
-                    WHERE skh.student_id = ?
-                ");
-                $khoa_hoc_stmt->bind_param("s", $row['Student_ID']);
-                $khoa_hoc_stmt->execute();
-                $khoa_hoc_result = $khoa_hoc_stmt->get_result();
-                $khoa_hoc_list = [];
-                while ($khoa_hoc_row = $khoa_hoc_result->fetch_assoc()) {
-                    $khoa_hoc_list[] = htmlspecialchars($khoa_hoc_row['khoa_hoc']);
-                }
-                $khoa_hoc_stmt->close();
-                echo "<td>" . (!empty($khoa_hoc_list) ? implode(", ", $khoa_hoc_list) : "Chưa đăng ký") . "</td>";
-
-                echo "<td class='actions'>";
-                echo "<form method='POST' action='" . htmlspecialchars($_SERVER["PHP_SELF"]) . "'>";
-                echo "<input type='hidden' name='action' value='delete'>";
-                echo "<input type='hidden' name='student_id' value='" . htmlspecialchars($row['Student_ID']) . "'>";
-                echo "<input type='submit' value='Xóa' onclick='return confirm(\"Bạn có chắc muốn xóa?\");'>";
-                echo "</form>";
-                echo "<form method='GET' action='" . htmlspecialchars($_SERVER["PHP_SELF"]) . "'>";
-                echo "<input type='hidden' name='mode' value='edit'>";
-                echo "<input type='hidden' name='student_id' value='" . htmlspecialchars($row['Student_ID']) . "'>";
-                echo "<input type='submit' value='Sửa'>";
-                echo "</form>";
-                echo "<button onclick=\"openModal('" . htmlspecialchars($row['Student_ID']) . "')\">Xem Khóa Học</button>";
-                echo "</td>";
-                echo "</tr>";
-            }
-            echo "</table>";
-        } else {
-            echo "<p style='text-align:center;'>Chưa có dữ liệu sinh viên.</p>";
-        }
-        $stmt->close();
-        ?>
-    <?php endif; ?>
-
-    <!-- Modal hiển thị và lưu khóa học -->
-    <div id="courseModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">×</span>
-            <h2 id="modalTitle">Khóa Học Của Sinh Viên</h2>
-            <form id="courseForm" method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-                <input type="hidden" name="action" value="save_courses">
-                <input type="hidden" name="student_id" id="modalStudentId">
-                <div class="course-list">
-                    <?php
-                    $stmt = $conn->prepare("SELECT * FROM khoa_hoc");
-                    $stmt->execute();
-                    $khoaHocResult = $stmt->get_result();
-                    if ($khoaHocResult->num_rows > 0) {
-                        while ($khoaHocRow = $khoaHocResult->fetch_assoc()) {
-                            echo "<label>";
-                            echo "<input type='checkbox' name='khoa_hoc[]' value='" . htmlspecialchars($khoaHocRow['id']) . "' onchange='updateSelectedCourses()'>";
-                            echo htmlspecialchars($khoaHocRow['khoa_hoc']);
-                            echo "</label>";
-                        }
-                    } else {
-                        echo "<p>Không có khóa học nào.</p>";
-                    }
-                    $stmt->close();
-                    ?>
-                </div>
-                <div id="selected-courses">
-                    <p><strong>Khóa học đã chọn:</strong> <span id="selectedCoursesText">Chưa chọn khóa học nào.</span></p>
-                </div>
-                <input type="submit" value="Lưu" style="background-color: #28a745; margin-top: 10px;">
-            </form>
-        </div>
-    </div>
-
-    <?php
-    // Đóng kết nối
-    $conn->close();
+    <?php 
+    if ($success_message) echo "<p class='success'>$success_message</p>";
+    if ($error_message) echo "<p class='error'>$error_message</p>";
     ?>
+    <?php if ($khoa_hoc && $id_khoa > 0): ?>
+        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
+            <div class="form-group">
+                <label for="ten_test">Tên Test:</label>
+                <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
+            </div>
 
-    <script>
-        function openModal(studentId) {
-            document.getElementById('modalTitle').innerText = `Khóa Học Của Sinh Viên: ${studentId}`;
-            document.getElementById('modalStudentId').value = studentId;
-            document.getElementById('courseModal').style.display = 'block';
+            <div class="form-group">
+                <label for="lan_thu">Lần thứ:</label>
+                <input type="number" id="lan_thu" name="lan_thu" value="<?php echo $editing ? htmlspecialchars($edit_test['lan_thu']) : '1'; ?>" min="1" required>
+            </div>
 
-            // Lấy danh sách khóa học đã chọn của sinh viên
-            fetch(`get_student_courses.php?student_id=${studentId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const checkboxes = document.querySelectorAll('input[name="khoa_hoc[]"]');
-                    checkboxes.forEach(checkbox => {
-                        checkbox.checked = data.includes(checkbox.value);
-                    });
-                    updateSelectedCourses();
-                });
-        }
+            <div class="form-group">
+                <label for="lan_thu">Lần thử tối đa:</label>
+                <input type="number" id="lan_thu" name="lan_thu_toi_da" value="<?php echo $editing ? htmlspecialchars($edit_test['lan_thu_toi_da']) : '1'; ?>" min="1" required>
+            </div>
 
-        function closeModal() {
-            document.getElementById('courseModal').style.display = 'none';
-            const checkboxes = document.querySelectorAll('input[name="khoa_hoc[]"]');
-            checkboxes.forEach(checkbox => checkbox.checked = false);
-            updateSelectedCourses();
-        }
+            <div class="form-group">
+                <label for="pass">Pass %:</label>
+                <input type="text" id="pass" name="pass" value="<?php echo $editing ? htmlspecialchars($edit_test['pass']) : ''; ?>" required>
+            </div>
 
-        function updateSelectedCourses() {
-            const selectedCourses = [];
-            const checkboxes = document.querySelectorAll('input[name="khoa_hoc[]"]:checked');
-            checkboxes.forEach(checkbox => {
-                const label = checkbox.parentElement.textContent.trim();
-                selectedCourses.push(label);
-            });
-            const selectedCoursesText = selectedCourses.length > 0 ? selectedCourses.join(', ') : 'Chưa chọn khóa học nào.';
-            document.getElementById('selectedCoursesText').innerText = selectedCoursesText;
-        }
+            <div class="form-group">
+                <label for="so_cau_hien_thi">Số câu hiển thị:</label>
+                <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : '5'; ?>" min="1" required>
+            </div>
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('courseModal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-    </script>
+            <?php if ($editing): ?>
+                <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
+                <button type="submit" name="update_test">Cập nhật</button>
+                <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa); ?>" class="cancel-button">Hủy</a>
+            <?php else: ?>
+                <button type="submit" name="add_test">Thêm</button>
+            <?php endif; ?>
+        </form>
+        
+        <h2>Danh sách bài test</h2>
+        <?php if ($result && $result->num_rows > 0): ?>
+            <table>
+                <tr>
+                    <th>ID Test</th>
+                    <th>Khóa học</th>
+                    <th>Tên Test</th>
+                    <th>Lần thứ</th>
+                    <th>Lân thư tối da</th>                    
+                    <th>Pass</th>
+                    <th>Câu hỏi</th>
+                    <th>Tổng số câu hỏi</th>
+                    <th>Hành động</th>
+                </tr>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <?php
+                    // Xác định loại bài test (Giữa kỳ hoặc Cuối kỳ) dựa trên ten_test
+                    $test_type = (stripos($row['ten_test'], 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
+                    
+                    // Đếm số câu hỏi có sẵn trong quiz
+                    $so_cau = 0;
+                    $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau
+                                  FROM quiz q
+                                  INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc))
+                                  WHERE k.id = ? AND q.id_baitest = ?";
+                    $stmt_count = $conn->prepare($sql_count);
+                    if ($stmt_count) {
+                        $stmt_count->bind_param("is", $id_khoa, $test_type);
+                        $stmt_count->execute();
+                        $result_count = $stmt_count->get_result();
+                        if ($row_count = $result_count->fetch_assoc()) {
+                            $so_cau = (int)$row_count['so_cau'];
+                        }
+                        $stmt_count->close();
+                    } else {
+                        $error_message = "<p>Lỗi chuẩn bị truy vấn đếm câu hỏi: " . $conn->error . "</p>";
+                    }
+                    // Xác định hiển thị cho cột "câu hỏi" 
+                    $cau_hoi_display = ($so_cau < $row['so_cau_hien_thi']) ? "$so_cau/{$row['so_cau_hien_thi']}" : $row['so_cau_hien_thi'];
+                    ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row['id_test']); ?></td>
+                        <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
+                        <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
+                        <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
+                        <td><?php echo htmltspecialchars($row['lan_thu_toi_da']); ?></td>
+                        <td><?php echo htmlspecialchars($row['pass']); ?></td>
+                        <td><?php echo htmlspecialchars($cau_hoi_display);?>
+                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo ' <span style="color: red;">(Không đủ câu)</span>'; ?>
+                            <?php if ($so_cau == 0) echo ' <span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
+                        </td>
+                            <td><?php echo htmlspecialchars($so_cau); ?></td>
+                        <td>
+                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
+                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
+                            <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
+                        </td>
+                        
 
-    <style>
-        /* Reset and Base Styles */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+                    </tr>
+                <?php endwhile; ?>
+            </table>
+        <?php else: ?>
+            <p>Chưa có dữ liệu trong bảng Test cho khóa học này.</p>
+        <?php endif; ?>
+    <?php else: ?>
+        <p>Vui lòng chọn một khóa học hợp lệ từ trang danh sách khóa học.</p>
+    <?php endif; ?>
+</body>
+</html>
+
+<style>
+    /* [Previous CSS unchanged, included for completeness] */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Arial', sans-serif;
+        margin: 20px auto;
+        max-width: 1300px;
+        background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+        color: #333;
+        line-height: 1.6;
+    }
+
+    h2 {
+        margin-bottom: 25px;
+        color: #2d3748;
+        font-size: 24px;
+        font-weight: 600;
+        text-align: center;
+        padding: 10px;
+        background-color: #edf2f7;
+        border-radius: 8px;
+    }
+
+    p {
+        margin: 15px 0;
+        font-size: 15px;
+        text-align: center;
+    }
+
+    p.success {
+        color: #2f855a;
+        background-color: #e6fff3;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #2f855a;
+    }
+
+    p.error {
+        color: #c53030;
+        background-color: #fff5f5;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #c53030;
+    }
+
+    form {
+        background-color: #ffffff;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+        transition: transform 0.2s ease;
+    }
+
+    form:hover {
+        transform: translateY(-2px);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #4a5568;
+        font-size: 14px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        background-color: #fff;
+    }
+
+    input:focus {
+        border-color: #3182ce;
+        box-shadow: 0 0 5px rgba(49, 130, 206, 0.2);
+        outline: none;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #3182ce;
+        border: none;
+        color: #fff;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    button:hover {
+        background-color: #2b6cb0;
+        transform: translateY(-1px);
+    }
+
+    button:active {
+        transform: translateY(0);
+    }
+
+    .action-button, .edit-button, .delete-button {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        margin-right: 5px;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .action-button {
+        background-color: #3182ce;
+        color: #fff;
+    }
+
+    .action-button:hover {
+        background-color: #2b6cb0;
+        transform: translateY(-1px);
+    }
+
+    .edit-button {
+        background-color: #e3f2fd;
+        color: #0288d1;
+    }
+
+    .edit-button:hover {
+        background-color: #e3f2fd;
+        transform: translateY(-1px);
+    }
+
+    .delete-button {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+
+    .action-button:active, .edit-button:active, .delete-button:active {
+        transform: translateY(0);
+    }
+
+    .back-button, .cancel-button {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .back-button {
+        background-color: #e3f2fd;
+        color: #0288d1;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .back-button:hover {
+        background-color: #e3f2fd;
+        transform: translateY(-1px);
+    }
+
+    .back-button:active {
+        transform: translateY(0);
+    }
+
+    .cancel-button {
+        background-color: #718096;
+        color: #fff;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .cancel-button:hover {
+        background-color: #4a5568;
+        transform: translateY(-1px);
+    }
+
+    .cancel-button:active {
+        transform: translateY(0);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    th {
+        background-color: #3182ce;
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    td {
+        font-size: 14px;
+        color: #4a5568;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background-color: #f7fafc;
+    }
+
+    @media (max-width: 600px) {
         body {
-            font-family: 'Arial', sans-serif;
-            margin: 20px auto;
-            max-width: 1200px;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            color: #333;
-            line-height: 1.6;
-            padding: 15px;
+            margin: 10px;
+            padding: 5px;
         }
 
         h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
+            font-size: 20px;
         }
 
-        .form-container {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            flex-wrap: wrap;
-            margin: 0 auto 20px;
-            max-width: 900px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        form, table {
+            padding: 15px;
         }
 
-        .form-left, .form-right {
-            flex: 1;
-            min-width: 280px;
+        input[type="text"],
+        input[type="number"] {
+            font-size: 13px;
+            padding: 8px;
         }
 
-        .form-left label, .form-right label {
-            display: block;
-            margin: 10px 0 6px;
-            font-weight: 600;
-            color: #34495e;
-        }
-
-        input[type="number"], input[type="text"], input[type="password"], input[type="email"] {
-            width: 100%;
-            padding: 10px 12px;
-            margin-bottom: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-
-        input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-
-        input[type="submit"] {
-            background-color: #3498db;
-            color: white;
-            padding: 14px 22px;
-            margin: 20px auto;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            display: block;
-            transition: background-color 0.3s;
-        }
-
-        input[type="submit"]:hover {
-            background-color: #2980b9;
-        }
-
-        .message {
-            color: green;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 1000px;
-            margin: 20px auto;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            background-color: #ffffff;
-            border-radius: 10px;
-            overflow: hidden;
+        button, .action-button, .edit-button, .delete-button, .back-button, .cancel-button {
+            font-size: 12px;
+            padding: 6px 10px;
         }
 
         th, td {
-            padding: 14px 18px;
-            text-align: left;
-            border-bottom: 1px solid #e6e6e6;
+            padding: 8px 10px;
+            font-size: 12px;
         }
 
-        th {
-            background-color: #3498db;
-            color: #fff;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 14px;
-        }
-
-        tr:hover {
-            background-color: #f4f6f8;
-        }
-
-        .actions form {
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        .actions input[type="submit"], .actions button {
-            padding: 8px 12px;
-            font-size: 14px;
-            margin: 0;
-            cursor: pointer;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 50%;
-            max-width: 500px;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .course-list {
-            margin-top: 20px;
-        }
-
-        .course-list label {
+        .cancel-button {
+            margin-left: 0;
+            margin-top: 10px;
             display: block;
-            margin: 10px 0;
+            width: 100%;
+            text-align: center;
         }
+    }
+</style>
 
-        #selected-courses {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-
-        @media (max-width: 768px) {
-            .form-container {
-                flex-direction: column;
-            }
-            .modal-content {
-                width: 90%;
-            }
-        }
-    </style>
-</body>
-</html>
+<?php
+$conn->close();
+?>

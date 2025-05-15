@@ -64,8 +64,6 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id']) && $id_test > 0)
     $conn->close();
 }
 
-
-
 // Lấy thông tin bài kiểm tra và khóa học
 $test_info = null;
 $khoa_hoc = null;
@@ -109,6 +107,7 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
     $stmt->close();
     $conn->close();
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -126,7 +125,6 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
         
         <?php if (!empty($message)) echo $message; ?>
         <a href="add_khoahoc.php" class="btn-back">Danh sách khóa học</a>
-        <a href="add_question.php" class="btn-back">Danh sách câu hỏi</a>
         <?php if ($test_info): ?>
             <a href="khoahoc.php?id_khoa=<?php echo htmlspecialchars($test_info['id_khoa']); ?>" class="btn-back">Quay lại danh sách bài test</a>
         <?php endif; ?>
@@ -226,6 +224,7 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            
         }
         th {
             background-color:  #3182ce;

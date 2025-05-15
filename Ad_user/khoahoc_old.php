@@ -209,7 +209,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     <th>Khóa học</th>
                     <th>Tên Test</th>
                     <th>Lần thứ</th>
-                    <!-- <th>Số câu </th> -->
+                    <th>Số câu </th>
                     <th>Hành động</th>
                 </tr>
                 <?php while ($row = $result->fetch_assoc()): ?>
@@ -218,7 +218,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
                         <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
-                        <!-- <td><?php echo htmlspecialchars($row['so_câu'])?></td> -->
+                        <td><?php echo htmlspecialchars($row['so_câu'])?></td>
 
                         <td>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
