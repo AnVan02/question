@@ -10,10 +10,11 @@ $username = "root";
 $password = "";
 $dbname = "study";
 
+
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 2"; // Python Nâng Cao
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 3"; // YOLO
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
@@ -25,7 +26,7 @@ try {
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 2</title>
+    <title>Content 3</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,11 +64,11 @@ try {
 </head>
 <body>
     <div class="content-container">
-        <h2>Trang Content 2</h2>
-        <p>Xin chào <?php echo htmlspecialchars($_SESSION['student_id']); ?> - <?php echo htmlspecialchars($khoa_hoc); ?></p>
+        <h2>Trang Content 3</h2>
+        <p>Welcome <?php echo htmlspecialchars($_SESSION['student_id']); ?> - <?php echo htmlspecialchars($khoa_hoc); ?></p>
         <p>
-            <!-- <a href="content1.php">Content 1</a> | -->
-            <a href="content3.php">Content 3</a> |
+            <a href="content1.php">Content 1</a> |
+            <a href="content2.php">Content 2</a> |
             <a href="logout.php">Đăng xuất</a>
         </p>
     </div>

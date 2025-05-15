@@ -1,78 +1,99 @@
 <?php
-error_reporting(E_ALL);
-ini_set ('display_errors',1);
 session_start();
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "study";
 
-// Danh sách người dùng cố định (thay thế bằng cơ sở dữ liệu trong thực tế)
-$users = [
-    'admin' => '123456',
-    'user' => '456789'
-];
-function dbconnect () {
-    $conn = new mysql ("localhost" . "root" . "" , "study");
-    if($conn -> connect_error) {
-        die("Lỗi kết nối CSDL: " .$conn -> connect_error);
-    }
-    $conn -> set_charset("UTF8MB4");
-    return $conn ;
-
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
 
-// Xử lý đăng nhập
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $student_id = $_POST['student_id'];
+    $password = $_POST['password'];
 
-    if (isset($users[$username]) && $users[$username] === $password) {
-        $_SESSION['username'] = $username;
-        header('Location: content1.php');
-        exit;
+    $sql = "SELECT * FROM login WHERE Student_ID = :student_id AND Password = :password";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute(['student_id' => $student_id, 'password' => $password]);
+
+    if ($stmt->rowCount() > 0) {
+        $_SESSION['student_id'] = $student_id;
+        header("Location: content1.php");
+        exit();
     } else {
-        $error = 'Tên đăng nhập hoặc mật khẩu không đúng!';
+        $error = "Mã sinh viên hoặc mật khẩu không đúng!";
     }
 }
-
-// Nếu đã đăng nhập, chuyển hướng đến content1.php
-if (isset($_SESSION['username'])) {
-    header('Location: content1.php');
-    exit;
-}
-
-
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; }
-        .error { color: red; }
-        form { display: flex; flex-direction: column; gap: 10px; }
-        input { padding: 8px; }
-        button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <h2>Đăng nhập</h2>
-    <?php if (isset($error)): ?>
-        <p class="error"><?php echo $error; ?></p>
-    <?php endif; ?>
-    <form method="POST">
-        <label for="username">Tên đăng nhập:</label>
-        <input type="text" id="username" name="username" required>
-        <label for="password">Mật khẩu:</label>
-        <input type="password" id="password" name="password" required>
-        <button type="submit">Đăng nhập</button>
-    </form>
+    <div class="login-container">
+        <h2>Đăng nhập</h2>
+        <form method="post" action="">
+            <input type="text" name="student_id" placeholder="Mã sinh viên" required>
+            <input type="password" name="password" placeholder="Mật khẩu" required>
+            <input type="submit" value="Đăng nhập">
+        </form>
+        <?php if (isset($error)) { ?>
+            <p class="error"><?php echo $error; ?></p>
+        <?php } ?>
+    </div>
 </body>
 </html>
-
-
-
-
-
-

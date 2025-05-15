@@ -1,36 +1,76 @@
 <?php
 session_start();
-
-// Kiểm tra trạng thái session
-if (!isset($_SESSION['username'])) {
+if (!isset($_SESSION['student_id'])) {
     echo "Đăng nhập thất bại";
-    exit;
+    exit();
 }
-$username = htmlspecialchars($_SESSION['username']);
-$session_id = session_id(); // Lấy session ID để debug
+
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "study";
+
+
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 1"; // Python Cơ Bản
+    $stmt = $conn->query($sql);
+    $khoa_hoc = $stmt->fetchColumn();
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nội dung 1</title>
+    <title>Content 1</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; }
-        .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
-        h2 { color: #4CAF50; }
-        a { color: #4CAF50; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .content-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #007bff;
+        }
+        p {
+            font-size: 18px;
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        Người dùng: <?php echo $username; ?>
+    <div class="content-container">
+        <h2>Trang Content 1</h2>
+        <p>Hello <?php echo htmlspecialchars($_SESSION['student_id']); ?> - <?php echo htmlspecialchars($khoa_hoc); ?></p>
+        <p>
+            <a href="content2.php">Content 2</a> |
+            <!-- <a href="content3.php">Content 3</a> | -->
+            <a href="logout.php">Đăng xuất</a>
+        </p>
     </div>
-    <h2>Hello <?php echo $username; ?></h2>
-    <p>Debug: Bạn đã đăng nhập với tên <?php echo $username; ?>. Session ID: <?php echo $session_id; ?></p>
-    <p><a href="content2.php">Xem nội dung 2</a></p>
-    <p><a href="logout.php">Đăng xuất</a></p>
 </body>
 </html>
