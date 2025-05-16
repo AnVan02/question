@@ -1,7 +1,13 @@
 <?php
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    echo "Đăng nhập thất bại";
+    header("Location: login.php");
+    exit();
+}
+
+$student_id = $_SESSION['student_id'];
+if ($student_id != 2) {
+    echo "Bạn không có quyền truy cập khoá học này";
     exit();
 }
 
@@ -9,7 +15,6 @@ $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "study";
-
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
@@ -30,7 +35,7 @@ try {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
+            background: linear-gradient(to bottom right, #e6f3fa, #f4f4f9);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -39,7 +44,7 @@ try {
         }
         .content-container {
             background-color: white;
-            padding: 20px;
+            padding: 50px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             width: 400px;
@@ -52,25 +57,12 @@ try {
             font-size: 18px;
             color: #333;
         }
-        a {
-            color: #007bff;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
     <div class="content-container">
-        <h2>Trang Content 3</h2>
-        <p>Welcome <?php echo htmlspecialchars($_SESSION['student_id']); ?> - <?php echo htmlspecialchars($khoa_hoc); ?></p>
-        <p>
-            <a href="content1.php">Content 1</a> |
-            <a href="content2.php">Content 2</a> |
-            <a href="logout.php">Đăng xuất</a>
-        </p>
+        <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
+        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
     </div>
 </body>
 </html>

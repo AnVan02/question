@@ -1,7 +1,30 @@
 <?php
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    echo "Đăng nhập thất bại";
+    header("Location: login.php");
+    exit();
+}
+
+// Debug thông tin
+echo "Raw session value: ";
+var_dump($_SESSION['student_id']);
+echo "<br>";
+
+$student_id = $_SESSION['student_id'];
+echo "Before conversion - Value: ";
+var_dump($student_id);
+echo " Type: " . gettype($student_id) . "<br>";
+
+$student_id = intval($student_id);
+echo "After conversion - Value: ";
+var_dump($student_id);
+echo " Type: " . gettype($student_id) . "<br>";
+
+// Kiểm tra quyền truy cập
+if ($student_id == 1 || $student_id == 2 || $student_id == 3) {
+    // Cho phép truy cập
+} else {
+    echo "Bạn không có quyền truy cập khoá học này";
     exit();
 }
 
@@ -10,11 +33,10 @@ $username = "root";
 $password = "";
 $dbname = "study";
 
-
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 1"; // Python Cơ Bản
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 1"; // PYTHON CƠ BẢN
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
@@ -30,7 +52,7 @@ try {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
+            background: linear-gradient(to bottom right, #e6f3fa, #f4f4f9);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -39,7 +61,7 @@ try {
         }
         .content-container {
             background-color: white;
-            padding: 20px;
+            padding: 50px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             width: 400px;
@@ -52,25 +74,12 @@ try {
             font-size: 18px;
             color: #333;
         }
-        a {
-            color: #007bff;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
     <div class="content-container">
-        <h2>Trang Content 1</h2>
-        <p>Hello <?php echo htmlspecialchars($_SESSION['student_id']); ?> - <?php echo htmlspecialchars($khoa_hoc); ?></p>
-        <p>
-            <a href="content2.php">Content 2</a> |
-            <!-- <a href="content3.php">Content 3</a> | -->
-            <a href="logout.php">Đăng xuất</a>
-        </p>
+        <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
+        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
     </div>
 </body>
 </html>

@@ -86,8 +86,10 @@ CREATE TABLE `login` (
 --
 
 INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
-(7, 'user1', '123456'),
-(8, 'user2', '456789');
+(1, 'user1', '1'),
+(2, 'user2', '2'),
+(3, 'user3', '3');
+
 
 -- --------------------------------------------------------
 
