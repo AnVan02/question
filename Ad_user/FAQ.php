@@ -57,6 +57,14 @@ function getTestInfo($ten_test, $ten_khoa) {
     $conn->close();
     return 1; // Mặc định 1 lần nếu không tìm thấy
 }
+// lấy số lân hiển thị từ bảng test
+// function getTestInfo ($ten_test, $so_lan_hien_thi){
+//     $conn = dbconnect ();
+//     $courses= getCoursesFromDB ();
+//     $id_khoa = array_search ($ten_khoa , $courses);
+//     $if()
+// }
+
 
 // Lấy câu hỏi từ cơ sở dữ liệu
 function getQuestionsFromDB($ten_khoa, $id_baitest) {
@@ -92,12 +100,13 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
     $stmt->close();
     $conn->close();
 
-    // Nếu không đủ 5 câu hỏi, báo lỗi
+    // Nếu không đủ 5 câu hỏi của khoá học đó thì báo lỗi
     if (count($questions) < 5) {
         die("Lỗi: Không đủ 5 câu hỏi cho khóa học '$ten_khoa' thuộc bài  '$id_baitest'. Vui lòng thêm câu hỏi.");
     }
     return $questions;
 }
+
 
 // Lấy tham số từ URL
 $ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
@@ -107,6 +116,7 @@ $id_baitest = $_GET['id_baitest'] ?? $_SESSION['id_baitest'];
 if ($ten_khoa !== $_SESSION['ten_khoa']) {
     die("Lỗi: Bạn không có quyền truy cập khóa học '$ten_khoa'");
 }
+
 
 // Lấy số lần thử tối đa
 $max_attempts = getTestInfo($id_baitest, $ten_khoa);
@@ -136,6 +146,7 @@ if ($_SESSION["attempts"] >= $max_attempts) {
     header("Location: ketqua.php?limit_exceeded=1");
     exit;
 }
+
 
 // Xử lý reset
 if (isset($_GET["reset"]) && $_SESSION["attempts"] < $max_attempts) {

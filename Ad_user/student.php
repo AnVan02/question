@@ -707,6 +707,7 @@ if ($mode == 'edit' && $student_id) {
             display: block;
             transition: background-color 0.3s;
         }
+        
         input[type="submit"]:hover {
             background-color: #2980b9;
         }

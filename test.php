@@ -316,10 +316,11 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
                         <td><?php echo htmltspecialchars($row['lan_thu_toi_da']); ?></td>
                         <td><?php echo htmlspecialchars($row['pass']); ?></td>
-                        <td><?php echo htmlspecialchars($cau_hoi_display);?>
-                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo ' <span style="color: red;">(Không đủ câu)</span>'; ?>
-                            <?php if ($so_cau == 0) echo ' <span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
-                        </td>
+                       $cau_hoi_display = "$so_cau/{$row['so_cau_hien_thi']}";?>
+                    <td><?php echo htmlspecialchars($cau_hoi_display); ?>
+                        <?php if ($so_cau < $row['so_cau_hien_thi']) echo ' <span style="color: red;">(Không đủ câu)</span>'; ?>
+                        <?php if ($so_cau == 0) echo ' <span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
+                    </td>
                             <td><?php echo htmlspecialchars($so_cau); ?></td>
                         <td>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>

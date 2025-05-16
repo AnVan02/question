@@ -296,8 +296,11 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         $error_message = "<p>Lỗi chuẩn bị truy vấn đếm câu hỏi: " . $conn->error . "</p>";
                     }
                     // Xác định hiển thị cho cột "câu hỏi" 
-                    $cau_hoi_display = ($so_cau < $row['so_cau_hien_thi']) ? "$so_cau/{$row['so_cau_hien_thi']}" : $row['so_cau_hien_thi'];
+                    // $cau_hoi_display = ($so_cau < $row['so_cau_hien_thi']) ? "$so_cau/{$row['so_cau_hien_thi']}" : $row['so_cau_hien_thi'];
+                    // $cau_hoi_display = "$so_cau/{$row['so_cau_hien_thi']}";
+                     $cau_hoi_display = "$so_cau/5";
                     ?>
+                
                     <tr>
                         <td><?php echo htmlspecialchars($row['id_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>

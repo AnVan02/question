@@ -1,7 +1,18 @@
 <?php
 session_start();
 
-// Kết nối cơ sở dữ liệu
+// Bật hiển thị lỗi để debug
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Kiểm tra đăng nhập
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['bai_hoc']) || !isset($_SESSION['ten_khoa'])) {
+    header("Location: FAQ.php");
+    exit;
+}
+
+// Hàm kết nối cơ sở dữ liệu
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "study");
     if ($conn->connect_error) {
@@ -23,14 +34,7 @@ function getCoursesFromDB() {
     return $courses;
 }
 
-// lây thông tin khoa học từ bảng khoa_hoc
-function getCoursesFromDB (){
-    $conn = dbconnect ();
-    $sql = "SELECT id, khoahoc FROM khoa_hoc";
-    $result =$conn ->query ($sql);
-  
-}
-// Lấy thông tin bài test từ bảng test
+// Lấy số lần thử từ bảng test
 function getTestInfo($ten_test, $ten_khoa) {
     $conn = dbconnect();
     $courses = getCoursesFromDB();
@@ -51,8 +55,33 @@ function getTestInfo($ten_test, $ten_khoa) {
     }
     $stmt->close();
     $conn->close();
-    die("Lỗi: Không tìm thấy bài test '$ten_test' cho khóa học '$ten_khoa'");
+    return 1; // Mặc định 1 lần nếu không tìm thấy
 }
+
+// lấy câu hiển thị từ bảng test
+// function getTestInfo($so_cau_hien_thị, $ten_khoa) {
+//     $conn = dbconnect();
+//     $courses = getCoursesFromDB();
+//     $id_khoa = array_search($ten_khoa, $courses);
+//     if ($id_khoa === false) {
+//         die("Lỗi: Không tìm thấy khóa học '$ten_khoa'");
+//     }
+//     $sql = "SELECT so_cau_hien_thị FROM test WHERE ten_test = ? AND id_khoa = ?";
+//     $stmt = $conn->prepare($sql);
+//     $stmt->bind_param("si", $ten_test, $id_khoa);
+//     $stmt->execute();
+//     $result = $stmt->get_result();
+//     if ($result->num_rows > 0) {
+//         $row = $result->fetch_assoc();
+//         $stmt->close();
+//         $conn->close();
+//         return $row['so_cau_hien_thị'];
+//     }
+//     $stmt->close();
+//     $conn->close();
+//     return ; // Mặc định 1 lần nếu không tìm thấy
+// }
+
 
 // Lấy câu hỏi từ cơ sở dữ liệu
 function getQuestionsFromDB($ten_khoa, $id_baitest) {
@@ -86,49 +115,27 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
         }
     }
     $stmt->close();
-
-    // Nếu không đủ 5 câu hỏi, lấy ngẫu nhiên từ toàn bộ bảng quiz
-    if (count($questions) < 5) {
-        $sql_all = "SELECT * FROM quiz";
-        $result_all = $conn->query($sql_all);
-        $all_questions = [];
-        while ($row = $result_all->fetch_assoc()) {
-            $all_questions[] = [
-                'id' => $row['Id_cauhoi'],
-                'question' => $row['cauhoi'],
-                'choices' => [
-                    'A' => $row['cau_a'],
-                    'B' => $row['cau_b'],
-                    'C' => $row['cau_c'],
-                    'D' => $row['cau_d']
-                ],
-                'explanations' => [
-                    'A' => $row['giaithich_a'],
-                    'B' => $row['giaithich_b'],
-                    'C' => $row['giaithich_c'],
-                    'D' => $row['giaithich_d']
-                ],
-                'correct' => $row['dap_an'],
-                'image' => $row['hinhanh']
-            ];
-        }
-        shuffle($all_questions);
-        $questions = array_slice($all_questions, 0, 5);
-    }
-
     $conn->close();
-    if (empty($questions)) {
-        die("Lỗi: Không có câu hỏi nào trong cơ sở dữ liệu. Vui lòng thêm ít nhất 5 câu hỏi.");
+
+    // Nếu không đủ 5 câu hỏi của khoá học đó thì báo lỗi
+    if (count($questions) < 5) {
+        die("Lỗi: Không đủ 5 câu hỏi cho khóa học '$ten_khoa' thuộc bài  '$id_baitest'. Vui lòng thêm câu hỏi.");
     }
     return $questions;
 }
 
-// Lấy tham số từ URL để xác định bài test
 
-$ten_khoa = $_GET['ten_khoa'] ?? 'Python cơ bản'; // Mặc định
-$id_baitest = $_GET['id_baitest'] ?? 'Giữa kỳ'; // Mặc định
+// Lấy tham số từ URL
+$ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
+$id_baitest = $_GET['id_baitest'] ?? $_SESSION['id_baitest'];
 
-// Lấy số lần thử từ bảng test
+// Kiểm tra ten_khoa có khớp với khóa học của tài khoản
+if ($ten_khoa !== $_SESSION['ten_khoa']) {
+    die("Lỗi: Bạn không có quyền truy cập khóa học '$ten_khoa'");
+}
+
+
+// Lấy số lần thử tối đa
 $max_attempts = getTestInfo($id_baitest, $ten_khoa);
 
 // Lấy danh sách câu hỏi
@@ -143,12 +150,10 @@ if (!isset($_SESSION["attempts"])) $_SESSION["attempts"] = 0;
 if (!isset($_SESSION["highest_score"])) $_SESSION["highest_score"] = 0;
 if (!isset($_SESSION["time"])) $_SESSION["time"] = date("d-m-Y H:i:s");
 
-// Chọn ngẫu nhiên 5 câu hỏi khi bắt đầu hoặc reset
-if (!isset($_SESSION["selected_questions"]) || isset($_GET["reset"])) {
+
+// Chọn ngẫu nhiên 5 câu hỏi
+if (!isset($_SESSION["selected_questions"])) {
     $question_keys = array_keys($questions);
-    if (count($question_keys) < 5) {
-        die("Lỗi: Cần ít nhất 5 câu hỏi trong cơ sở dữ liệu.");
-    }
     shuffle($question_keys);
     $_SESSION["selected_questions"] = array_slice($question_keys, 0, 5);
 }
@@ -159,6 +164,7 @@ if ($_SESSION["attempts"] >= $max_attempts) {
     exit;
 }
 
+
 // Xử lý reset
 if (isset($_GET["reset"]) && $_SESSION["attempts"] < $max_attempts) {
     $_SESSION["current"] = 0;
@@ -167,9 +173,6 @@ if (isset($_GET["reset"]) && $_SESSION["attempts"] < $max_attempts) {
     $_SESSION["answers"] = [];
     $_SESSION["time"] = date("d-m-Y H:i:s");
     $question_keys = array_keys($questions);
-    if (count($question_keys) < 5) {
-        die("Lỗi: Cần ít nhất 5 câu hỏi trong cơ sở dữ liệu.");
-    }
     shuffle($question_keys);
     $_SESSION["selected_questions"] = array_slice($question_keys, 0, 5);
     header("Location: FAQ.php?ten_khoa=" . urlencode($ten_khoa) . "&id_baitest=" . urlencode($id_baitest));
@@ -206,6 +209,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["next"])) {
         $_SESSION["feedback"] = "<div style='color: orange;'>⚠️ Vui lòng chọn một đáp án!</div>";
     }
 }
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
     if ($_SESSION["current"] > 0) {
         $_SESSION["current"]--;
@@ -227,34 +231,11 @@ if ($current >= $total) {
 }
 
 // Lấy câu hỏi hiện tại
-if (!isset($_SESSION["selected_questions"][$current])) {
-    error_log("Lỗi: selected_questions không hợp lệ tại chỉ số $current");
-    $_SESSION["selected_questions"] = [];
-    header("Location: FAQ.php?reset=1&ten_khoa=" . urlencode($ten_khoa) . "&id_baitest=" . urlencode($id_baitest));
-    exit;
-}
-
 $question_index = $_SESSION["selected_questions"][$current];
-if (!isset($questions[$question_index])) {
-    error_log("Lỗi: question_index không hợp lệ: $question_index");
-    $_SESSION["selected_questions"] = [];
-    header("Location: FAQ.php?reset=1&ten_khoa=" . urlencode($ten_khoa) . "&id_baitest=" . urlencode($id_baitest));
-    exit;
-}
-
 $question_data = $questions[$question_index];
-
-// Kiểm tra dữ liệu câu hỏi
-if (!isset($question_data['question']) || !isset($question_data['choices']) || !is_array($question_data['choices']) || !isset($question_data['correct'])) {
-    error_log("Lỗi: Dữ liệu câu hỏi không hợp lệ cho question_index $question_index: " . print_r($question_data, true));
-    $_SESSION["selected_questions"] = [];
-    header("Location: FAQ.php?reset=1&ten_khoa=" . urlencode($ten_khoa) . "&id_baitest=" . urlencode($id_baitest));
-    exit;
-}
 
 // Gán nhãn cho các đáp án
 $answer_labels = ['A', 'B', 'C', 'D'];
-
 ?>
 
 <!DOCTYPE html>
@@ -262,8 +243,143 @@ $answer_labels = ['A', 'B', 'C', 'D'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Lập Trình</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Quiz - <?= htmlspecialchars($ten_khoa) ?></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin: 0 auto;
+        }
+        .question {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .question-image-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .question-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .answer {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f7fafc;
+            transition: background 0.3s ease;
+        }
+        .answer:hover {
+            background: #edf2f7;
+        }
+        .answer input[type="radio"] {
+            margin-right: 10px;
+            accent-color: #3182ce;
+        }
+        .answer label {
+            font-size: 1rem;
+            color: #2d3748;
+            cursor: pointer;
+        }
+        .content-area {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .left-area {
+            text-align: center;
+        }
+        .progress {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .result-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #fff5f5;
+            color: #e53e3e;
+            font-size: 0.95rem;
+        }
+        .btn-area {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .btn-prev,
+        .btn-next {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .btn-prev {
+            background: #a0aec0;
+            color: #ffffff;
+        }
+        .btn-prev:hover {
+            background: #718096;
+            transform: translateY(-2px);
+        }
+        .btn-next {
+            background: #3182ce;
+            color: #ffffff;
+        }
+        .btn-next:hover {
+            background: #2b6cb0;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .question {
+                font-size: 1.2rem;
+            }
+            .answer label {
+                font-size: 0.9rem;
+            }
+            .btn-prev,
+            .btn-next {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -306,171 +422,3 @@ $answer_labels = ['A', 'B', 'C', 'D'];
     </div>
 </body>
 </html>
-<Style>
-    /* Reset mặc định */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    color: #2d3748;
-    line-height: 1.6;
-}
-
-/* Container chính */
-.container {
-    max-width: 800px;
-    width: 100%;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    margin: 0 auto;
-}
-
-/* Định dạng câu hỏi */
-.question {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a202c;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-/* Hình ảnh câu hỏi */
-.question-image-container {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.question-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* Định dạng các đáp án */
-.answer {
-    display: flex;
-    align-items: center;
-    margin: 10px 0;
-    padding: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #f7fafc;
-    transition: background 0.3s ease;
-}
-
-.answer:hover {
-    background: #edf2f7;
-}
-
-.answer input[type="radio"] {
-    margin-right: 10px;
-    accent-color: #3182ce;
-}
-
-.answer label {
-    font-size: 1rem;
-    color: #2d3748;
-    cursor: pointer;
-}
-
-/* Khu vực nội dung bên dưới */
-.content-area {
-    margin-top: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* Khu vực bên trái (progress và feedback) */
-.left-area {
-    text-align: center;
-}
-
-.progress {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #4a5568;
-    margin-bottom: 10px;
-}
-
-.result-box {
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 8px;
-    background: #fff5f5;
-    color: #e53e3e;
-    font-size: 0.95rem;
-}
-
-/* Khu vực nút */
-.btn-area {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.btn-prev,
-.btn-next {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.2s ease;
-}
-
-.btn-prev {
-    background: #a0aec0;
-    color: #ffffff;
-}
-
-.btn-prev:hover {
-    background: #718096;
-    transform: translateY(-2px);
-}
-
-.btn-next {
-    background: #3182ce;
-    color: #ffffff;
-}
-
-.btn-next:hover {
-    background: #2b6cb0;
-    transform: translateY(-2px);
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-    .container {
-        padding: 20px;
-    }
-
-    .question {
-        font-size: 1.2rem;
-    }
-
-    .answer label {
-        font-size: 0.9rem;
-    }
-
-    .btn-prev,
-    .btn-next {
-        padding: 8px 15px;
-        font-size: 0.9rem;
-    }
-}
-</Style>

@@ -1,38 +1,74 @@
 <?php
 session_start();
-
-// Kiểm tra trạng thái session
-if (!isset($_SESSION['username'])) {
-    echo "Đăng nhập thất bại";
-    exit;
+if (!isset($_SESSION['student_id'])) {
+    header("Location: login.php");
+    exit();
 }
-$username = htmlspecialchars($_SESSION['username']);
-$session_id = session_id(); // Lấy session ID để debug
+
+$student_id = $_SESSION['student_id'];
+if ($student_id != 1 && $student_id !=3 ) {
+    echo "Bạn không có quyền truy cập khoá học này";
+    exit();
+}
+
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "study";
+
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 2"; // Python Nâng Cao
+    $stmt = $conn->query($sql);
+    $khoa_hoc = $stmt->fetchColumn();
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python nâng cao</title>
+    <title>Content 3</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; }
-        .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
-        h2 { color: #4CAF50; }
-        a { color: #4CAF50; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, #e6f3fa, #f4f4f9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .content-container {
+            background-color: white;
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #007bff;
+        }
+        p {
+            font-size: 18px;
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        Người dùng: <?php echo $student_id; ?>
+    <div class="content-container">
+        <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
+        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
+        
     </div>
-    <h2>Xin chào bạn <?php echo $student_id; ?> + Tên khoá hoc: <?php echo $khoa_hoc; ?></h2>
-    <p>Python nâng cao </p>
-    <p><a href="content1.php">Khoá học Python nâng cao</a></p>
-    <p><a href="logout.php">Đăng xuất</a></p>
 </body>
 </html>
-
-

@@ -1,14 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['student_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-$student_id = $_SESSION['student_id'];
-if ($student_id != 1 && $student_id !=2 && $student_id !=3 ) {
-    echo "Bạn không có quyền truy cập khoá học này";
-    exit();
+session_start ();
+if(!isset ($_SESSION ['student_id'])) {
+    echo "đăng nhập thất bại";
+    exit ();
 }
 
 $servername = "localhost";
@@ -18,20 +12,21 @@ $dbname = "study";
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 1"; // PYTHON CƠ BẢN
+       $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 3"; // YOLO
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
+
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 1</title>
+    <title>Content 3</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,7 +39,7 @@ try {
         }
         .content-container {
             background-color: white;
-            padding: 50px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             width: 400px;
@@ -60,15 +55,22 @@ try {
         a {
             color: #007bff;
             text-decoration: none;
-            margin: 0 10px;
+            /* margin: 0 10px; */
         }
+        
+       
     </style>
 </head>
 <body>
-    <div class="content-container">
-        <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
-        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
-        
+    <div class ="content-container">
+        <h3>Khoa học 4</h3>
+        <p>Welcome bạn <?php echo htmlspecialchars ($_SESSION ['student_id']);?> - bạn học khoá <?php echo htmlspecialchars ('khoa_hoc') ;?></p>
+        <p>
+            <a href="content2.php">Xem khoa hoc 1</a>
+            <a href="content3.php">Xem khoa hoc 2</a>
+            <a href="logout.php">Đăng xuất </a>
+
+        </p>
     </div>
 </body>
 </html>

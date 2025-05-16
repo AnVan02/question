@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th5 14, 2025 lúc 04:27 AM
+-- Thời gian đã tạo: Th5 15, 2025 lúc 07:23 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -32,8 +32,6 @@ CREATE TABLE `khoa_hoc` (
   `khoa_hoc` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
-
 --
 -- Đang đổ dữ liệu cho bảng `khoa_hoc`
 --
@@ -48,6 +46,7 @@ INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
 (10, 'Hoá học');
 
 -- --------------------------------------------------------
+
 --
 -- Cấu trúc bảng cho bảng `kiem_tra`
 --
@@ -62,6 +61,33 @@ CREATE TABLE `kiem_tra` (
   `Tral` varchar(255) NOT NULL,
   `Max_tral` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `kiem_tra`
+--
+
+INSERT INTO `kiem_tra` (`Studen_ID`, `Khoa_ID`, `Test_ID`, `Best_Scone`, `Max_Scone`, `Pass`, `Tral`, `Max_tral`) VALUES
+(2, 6, 1, '0', '0', '0', '0', '0');
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `login`
+--
+
+CREATE TABLE `login` (
+  `Id` int(11) NOT NULL AUTO_INCREMENT,
+  `Student_ID` varchar(50) NOT NULL,
+  `Password` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `login`
+--
+
+INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
+(1, 'user1', '123456'),
+(2, 'user2', '456789');
 
 -- --------------------------------------------------------
 
@@ -124,15 +150,16 @@ CREATE TABLE `students` (
   `Student_ID` varchar(255) NOT NULL,
   `Password` varchar(255) NOT NULL,
   `Ten` varchar(255) NOT NULL,
-  `Email` varchar(255) NOT NULL
+  `Email` varchar(255) NOT NULL,
+  `khoahoc` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `students`
 --
 
-INSERT INTO `students` (`IMEI`, `MB_ID`, `OS_ID`, `Student_ID`, `Password`, `Ten`, `Email`) VALUES
-(1, 1, 1, '1', '1', 'An', 'anvan123@gmail.com');
+INSERT INTO `students` (`IMEI`, `MB_ID`, `OS_ID`, `Student_ID`, `Password`, `Ten`, `Email`, `khoahoc`) VALUES
+(2, 2, 2, '2', '2', 'AN', 'admin1@gmail.com', '6');
 
 -- --------------------------------------------------------
 
@@ -144,8 +171,7 @@ CREATE TABLE `test` (
   `id_test` int(11) NOT NULL,
   `id_khoa` int(11) NOT NULL,
   `ten_test` varchar(255) NOT NULL,
-  `lan_thu` int(11) DEFAULT 1,
-  `Pass` varchar(255) NOT NULL
+  `lan_thu` int(11) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -177,20 +203,16 @@ ALTER TABLE `khoa_hoc`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Chỉ mục cho bảng `login`
+--
+ALTER TABLE `login`
+  ADD PRIMARY KEY (`Id`);
+
+--
 -- Chỉ mục cho bảng `quiz`
 --
 ALTER TABLE `quiz`
   ADD PRIMARY KEY (`Id_cauhoi`);
-
---
--- Chỉ mục cho bảng `students`
---
-ALTER TABLE `students`
-  ADD PRIMARY KEY (`Student_ID`),
-  ADD UNIQUE KEY `IMEI` (`IMEI`),
-  ADD UNIQUE KEY `Email` (`Email`),
-  ADD KEY `MB_ID` (`MB_ID`),
-  ADD KEY `OS_ID` (`OS_ID`);
 
 --
 -- Chỉ mục cho bảng `test`
@@ -207,6 +229,12 @@ ALTER TABLE `test`
 --
 ALTER TABLE `khoa_hoc`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT cho bảng `login`
+--
+ALTER TABLE `login`
+  MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT cho bảng `quiz`
