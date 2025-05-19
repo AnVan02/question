@@ -4,9 +4,9 @@ if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
     exit();
 }
-// user 3
+
 $student_id = $_SESSION['student_id'];
-if ($student_id !=2 ) {
+if ($student_id != 1 && $student_id !=2 && $student_id !=3 ) {
     echo "Bạn không có quyền truy cập khoá học này";
     exit();
 }
@@ -19,7 +19,7 @@ $dbname = "study";
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 1"; // PYTHON CƠ BẢN
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 4"; // Toán 
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
@@ -32,7 +32,7 @@ try {
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 1</title>
+    <title>Content 4</title>
     <style>
         body {
             font-family: Arial, sans-serif;

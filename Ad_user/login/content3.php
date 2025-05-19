@@ -4,9 +4,9 @@ if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
     exit();
 }
-
+// user 1
 $student_id = $_SESSION['student_id'];
-if ($student_id !=2 ) {
+if ($student_id != 2) {
     echo "Bạn không có quyền truy cập khoá học này";
     exit();
 }
@@ -25,13 +25,13 @@ try {
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
-?>
 
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 2</title>
+    <title>Content 3</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,11 +56,6 @@ try {
         p {
             font-size: 18px;
             color: #333;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-            margin: 0 10px;
         }
     </style>
 </head>

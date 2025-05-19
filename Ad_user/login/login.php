@@ -112,11 +112,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <input type="text" name="student_id" placeholder="Mã sinh viên" required>
             <input type="password" name="password" placeholder="Mật khẩu" required>
             <input type="submit" value="Đăng nhập">
-            <a href="dangky.php">Đăng ký</a>
         </form>
+
+
         <?php if (isset($error)) { ?>
             <p class="error"><?php echo $error; ?></p>
         <?php } ?>
+
     </div>
 </body>
 </html>

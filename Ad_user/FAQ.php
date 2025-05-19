@@ -57,14 +57,6 @@ function getTestInfo($ten_test, $ten_khoa) {
     $conn->close();
     return 1; // Mặc định 1 lần nếu không tìm thấy
 }
-// lấy số lân hiển thị từ bảng test
-// function getTestInfo ($ten_test, $so_lan_hien_thi){
-//     $conn = dbconnect ();
-//     $courses= getCoursesFromDB ();
-//     $id_khoa = array_search ($ten_khoa , $courses);
-//     $if()
-// }
-
 
 // Lấy câu hỏi từ cơ sở dữ liệu
 function getQuestionsFromDB($ten_khoa, $id_baitest) {
