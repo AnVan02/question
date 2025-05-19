@@ -5,8 +5,12 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-$student_id = $_SESSION['student_id'];
-if ($student_id != 1 && $student_id != 3) {
+$student_id = intval($_SESSION['student_id']);
+
+// Kiểm tra quyền truy cập
+if ($student_id == 1 || $student_id == 3) {
+    // Cho phép truy cập
+} else {
     echo "Bạn không có quyền truy cập khoá học này";
     exit();
 }
@@ -19,7 +23,7 @@ $dbname = "study";
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 2"; // Python Nâng Cao
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 2"; // PYTHON NÂNG CAO
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {

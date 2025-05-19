@@ -5,23 +5,10 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-// Debug thông tin
-echo "Raw session value: ";
-var_dump($_SESSION['student_id']);
-echo "<br>";
-
-$student_id = $_SESSION['student_id'];
-echo "Before conversion - Value: ";
-var_dump($student_id);
-echo " Type: " . gettype($student_id) . "<br>";
-
-$student_id = intval($student_id);
-echo "After conversion - Value: ";
-var_dump($student_id);
-echo " Type: " . gettype($student_id) . "<br>";
+$student_id = intval($_SESSION['student_id']);
 
 // Kiểm tra quyền truy cập
-if ($student_id == 1 || $student_id == 2 || $student_id == 3) {
+if ($student_id == 1 || $student_id == 2) {
     // Cho phép truy cập
 } else {
     echo "Bạn không có quyền truy cập khoá học này";
