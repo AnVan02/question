@@ -13,7 +13,7 @@ $message = "";
 if (isset($_GET['delete'])) {
     $id = (int) $_GET['delete'];
     $conn = dbconnect();
-    
+
     // Kiểm tra xem có bài kiểm tra nào liên quan đến khóa học không
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM test WHERE id_khoa = ?");
     $stmt->bind_param("i", $id);
@@ -35,6 +35,7 @@ if (isset($_GET['delete'])) {
     }
     $conn->close();
 }
+// xử lý 
 
 
 // Xử lý sửa khóa học
@@ -339,9 +340,6 @@ if (isset($_GET['edit'])) {
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-        
-        
     </div>
-    
 </body>
 </html>

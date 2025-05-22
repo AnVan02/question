@@ -177,9 +177,6 @@ if (isset($_GET["edit"])) {
                     <textarea name="explanation_d" id="explanation_d" required><?= $edit_question ? htmlspecialchars($edit_question['explanation_d']) : '' ?></textarea>
                 </div>
 
-                
-
-
                 <div class="form-group">
                     <label for="correct">Đáp án đúng</label>
                     <select name="correct" id="correct" required>

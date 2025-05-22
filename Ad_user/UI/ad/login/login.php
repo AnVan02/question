@@ -20,30 +20,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt = $conn->prepare($sql);
     $stmt->execute(['student_id' => $student_id, 'password' => $password]);
 
+// Nếu đã đã dăng nhập chuyển hướng đến content 1.php
+
     if ($stmt->rowCount() > 0) {
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        $_SESSION['student_id'] = $user['Id'];
-        
-        // Redirect based on student_id
-        switch($user['Id']) {
-            case 1:
-                header("Location: content1.php");
-                break;
-            case 2:
-                header("Location: content2.php");
-                break;
-            case 3:
-                header("Location: content3.php");
-                break;
-            default:
-                $error = "Không có quyền truy cập!";
-        }
+        $_SESSION['student_id'] = $student_id;
+        header("Location: content1.php");
         exit();
     } else {
         $error = "Mã sinh viên hoặc mật khẩu không đúng!";
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -122,14 +108,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
         
         <form method="post" action="">
-            <input type="text" name="student_id" placeholder="Mã sinh viên" required>
+            <input <?php $student_id ?> name="student_id" placeholder="Mã sinh viên" $required ?>
             <input type="password" name="password" placeholder="Mật khẩu" required>
             <input type="submit" value="Đăng nhập">
-            <a href="dangky.php">Đăng ký</a>
         </form>
+
         <?php if (isset($error)) { ?>
             <p class="error"><?php echo $error; ?></p>
         <?php } ?>
+
+        
+
+        
+
     </div>
 </body>
 </html>

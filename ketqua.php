@@ -15,6 +15,7 @@ $attempts = (int)$_SESSION["attempts"];
 $highest = (int)$_SESSION["highest_score"];
 $time = htmlspecialchars($_SESSION["time"]);
 $answers = $_SESSION["answers"];
+$pass_status = $_SESSION['pass_status'] ?? '';
 $selected_question_indices = $_SESSION["selected_questions"];
 $total = count($selected_question_indices); // Dynamic total based on selected questions
 
@@ -135,9 +136,12 @@ $answer_labels = ['A', 'B', 'C', 'D'];
         <p><strong>Bài test về môn Lập Trình</strong></p>
         <p><strong>Tổng điểm:</strong> <?= $score ?> / <?= $total ?></p>
         <p><strong>Ngày làm bài kiểm tra:</strong> <?= $time ?></p>
-        <p><strong>Số lần làm bài:</strong> <?= $attempts ?> / 3</p>
+        <p><strong>Số lần làm bài:</strong> <?= $attempts ?> / <?= $lanthu ?></p>
         <p><strong>Điểm cao nhất:</strong> <?= $highest ?> / <?= $total ?></p>
+        <p><strong>Trạng thái:</strong> <?= $pass_status ?>
+        
         <hr>
+        
 
         <?php
         $answeredQuestions = 0;

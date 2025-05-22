@@ -2,58 +2,57 @@
 session_start();
 error_log("Debug: Login.php started");
 
-// Kết nối CSDL
+// DB config
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "study";
 
+// Connect DB
 try {
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $conn->exec("SET NAMES utf8mb4");
 } catch (PDOException $e) {
     error_log("Connection failed: " . $e->getMessage());
     die("Lỗi kết nối cơ sở dữ liệu. Vui lòng thử lại sau.");
 }
 
 $error = '';
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $student_id = trim($_POST['student_id'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $password_input = trim($_POST['password'] ?? '');
 
-    if (empty($student_id) || empty($password)) {
+    if (empty($student_id) || empty($password_input)) {
         $error = "Vui lòng nhập mã sinh viên và mật khẩu.";
     } else {
-        $sql = "SELECT Student_ID, Password, Khoahoc FROM students WHERE Student_ID = :student_id";
+        $sql = "SELECT Student_ID, Password, Khoahoc FROM students WHERE Student_ID = :student_id LIMIT 1";
         $stmt = $conn->prepare($sql);
         $stmt->execute(['student_id' => $student_id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user) {
-            $use_hashed_passwords = false; // Chỉnh lại nếu dùng hash
+            // Dùng true nếu mật khẩu được mã hóa bằng password_hash()
+            $use_hashed_passwords = false; // <<< Sửa tại đây tùy theo database
 
-            $password_correct = $use_hashed_passwords
-                ? password_verify($password, $user['Password'])
-                : ($password === $user['Password']);
-            error_log("Debug: Password correct = " . ($password_correct ? "true" : "false"));
+            $is_password_correct = $use_hashed_passwords
+                ? password_verify($password_input, $user['Password'])
+                : ($password_input === $user['Password']);
 
-            if ($password_correct) {
+            if ($is_password_correct) {
                 $_SESSION['user_id'] = $user['Student_ID'];
                 $_SESSION['students']['Khoahoc'] = $user['Khoahoc'] ?? '';
-                error_log("Debug: Khoahoc = " . ($user['Khoahoc'] ?? 'empty'));
 
                 if (!empty($user['Khoahoc'])) {
                     $khoa_id = explode(',', $user['Khoahoc'])[0];
-                    error_log("Debug: Selected khoa_id = $khoa_id");
 
+                    // Get course name
                     $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = :khoa_id";
                     $stmt = $conn->prepare($sql);
                     $stmt->execute(['khoa_id' => $khoa_id]);
                     $course = $stmt->fetch(PDO::FETCH_ASSOC);
                     $_SESSION['ten_khoa'] = $course['khoa_hoc'] ?? 'Default Course';
 
+                    // Get first test
                     $sql = "SELECT ten_test FROM test WHERE id_khoa = :khoa_id LIMIT 1";
                     $stmt = $conn->prepare($sql);
                     $stmt->execute(['khoa_id' => $khoa_id]);
@@ -64,10 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $_SESSION['id_baitest'] = 'Default Test';
                 }
 
-                error_log("Debug: Login successful, session = " . print_r($_SESSION, true));
-
-                // Chuyển hướng chắc chắn
-                echo "<script>window.location.href='FAQ.php';</script>";
+                header("Location: FAQ.php");
                 exit();
             } else {
                 $error = "Mã sinh viên hoặc mật khẩu không đúng!";
@@ -79,15 +75,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
+<!-- HTML -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập</title>
-    <style>
+        <style>
         * {
-            margin: 0; padding: 0; box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         body {
             font-family: Arial, sans-serif;
@@ -141,19 +139,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-top: 10px;
         }
     </style>
+
 </head>
 <body>
-<div class="login-container">
-    <h2>Đăng nhập</h2>
-    <?php if (!empty($error)): ?>
-        <p class="error"><?php echo $error; ?></p>
-    <?php endif; ?>
+    <div class="login-container">
+        <h2>Đăng nhập</h2>
+        <?php if (!empty($error)): ?>
+            <p class="error"><?php echo htmlspecialchars($error); ?></p>
+        <?php endif; ?>
 
-    <form method="post" action="">
-        <input type="text" name="student_id" placeholder="Mã sinh viên" required>
-        <input type="password" name="password" placeholder="Mật khẩu" required>
-        <input type="submit" value="Đăng nhập">
-    </form>
-</div>
+        <form method="post" action="">
+            <input type="text" name="student_id" placeholder="Mã sinh viên" required>
+            <input type="password" name="password" placeholder="Mật khẩu" required>
+            <input type="submit" value="Đăng nhập">
+            <a href="dangky.php">Đăng ký</a>
+        </form>
+    </div>
 </body>
 </html>

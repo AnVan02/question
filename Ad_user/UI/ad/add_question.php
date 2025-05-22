@@ -242,7 +242,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
                     <input type="hidden" name="existing_image" value="<?= htmlspecialchars($question_data['hinhanh']) ?>">
                 </div>
             <?php endif; ?>
-
             <?php
             $options = ['A', 'B', 'C', 'D'];
             foreach ($options as $opt): ?>
@@ -251,6 +250,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
                 <label>Giải thích <?= $opt ?>:</label>
                 <input type="text" name="explain_<?= strtolower($opt) ?>" value="<?= htmlspecialchars($question_data["giaithich_".strtolower($opt)] ?? '') ?>">
             <?php endforeach; ?>
+            
 
             <label>Đáp án đúng:</label>
             <select name="correct" class="custom-select">

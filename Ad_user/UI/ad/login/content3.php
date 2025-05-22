@@ -15,6 +15,8 @@ if ($student_id == 1 || $student_id == 2) {
     exit();
 }
 
+
+
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -67,6 +69,13 @@ try {
     <div class="content-container">
         <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
         <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
+    </div>
+    <div class="container">
+        <div method ="post">
+            <div></div>
+
+        </div>
+        
     </div>
 </body>
 </html>

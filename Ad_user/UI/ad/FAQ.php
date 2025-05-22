@@ -7,10 +7,12 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Kiểm tra đăng nhập
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['bai_hoc']) || !isset($_SESSION['ten_khoa'])) {
-    header("Location: index.php");
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['ten_khoa']) || !isset($_SESSION['id_baitest'])) {
+    header("Location: FAQ.php");
     exit;
 }
+// kiem tra user có thuộc bài học đó không
+ 
 
 // Hàm kết nối cơ sở dữ liệu
 function dbconnect() {
@@ -18,6 +20,7 @@ function dbconnect() {
     if ($conn->connect_error) {
         die("Kết nối cơ sở dữ liệu thất bại: " . $conn->connect_error);
     }
+    $conn->set_charset("utf8mb4");
     return $conn;
 }
 
@@ -34,7 +37,7 @@ function getCoursesFromDB() {
     return $courses;
 }
 
-// Lấy số lần thử từ bảng test
+// Lấy thông tin bài test từ bảng test
 function getTestInfo($ten_test, $ten_khoa) {
     $conn = dbconnect();
     $courses = getCoursesFromDB();
@@ -42,7 +45,7 @@ function getTestInfo($ten_test, $ten_khoa) {
     if ($id_khoa === false) {
         die("Lỗi: Không tìm thấy khóa học '$ten_khoa'");
     }
-    $sql = "SELECT lan_thu FROM test WHERE ten_test = ? AND id_khoa = ?";
+    $sql = "SELECT lan_thu, Pass, so_cau_hien_thi FROM test WHERE ten_test = ? AND id_khoa = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("si", $ten_test, $id_khoa);
     $stmt->execute();
@@ -51,14 +54,18 @@ function getTestInfo($ten_test, $ten_khoa) {
         $row = $result->fetch_assoc();
         $stmt->close();
         $conn->close();
-        return $row['lan_thu'];
+        return [
+            'lan_thu' => $row['lan_thu'],
+            'pass' => $row['Pass'],
+            'so_cau_hien_thi' => $row['so_cau_hien_thi']
+        ];
     }
     $stmt->close();
     $conn->close();
-    return 1; // Mặc định 1 lần nếu không tìm thấy
+    return ['lan_thu' => 1, 'pass' => 80, 'so_cau_hien_thi' => 5]; // Giá trị mặc định
 }
 
-// Lấy câu hỏi từ cơ sở dữ liệu
+// Lấy câu hỏi từ bảng quiz
 function getQuestionsFromDB($ten_khoa, $id_baitest) {
     $conn = dbconnect();
     $sql = "SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?";
@@ -67,49 +74,67 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
     $stmt->execute();
     $result = $stmt->get_result();
     $questions = [];
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $questions[] = [
-                'id' => $row['Id_cauhoi'],
-                'question' => $row['cauhoi'],
-                'choices' => [
-                    'A' => $row['cau_a'],
-                    'B' => $row['cau_b'],
-                    'C' => $row['cau_c'],
-                    'D' => $row['cau_d']
-                ],
-                'explanations' => [
-                    'A' => $row['giaithich_a'],
-                    'B' => $row['giaithich_b'],
-                    'C' => $row['giaithich_c'],
-                    'D' => $row['giaithich_d']
-                ],
-                'correct' => $row['dap_an'],
-                'image' => $row['hinhanh']
-            ];
-        }
+    while ($row = $result->fetch_assoc()) {
+        $questions[] = [
+            'id' => $row['Id_cauhoi'],
+            'question' => $row['cauhoi'],
+            'choices' => [
+                'A' => $row['cau_a'],
+                'B' => $row['cau_b'],
+                'C' => $row['cau_c'],
+                'D' => $row['cau_d']
+            ],
+            'explanations' => [
+                'A' => $row['giaithich_a'],
+                'B' => $row['giaithich_b'],
+                'C' => $row['giaithich_c'],
+                'D' => $row['giaithich_d']
+            ],
+            'correct' => $row['dap_an'],
+            'image' => $row['hinhanh']
+        ];
     }
     $stmt->close();
     $conn->close();
 
-    // Nếu không đủ 5 câu hỏi, báo lỗi
+    // Kiểm tra số lượng câu hỏi
     if (count($questions) < 5) {
-        die("Lỗi: Không đủ 5 câu hỏi cho khóa học '$ten_khoa' thuộc bài  '$id_baitest'. Vui lòng thêm câu hỏi.");
+        die("Lỗi: Không đủ 5 câu hỏi cho khóa học '$ten_khoa' thuộc bài '$id_baitest'. Vui lòng thêm câu hỏi.");
     }
     return $questions;
 }
 
+// Lưu kết quả bài kiểm tra vào bảng kiem_tra
+function saveTestResult($student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $trial, $max_trial) {
+    $conn = dbconnect();
+    $sql = "INSERT INTO kiem_tra (Student_ID, Khoa_ID, Test_ID, Best_Score, Max_Score, Pass, Trial, Max_trial) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+            Best_Score = ?, Trial = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iissssssss", $student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $trial, $max_trial, $best_score, $trial);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
+}
+
 // Lấy tham số từ URL
 $ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
-$id_baitest = $_GET['id_baitest'] ?? 'Giữa kỳ';
+$id_baitest = $_GET['id_baitest'] ?? $_SESSION['id_baitest'];
 
 // Kiểm tra ten_khoa có khớp với khóa học của tài khoản
-if ($ten_khoa !== $_SESSION['ten_khoa']) {
+$courses = getCoursesFromDB();
+$khoa_ids = array_keys($courses);
+$student_khoahoc = explode(',', $_SESSION['students']['Khoahoc'] ?? '');
+if (!in_array(array_search($ten_khoa, $courses), $student_khoahoc)) {
     die("Lỗi: Bạn không có quyền truy cập khóa học '$ten_khoa'");
 }
 
-// Lấy số lần thử tối đa
-$max_attempts = getTestInfo($id_baitest, $ten_khoa);
+// Lấy thông tin bài test
+$test_info = getTestInfo($id_baitest, $ten_khoa);
+$max_attempts = $test_info['lan_thu'];
+$pass_score = $test_info['pass'];
+$total_questions = $test_info['so_cau_hien_thi'] ?: 5;
 
 // Lấy danh sách câu hỏi
 $questions = getQuestionsFromDB($ten_khoa, $id_baitest);
@@ -123,11 +148,11 @@ if (!isset($_SESSION["attempts"])) $_SESSION["attempts"] = 0;
 if (!isset($_SESSION["highest_score"])) $_SESSION["highest_score"] = 0;
 if (!isset($_SESSION["time"])) $_SESSION["time"] = date("d-m-Y H:i:s");
 
-// Chọn ngẫu nhiên 5 câu hỏi
+// Chọn ngẫu nhiên số câu hỏi theo cấu hình
 if (!isset($_SESSION["selected_questions"])) {
     $question_keys = array_keys($questions);
     shuffle($question_keys);
-    $_SESSION["selected_questions"] = array_slice($question_keys, 0, 5);
+    $_SESSION["selected_questions"] = array_slice($question_keys, 0, $total_questions);
 }
 
 // Kiểm tra giới hạn số lần thử
@@ -145,13 +170,13 @@ if (isset($_GET["reset"]) && $_SESSION["attempts"] < $max_attempts) {
     $_SESSION["time"] = date("d-m-Y H:i:s");
     $question_keys = array_keys($questions);
     shuffle($question_keys);
-    $_SESSION["selected_questions"] = array_slice($question_keys, 0, 5);
+    $_SESSION["selected_questions"] = array_slice($question_keys, 0, $total_questions);
     header("Location: FAQ.php?ten_khoa=" . urlencode($ten_khoa) . "&id_baitest=" . urlencode($id_baitest));
     exit;
 }
 
 $current = $_SESSION["current"];
-$total = 5;
+$total = $total_questions;
 
 // Xử lý gửi biểu mẫu
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["next"])) {
@@ -197,6 +222,17 @@ if ($current >= $total) {
         $_SESSION["highest_score"] = $_SESSION["score"];
     }
     $_SESSION["time"] = date("d-m-Y H:i:s");
+
+    // Lưu kết quả vào bảng kiem_tra
+    $student_id = $_SESSION['user_id'];
+    $khoa_id = array_search($ten_khoa, $courses);
+    $test_id = $id_baitest; // Sử dụng id_baitest làm Test_ID
+    $best_score = $_SESSION["highest_score"];
+    $max_score = $total;
+    $pass = ($best_score >= $pass_score) ? 'Passed' : 'Failed';
+    $trial = $_SESSION["attempts"];
+    saveTestResult($student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $trial, $max_attempts);
+
     header("Location: ketqua.php");
     exit;
 }

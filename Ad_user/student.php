@@ -78,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $stmt_check->execute();
     $check_result = $stmt_check->get_result();
     if ($check_result->num_rows === 0) {
-        error_log("Student not found: $student_id");
+        error_log("student not found: $student_id");
         $response = ['status' => 'error', 'message' => 'Sinh viên không tồn tại: ' . htmlspecialchars($student_id)];
         $stmt_check->close();
         header('Content-Type: application/json');
@@ -103,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $stmt->close();
 
         // Xóa tất cả bản ghi cũ trong kiem_tra
-        $stmt_delete = $conn->prepare("DELETE FROM kiem_tra WHERE Studen_ID = ?");
+        $stmt_delete = $conn->prepare("DELETE FROM kiem_tra WHERE Student_ID = ?");
         if (!$stmt_delete) {
             throw new Exception("Prepare failed for delete kiem_tra: " . $conn->error);
         }
@@ -151,11 +151,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $stmt_test->close();
 
             // Chèn bản ghi vào bảng kiem_tra
-            $stmt_insert = $conn->prepare("INSERT INTO kiem_tra (Studen_ID, Khoa_ID, Test_ID, Best_Scone, Max_Scone, Pass, Tral, Max_tral) VALUES (?, ?, ?, '0', '0', ?, '0', ?)");
+            $stmt_insert = $conn->prepare("INSERT INTO kiem_tra (Student_ID, Khoa_ID, Test_ID, Best_Score, Max_Score, Pass, Trial, Max_trial) VALUES (?, ?, ?, '0', '0', ?, '0', ?)");
             if (!$stmt_insert) {
                 throw new Exception("Prepare failed for insert kiem_tra: " . $conn->error);
             }
-            $stmt_insert->bind_param("siiss", $student_id, $khoa_id, $test_id, $pass, $max_tral);
+            $stmt_insert->bind_param("siisi", $student_id, $khoa_id, $test_id, $pass, $max_tral);
             if (!$stmt_insert->execute()) {
                 throw new Exception("Execute failed for insert kiem_tra: " . $stmt_insert->error);
             }
@@ -163,7 +163,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $stmt_insert->close();
         }
     }
-        // Lấy danh sách tên khóa học để trả về
+
+    // Lấy danh sách tên khóa học để trả về
         $khoa_hoc_names = [];
         if (!empty($khoa_hoc_ids)) {
             $placeholders = implode(',', array_fill(0, count($khoa_hoc_ids), '?'));
@@ -181,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
             $stmt_khoa_hoc->close();
         }
-
+        
         // Commit giao dịch
         $conn->commit();
         $response = [
@@ -190,6 +191,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             'khoa_hoc_names' => $khoa_hoc_names,
             'student_id' => $student_id
         ];
+
     } catch (Exception $e) {
         // Rollback giao dịch nếu có lỗi
         $conn->rollback();
@@ -219,6 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             $stmt->close();
         }
+        
     } elseif (isset($_POST['action']) && $_POST['action'] == 'update') {
         $student_id = $_POST['student_id'];
         $imei = (int)$_POST['imei'];
@@ -289,7 +292,7 @@ $mode = isset($_GET['mode']) ? $_GET['mode'] : '';
 $student_id = isset($_GET['student_id']) ? $_GET['student_id'] : '';
 $student_data = [];
 if ($mode == 'edit' && $student_id) {
-    $stmt = $conn->prepare("SELECT * FROM students WHERE Student_ID = ?");
+    $stmt = $conn->prepare("SELECT * FROM students WHERE Student_ID = ? ");
     if (!$stmt) {
         error_log("Prepare failed for select student: " . $conn->error);
         $message = "Lỗi truy vấn cơ sở dữ liệu";
@@ -301,7 +304,7 @@ if ($mode == 'edit' && $student_id) {
             $student_data = $result->fetch_assoc();
         } else {
             $message = "Không tìm thấy sinh viên với Student_ID: " . htmlspecialchars($student_id);
-            error_log("Student not found: $student_id");
+            error_log("student not found: $student_id");
         }
         $stmt->close();
     }
@@ -479,47 +482,48 @@ if ($mode == 'edit' && $student_id) {
             $stmt->close();
         }
         ?>
-    <?php endif; ?>
-    <!-- Modal hiển thị và lưu khóa học -->
-    <div id="courseModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">×</span>
-            <h2 id="modalTitle">Khóa Học Của Sinh Viên</h2>
-            <form id="courseForm" onsubmit="saveCourses(event)">
-                <input type="hidden" name="action" value="save_courses">
-                <input type="hidden" name="student_id" id="modalStudentId">
-                <div class="course-list">
-                    <?php
-                    $stmt = $conn->prepare("SELECT * FROM khoa_hoc ORDER BY khoa_hoc");
-                    if (!$stmt) {
-                        error_log("Prepare failed for select khoa_hoc: " . $conn->error);
-                        echo "<p class='error'>Lỗi tải danh sách khóa học</p>";
-                    } else {
-                        $stmt->execute();
-                        $khoaHocResult = $stmt->get_result();
-                        if ($khoaHocResult->num_rows > 0) {
-                            while ($khoaHocRow = $khoaHocResult->fetch_assoc()) {
-                                echo "<label class='course-item'>";
-                                echo "<input type='checkbox' name='khoa_hoc[]' value='" . htmlspecialchars($khoaHocRow['id']) . "' onchange='updateSelectedCourses()'>";
-                                echo "<span class='course-name'>" . htmlspecialchars($khoaHocRow['khoa_hoc']) . "</span>";
-                                echo "</label>";
-                            }
+        <?php endif; ?>
+        <!-- Modal hiển thị và lưu khóa học -->
+        <div id="courseModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">×</span>
+                <h2 id="modalTitle">Khóa Học Của Sinh Viên</h2>
+                <form id="courseForm" onsubmit="saveCourses(event)">
+                    <input type="hidden" name="action" value="save_courses">
+                    <input type="hidden" name="student_id" id="modalStudentId">
+                    <div class="course-list">
+                        <?php
+                        $stmt = $conn->prepare("SELECT * FROM khoa_hoc ORDER BY khoa_hoc");
+                        if (!$stmt) {
+                            error_log("Prepare failed for select khoa_hoc: " . $conn->error);
+                            echo "<p class='error'>Lỗi tải danh sách khóa học</p>";
                         } else {
-                            echo "<p>Không có khóa học nào.</p>";
+                            $stmt->execute();
+                            $khoaHocResult = $stmt->get_result();
+                            if ($khoaHocResult->num_rows > 0) {
+                                while ($khoaHocRow = $khoaHocResult->fetch_assoc()) {
+                                    echo "<label class='course-item'>";
+                                    echo "<input type='checkbox' name='khoa_hoc[]' value='" . htmlspecialchars($khoaHocRow['id']) . "' onchange='updateSelectedCourses()'>";
+                                    echo "<span class='course-name'>" . htmlspecialchars($khoaHocRow['khoa_hoc']) . "</span>";
+                                    echo "</label>";
+                                }
+                            } else {
+                                echo "<p>Không có khóa học nào.</p>";
+                            }
+                            $stmt->close();
                         }
-                        $stmt->close();
-                    }
-                    ?>
-                </div>
-                
-                <div id="selected-courses">
-                    <p><strong>Khóa học đã chọn:</strong> <span id="selectedCoursesText">Chưa chọn khóa học nào.</span></p>
-                </div>
+                        
+                        ?>
+                    </div>
+                    
+                    <div id="selected-courses">
+                        <p><strong>Khóa học đã chọn:</strong> <span id="selectedCoursesText">Chưa chọn khóa học nào.</span></p>
+                    </div>
 
-                <input type="submit" value="Lưu" style="background-color: #28a745; margin-top: 10px;">
-            </form>
+                    <input type="submit" value="Lưu" style="background-color: #28a745; margin-top: 10px;">
+                </form>
+            </div>
         </div>
-    </div>
 
     <?php
     // Đóng kết nối

@@ -23,19 +23,20 @@ $dbname = "study";
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 3"; // PYTHON CHUYÊN SÂU
+    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 1"; // PYTHON CƠ BẢN
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
+
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 3</title>
+    <title>Content 1</title>
     <style>
         body {
             font-family: Arial, sans-serif;
