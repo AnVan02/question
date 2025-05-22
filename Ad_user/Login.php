@@ -1,115 +1,81 @@
 <?php
-// Bật hiển thị lỗi để debug
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Khởi động session
 session_start();
+error_log("Debug: Login.php started");
 
-// Hàm kết nối cơ sở dữ liệu
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
-    if ($conn->connect_errno) {
-        die("Kết nối cơ sở dữ liệu thất bại: " . $conn->connect_error);
-    }
-    return $conn;
+// Kết nối CSDL
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "study";
+
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn->exec("SET NAMES utf8mb4");
+} catch (PDOException $e) {
+    error_log("Connection failed: " . $e->getMessage());
+    die("Lỗi kết nối cơ sở dữ liệu. Vui lòng thử lại sau.");
 }
 
-$conn = dbconnect();
+$error = '';
 
-// Xử lý đăng nhập
-if (isset($_POST['login'])) {
-    $email = trim($_POST['account_email']);
-    $password = trim($_POST['account_password']);
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $student_id = trim($_POST['student_id'] ?? '');
+    $password = trim($_POST['password'] ?? '');
 
-    $stmt = $conn->prepare("SELECT id, email, password, bai_hoc FROM accounts WHERE email = ?");
-    if (!$stmt) {
-        $error = "Lỗi chuẩn bị truy vấn: " . $conn->error;
+    if (empty($student_id) || empty($password)) {
+        $error = "Vui lòng nhập mã sinh viên và mật khẩu.";
     } else {
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $sql = "SELECT Student_ID, Password, Khoahoc FROM students WHERE Student_ID = :student_id";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(['student_id' => $student_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($result->num_rows > 0) {
-            $user = $result->fetch_assoc();
-            if ($password === $user['password']) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_email'] = $user['email'];
-                $_SESSION['bai_hoc'] = $user['bai_hoc'];
+        if ($user) {
+            $use_hashed_passwords = false; // Chỉnh lại nếu dùng hash
 
-                if ($user['bai_hoc'] == 0 || $user['bai_hoc'] === null) {
-                    $view = 'choose_course';
+            $password_correct = $use_hashed_passwords
+                ? password_verify($password, $user['Password'])
+                : ($password === $user['Password']);
+            error_log("Debug: Password correct = " . ($password_correct ? "true" : "false"));
+
+            if ($password_correct) {
+                $_SESSION['user_id'] = $user['Student_ID'];
+                $_SESSION['students']['Khoahoc'] = $user['Khoahoc'] ?? '';
+                error_log("Debug: Khoahoc = " . ($user['Khoahoc'] ?? 'empty'));
+
+                if (!empty($user['Khoahoc'])) {
+                    $khoa_id = explode(',', $user['Khoahoc'])[0];
+                    error_log("Debug: Selected khoa_id = $khoa_id");
+
+                    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = :khoa_id";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute(['khoa_id' => $khoa_id]);
+                    $course = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $_SESSION['ten_khoa'] = $course['khoa_hoc'] ?? 'Default Course';
+
+                    $sql = "SELECT ten_test FROM test WHERE id_khoa = :khoa_id LIMIT 1";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute(['khoa_id' => $khoa_id]);
+                    $test = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $_SESSION['id_baitest'] = $test['ten_test'] ?? 'Default Test';
                 } else {
-                    // Lấy tên khóa học từ bảng khoa_hoc
-                    $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
-                    $stmt->bind_param("i", $user['bai_hoc']);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($result->num_rows > 0) {
-                        $course = $result->fetch_assoc();
-                        $_SESSION['ten_khoa'] = $course['khoa_hoc'];
-                        // Chuyển hướng đến FAQ.php với tham số ten_khoa và id_baitest mặc định
-                        header("Location: FAQ.php?ten_khoa=" . urlencode($course['khoa_hoc']) . "&id_baitest=Giữa kỳ");
-                        exit;
-                    } else {
-                        $error = "Khóa học không tồn tại!";
-                        $view = 'choose_course';
-                    }
+                    $_SESSION['ten_khoa'] = 'Default Course';
+                    $_SESSION['id_baitest'] = 'Default Test';
                 }
+
+                error_log("Debug: Login successful, session = " . print_r($_SESSION, true));
+
+                // Chuyển hướng chắc chắn
+                echo "<script>window.location.href='FAQ.php';</script>";
+                exit();
             } else {
-                $error = "Mật khẩu không đúng!";
+                $error = "Mã sinh viên hoặc mật khẩu không đúng!";
             }
         } else {
-            $error = "Email không tồn tại!";
+            $error = "Mã sinh viên hoặc mật khẩu không đúng!";
         }
-        $stmt->close();
     }
-}
-
-// Xử lý chọn khóa học
-if (isset($_POST['choose_course'])) {
-    if (!isset($_SESSION['user_id'])) {
-        $error = "Phiên đăng nhập không hợp lệ!";
-        $view = null;
-    } else {
-        $course_id = (int)$_POST['course_id'];
-        $user_id = $_SESSION['user_id'];
-
-        // Kiểm tra khóa học có tồn tại
-        $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
-        $stmt->bind_param("i", $course_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows == 0) {
-            $error = "Khóa học không tồn tại!";
-            $view = 'choose_course';
-        } else {
-            $course = $result->fetch_assoc();
-            // Cập nhật bai_hoc cho tài khoản
-            $stmt = $conn->prepare("UPDATE accounts SET bai_hoc = ? WHERE id = ?");
-            $stmt->bind_param("ii", $course_id, $user_id);
-            if ($stmt->execute()) {
-                $_SESSION['bai_hoc'] = $course_id;
-                $_SESSION['ten_khoa'] = $course['khoa_hoc'];
-                // Chuyển hướng đến FAQ.php
-                header("Location: FAQ.php?ten_khoa=" . urlencode($course['khoa_hoc']) . "&id_baitest=Giữa kỳ");
-                exit;
-            } else {
-                $error = "Lỗi khi cập nhật khóa học: " . $stmt->error;
-                $view = 'choose_course';
-            }
-        }
-        $stmt->close();
-    }
-}
-
-
-// Xử lý đăng xuất
-if (isset($_POST['logout'])) {
-    session_destroy();
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit;
 }
 ?>
 
@@ -118,105 +84,78 @@ if (isset($_POST['logout'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bài test kiểm tra</title>
+    <title>Đăng nhập</title>
     <style>
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+        }
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+            background: linear-gradient(135deg, #74ebd5, #acb6e5);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
+            padding: 20px;
         }
-
-        .container {
-            max-width: 600px;
-            width: 150%;
-            background: #fff;
-            padding: 60px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .form-box h2 {
-            margin-bottom: 20px;
-            text-align: center;
-            color: #333;
-        }
-        input, select, button {
+        .login-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
+            max-width: 400px;
+            text-align: center;
         }
-        button {
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
             background-color: #007bff;
             color: white;
+            padding: 10px;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 16px;
         }
-        button:hover {
+        input[type="submit"]:hover {
             background-color: #0056b3;
         }
         .error {
             color: red;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        .debug {
-            color: blue;
-            text-align: center;
-            margin-bottom: 15px;
+            font-size: 14px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Debug thông tin -->
-        <!-- <?php if (isset($_SESSION['user_id'])): ?>
-            <p class="debug">User ID: <?= $_SESSION['user_id'] ?>, Email: <?= $_SESSION['user_email'] ?>, Bài học: <?= $_SESSION['bai_hoc'] ?? 'Chưa chọn' ?></p>
-        <?php endif; ?>
-        <p class="debug">View: <?= isset($view) ? $view : 'không được gán' ?></p> -->
 
-        <!-- Hiển thị lỗi -->
-        <?php if (isset($error)): ?>
-            <p class="error"><?= htmlspecialchars($error) ?></p>
-        <?php endif; ?>
-        <!-- Form đăng nhập -->
-        <?php if (!isset($view)): ?>
-            <div class="form-box">
-                <h2>Đăng Nhập</h2>
-                <form method="POST">
-                    <input type="email" name="account_email" placeholder="Email" required>
-                    <input type="password" name="account_password" placeholder="Mật khẩu" required>
-                    <button type="submit" name="login">Đăng nhập</button>
-                </form>
-            </div>
+<div class="login-container">
+    <h2>Đăng nhập</h2>
+    <?php if (!empty($error)): ?>
+        <p class="error"><?php echo $error; ?></p>
+    <?php endif; ?>
 
-        <!-- Form chọn khóa học -->
-        <?php elseif ($view === 'choose_course'): ?>
-            <div class="form-box">
-                <h2>Chọn Khóa Học</h2>
-                <form method="POST">
-                    <select name="course_id" required>
-                        <option value="" disabled selected>Chọn khóa học</option>
-                        <?php
-                        $result = $conn->query("SELECT id, khoa_hoc FROM khoa_hoc");
-                        if ($result->num_rows > 0) {
-                            while ($course = $result->fetch_assoc()): ?>
-                                <option value="<?= $course['id'] ?>"><?= htmlspecialchars($course['khoa_hoc']) ?></option>
-                            <?php endwhile; ?>
-                        <?php } else { ?>
-                            <option disabled>Không có khóa học nào!</option>
-                        <?php } ?>
-                    </select>
-                    <button type="submit" name="choose_course">Xác nhận</button>
-                </form>
-            </div>
-        <?php endif; ?>
-    </div>
+    <form method="post" action="">
+        <input type="text" name="student_id" placeholder="Mã sinh viên" required>
+        <input type="password" name="password" placeholder="Mật khẩu" required>
+        <input type="submit" value="Đăng nhập">
+    </form>
+</div>
+
 </body>
 </html>
-<?php $conn->close(); ?>
