@@ -1,4 +1,8 @@
 <?php
+date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
+$time = date('H:i:s d/m/Y');
+
+// Bắt dầu phiên làm việc 
 session_start();
 
 // Bật hiển thị lỗi để debug
@@ -7,8 +11,8 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Kiểm tra đăng nhập
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['bai_hoc']) || !isset($_SESSION['ten_khoa'])) {
-    header("Location: index.php");
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['ten_khoa']) || !isset($_SESSION['id_baitest'])) {
+    header("Location: login.php");
     exit;
 }
 
@@ -34,6 +38,7 @@ function getCoursesFromDB() {
     return $courses;
 }
 
+
 // Lấy số lần thử
 function getTestInfo($ten_test, $ten_khoa) {
     $conn = dbconnect();
@@ -58,7 +63,7 @@ function getTestInfo($ten_test, $ten_khoa) {
     return 1;
 }
 
-// Lấy câu hỏi
+// lấy cau hỏi từ cơ sở dữ liệu
 function getQuestionsFromDB($ten_khoa, $id_baitest) {
     $conn = dbconnect();
     $sql = "SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?";
@@ -91,7 +96,6 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
     }
     $stmt->close();
     $conn->close();
-
     
     if (count($questions) < 5) {
         die("Lỗi: Không đủ 5 câu hỏi cho '$ten_khoa' và '$id_baitest'.");
@@ -124,6 +128,11 @@ $time = htmlspecialchars($_SESSION["time"] ?? date("d-m-Y H:i:s"));
 $answers = $_SESSION["answers"] ?? [];
 $selected_question_indices = $_SESSION["selected_questions"] ?? [];
 $total = count($selected_question_indices);
+$pass_status = $_SESSION["pass_status"] ?? false;
+$max_pass = $_SESSION["max_pass"] ?? 0;
+$pass_score = 4; // phải đúng ít nhất 4 câu
+$pass_status = ($score >= $pass_score) ? 'Đạt' : 'Không đạt';
+
 ?>
 
 <!DOCTYPE html>
@@ -138,11 +147,12 @@ $total = count($selected_question_indices);
         <h1>🎉 Kết quả Quiz - <?= htmlspecialchars($ten_khoa)?> - <?= htmlspecialchars($id_baitest)?>🎉</h1>
         <p><strong>Khóa học:</strong> <?= htmlspecialchars($ten_khoa) ?></p>
         <p><strong>Bài test:</strong> <?= htmlspecialchars($id_baitest) ?></p>
+        <p><strong>Thời gian làm bài: </strong> <?= $time ?></p>
         <p><strong>Tổng điểm:</strong> <?= $score ?> / <?= $total ?></p>
         <p><strong>Điểm cao nhất:</strong> <?= $highest_score ?> / <?= $total ?></p>
-        <p><strong>Ngày làm bài:</strong> <?= $time ?></p>
         <p><strong>Số lần làm bài:</strong> <?= $attempts ?> / <?= $max_attempts ?></p>
-        <p><strong>Điểm Pass/fail</strong><?= $pass ?>/ <?= $max_pass ?></p>
+        <p><strong>Trang thái :</strong> <? $pass_score ?><?= $score >= $pass_score ? 'Đạt' : 'Không đạt' ?></p>
+
         <hr>
         <h2>Chi tiết câu trả lời</h2>
 
@@ -176,15 +186,17 @@ $total = count($selected_question_indices);
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                    <?php if ($userAnswer !== null): ?>
+                     <?php if ($userAnswer !== null): ?>
                         <div class="explanation-block" style="border-color: <?= $isCorrect ? 'green' : 'red' ?>;">
                             <?php if ($isCorrect): ?>
-                                <p><strong>Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]] ?? 'Không có giải thích') ?></p>
+                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p>
                             <?php else: ?>
-                                <!-- <p><strong>Đáp án đúng:</strong> <span class="correct-answer"><?= $question_data["correct"] ?>. <?= htmlspecialchars($question_data["choices"][$question_data["correct"]]) ?></span></p> -->
-                                <p><strong>Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]] ?? 'Không có giải thích') ?></p>
+                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p>
                             <?php endif; ?>
+
                         </div>
+
+                     
                     <?php else: ?>
                         <div class="explanation-block" style="border-color: orange;">
                             <p style="color: orange; font-weight: bold;">Bạn chưa trả lời câu hỏi này!</p>
@@ -197,10 +209,11 @@ $total = count($selected_question_indices);
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <a href="<?= $attempts >= $max_attempts ? '#' : 'FAQ.php?reset=1&ten_khoa=' . urlencode($ten_khoa) . '&id_baitest=' . urlencode($id_baitest) ?>" 
-           class="try-again <?= $attempts >= $max_attempts ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / <?= $max_attempts ?>)</a>
-           
-        <!-- <a href="" class="back-to-login">🏠 Quay lại bài học</a> -->
+        <a href="FAQ.php<?= $attempts >= $max_attempts ? '#' : 'FAQ.php?reset=1&ten_khoa=' . urlencode($ten_khoa) . '&id_baitest=' . urlencode($id_baitest) ?>" 
+           class="try-again <?= $attempts >= $max_attempts ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / <?= $max_attempts ?>)
+        
+        </a>
+        
     </div>
 </body>
 </html>

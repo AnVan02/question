@@ -35,14 +35,14 @@ function getTestInfo($ten_test, $ten_khoa) {
     $id_khoa = array_search($ten_khoa, $courses);
     if ($id_khoa === false) die("Không tìm thấy khóa học '$ten_khoa'");
 
-    $stmt = $conn->prepare("SELECT lan_thu, Pass, so_cau_hien_thi FROM test WHERE ten_test = ? AND id_khoa = ?");
+    $stmt = $conn->prepare("SELECT lan_thu FROM test WHERE ten_test = ? AND id_khoa = ?");
     $stmt->bind_param("si", $ten_test, $id_khoa);
     $stmt->execute();
     $result = $stmt->get_result();
     $info = $result->fetch_assoc();
     $stmt->close();
     $conn->close();
-    return $info ?: ['lan_thu' => 1, 'pass' => 80, 'so_cau_hien_thi' => 5];
+    return $info ?: ['lan_thu' => 1];
 }
 
 //  Lấy câu hỏi 
@@ -107,8 +107,7 @@ if ($khoa_id === false || !in_array($khoa_id, $student_khoahoc)) {
 // Thông tin test
 $test_info = getTestInfo($id_baitest, $ten_khoa);
 $max_attempts = $test_info['lan_thu'];
-// $pass_score = $test_info['pass'] ?: 80;
-$total_questions = $test_info['so_cau_hien_thi'] ?: 5;
+$total_questions = 5; // Số câu hỏi mặc định là 5
 $questions = getQuestionsFromDB($ten_khoa, $id_baitest, $total_questions);
 
 // Session init
@@ -179,30 +178,41 @@ if ($current >= $total) {
     $test_id = $id_baitest;
     $best_score = $_SESSION["highest_score"];
     $max_score = $total > 0 ? $total : 1;
-    $pass = ($best_score / $max_score * 100 >= $pass_score) ? 'Passed' : 'Failed';
+    $pass = ($best_score / $max_score * 100 >= 80) ? 'Đạt' : 'Không đạt';
     saveTestResult($student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $_SESSION["attempts"], $max_attempts);
     header("Location: ketqua.php");
     exit;
 }
+// bài thì sô 2 hoặc những bài khác học xong mới ktra
+if ($test_info['lan_thu'] > 1) {
+    $sql = "SELECT COUNT(*) FROM kiem_tra WHERE Student_ID = ? AND Khoa_ID = ? AND Test_ID = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iis", $_SESSION['user_id'], $khoa_id, $id_baitest);
+    $stmt->execute();
+    $stmt->bind_result($attempts);
+    $stmt->fetch();
+    $stmt->close();
 
-
-
+    if ($attempts >= $max_attempts) {
+        die("Bạn đã hoàn thành bài kiểm tra này.");
+    }
+}
 
 
 // Hiển thị câu hỏi
 $question_index = $_SESSION["selected_questions"][$current] ?? null;
 $question_data = isset($question_index, $questions[$question_index]) ? $questions[$question_index] : null;
 $answer_labels = ['A', 'B', 'C', 'D'];
-
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quiz - <?= htmlspecialchars($ten_khoa) ?></title>
+    <title>Kiểm tra - <?= htmlspecialchars($ten_khoa) ?></title>
 </head>
 <body>
+    <!-- lấy tên từ bảng students  -->
     <h2>Xin chào học viên ID: <?= htmlspecialchars($_SESSION['user_id']) ?> - bạn đang học khóa: <?= htmlspecialchars($ten_khoa) ?></h2>
     <form method="post">
         <?php if ($question_data): ?>
@@ -232,9 +242,11 @@ $answer_labels = ['A', 'B', 'C', 'D'];
 
         <button type="submit" name="goBack">⬅️ Quay lại</button>
         <button type="submit" name="next">Tiếp theo ➡️</button>
-
-
-
+        
+        <?php if ($current >= $total - 1): ?>
+            <button type="submit" name="finish">Nộp bài</button>
+        <?php endif; ?>
+        
     </form>
 </body>
 </html>
@@ -302,4 +314,3 @@ $answer_labels = ['A', 'B', 'C', 'D'];
         margin: 12px 0;
     }
 </style>
-

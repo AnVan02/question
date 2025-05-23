@@ -212,6 +212,15 @@ if ($id_khoa > 0 && $khoa_hoc) {
         $stmt->close();
     }
 }
+
+// xu ly xoa bai kiem tra 
+if (isset($_get ['id_khoa']) ?? $id_khoa > 0){
+    $id_test(int($_get['delete_test'];
+    $stmt = $conn -> prepare ("DELETE FROM test WHERE ")
+    
+    
+    
+    ))}
 ?>
 
 <!DOCTYPE html>
@@ -297,6 +306,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         $error_message = "<p>Lỗi chuẩn bị truy vấn đếm câu hỏi: " . $conn->error . "</p>";
                     }
                     // Xác định hiển thị cho cột "câu hỏi" 
+
+                    
                     $cau_hoi_display = "$so_cau/{$row['so_cau_hien_thi']}";?>
                        <!-- $cau_hoi_display = "so_cau/5"?> -->
                     <tr>

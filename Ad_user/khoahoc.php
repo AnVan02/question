@@ -65,6 +65,8 @@ if (isset($_GET['edit_test']) && $id_khoa > 0) {
     }
 }
 
+// lấy tổng số cau hỏi trong quix
+
 // Xử lý cập nhật bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_khoa > 0) {
     $id_test = (int)$_POST['id_test'];
@@ -171,6 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
             }
             $stmt_count->close();
         }
+            
 
         if ($so_cau_hien_thi > $so_cau) {
             $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
@@ -193,7 +196,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
         }
     }
 }
-
 // Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
 $result = null;
 if ($id_khoa > 0 && $khoa_hoc) {
@@ -211,6 +213,9 @@ if ($id_khoa > 0 && $khoa_hoc) {
         $stmt->close();
     }
 }
+
+// lấy đúng câu hỏi va tong so cau trong quiz
+$result = null 
 ?>
 
 <!DOCTYPE html>
@@ -300,6 +305,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     // $cau_hoi_display = "$so_cau/{$row['so_cau_hien_thi']}";
                      $cau_hoi_display = "$so_cau/5";
                     ?>
+
                 
                     <tr>
                         <td><?php echo htmlspecialchars($row['id_test']); ?></td>

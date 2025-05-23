@@ -35,14 +35,14 @@ function getTestInfo($ten_test, $ten_khoa) {
     $id_khoa = array_search($ten_khoa, $courses);
     if ($id_khoa === false) die("Không tìm thấy khóa học '$ten_khoa'");
 
-    $stmt = $conn->prepare("SELECT lan_thu, Pass, so_cau_hien_thi FROM test WHERE ten_test = ? AND id_khoa = ?");
+    $stmt = $conn->prepare("SELECT lan_thu FROM test WHERE ten_test = ? AND id_khoa = ?");
     $stmt->bind_param("si", $ten_test, $id_khoa);
     $stmt->execute();
     $result = $stmt->get_result();
     $info = $result->fetch_assoc();
     $stmt->close();
     $conn->close();
-    return $info ?: ['lan_thu' => 1, 'pass' => 80, 'so_cau_hien_thi' => 5];
+    return $info ?: ['lan_thu' => 1];
 }
 
 //  Lấy câu hỏi 
@@ -107,8 +107,7 @@ if ($khoa_id === false || !in_array($khoa_id, $student_khoahoc)) {
 // Thông tin test
 $test_info = getTestInfo($id_baitest, $ten_khoa);
 $max_attempts = $test_info['lan_thu'];
-// $pass_score = $test_info['pass'] ?: 80;
-$total_questions = $test_info['so_cau_hien_thi'] ?: 5;
+$total_questions = 5; // Số câu hỏi mặc định là 5
 $questions = getQuestionsFromDB($ten_khoa, $id_baitest, $total_questions);
 
 // Session init
@@ -179,7 +178,7 @@ if ($current >= $total) {
     $test_id = $id_baitest;
     $best_score = $_SESSION["highest_score"];
     $max_score = $total > 0 ? $total : 1;
-    $pass = ($best_score / $max_score * 100 >= $pass_score) ? 'Passed' : 'Failed';
+    $pass = ($best_score / $max_score * 100 >= 80) ? 'Đạt' : 'Không đạt';
     saveTestResult($student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $_SESSION["attempts"], $max_attempts);
     header("Location: ketqua.php");
     exit;
@@ -210,11 +209,13 @@ $answer_labels = ['A', 'B', 'C', 'D'];
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quiz - <?= htmlspecialchars($ten_khoa) ?></title>
+    <title>Kiểm tra - <?= htmlspecialchars($ten_khoa) ?></title>
 </head>
 <body>
     <!-- lấy tên từ bảng students  -->
-    <h2>Xin chào học viên ID: <?= htmlspecialchars($_SESSION['user_id']) ?> - bạn đang học khóa: <?= htmlspecialchars($ten_khoa) ?></h2>
+    <h2>Xin chào học viên ID: <?= htmlspecialchars($_SESSION['user_ten']) ?> - bạn đang học khóa: <?= htmlspecialchars($ten_khoa) ?></h2>
+    <h2>Kiểm tra <?= htmlspecialchars($id_baitest) ?> - <?= htmlspecialchars($ten_khoa) ?></h2>    
+
     <form method="post">
         <?php if ($question_data): ?>
             <p><strong>Câu hỏi <?= $current + 1 ?>/<?= $total ?>:</strong> <?= htmlspecialchars($question_data['question']) ?></p>
@@ -241,11 +242,15 @@ $answer_labels = ['A', 'B', 'C', 'D'];
             <p style="color: red;"><?= $_SESSION['feedback'] ?></p>
         <?php endif; ?>
 
+        <?php if ($_SESSION ['feedback']) : ?>
+            <p style="color:blue;"><?= $_SESSION['feedback'] ?></p>
+        <?php endif; ?>
+
         <button type="submit" name="goBack">⬅️ Quay lại</button>
         <button type="submit" name="next">Tiếp theo ➡️</button>
         
         <?php if ($current >= $total - 1): ?>
-            <button href="ketqua.php"type="submit" name="finish">kiểm tra</button>
+            <button type="submit" name="finish">Nộp bài</button>
         <?php endif; ?>
         
     </form>
@@ -315,4 +320,3 @@ $answer_labels = ['A', 'B', 'C', 'D'];
         margin: 12px 0;
     }
 </style>
-
