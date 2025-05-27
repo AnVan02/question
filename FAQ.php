@@ -130,7 +130,19 @@ $answer_labels = ['A', 'B', 'C', 'D'];
 
         <div class="content-area">
             <div class="left-area">
-                <div class="progress">Câu <?= $current + 1 ?> / <?= $total ?></div>
+                <div class="progress">
+                    <?php
+                    $progress = "";
+                    for ($i = 1; $i <= $total; $i++) {
+                        if ($i == $current + 1) {
+                            $progress .= "<span style='color: #6f42c1; font-weight: bold;'>$i</span>";
+                        } else {
+                            $progress .= $i;
+                        }
+                    }
+                    echo $progress;
+                    ?>
+                </div>
                 <?php if ($_SESSION["feedback"]): ?>
                     <div class="result-box">
                         <?= $_SESSION["feedback"] ?>
