@@ -108,7 +108,6 @@ function getQuestionsFromDB($ten_khoa, $id_baitest) {
 $ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
 $id_baitest = $_GET['id_baitest'] ?? $_SESSION ['id_baitest'];
 
-
 // Kiểm tra quyền truy cập
 if ($ten_khoa !== $_SESSION['ten_khoa']) {
     die("Lỗi: Bạn không có quyền truy cập kết quả của khóa học '$ten_khoa'");
@@ -189,19 +188,17 @@ $pass_status = ($score >= $pass_score) ? 'Đạt' : 'Không đạt';
                      <?php if ($userAnswer !== null): ?>
                         <div class="explanation-block" style="border-color: <?= $isCorrect ? 'green' : 'red' ?>;">
                             <?php if ($isCorrect): ?>
-                                <p><strong> Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p>
+                                <!-- <p><strong> Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p> -->
                             <?php else: ?>
                                 <p><strong> Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]]) ?></p>
                             <?php endif; ?>
-
                         </div>
-
                      
                     <?php else: ?>
                         <div class="explanation-block" style="border-color: orange;">
                             <p style="color: orange; font-weight: bold;">Bạn chưa trả lời câu hỏi này!</p>
                             <!-- <p><strong>Đáp án đúng:</strong> <span class="correct-answer"><?= $question_data["correct"] ?>. <?= htmlspecialchars($question_data["choices"][$question_data["correct"]]) ?></span></p> -->
-                            <p><strong>Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]] ?? 'Không có giải thích') ?></p>
+                            <!-- <p><strong>Giải thích:</strong> <?= htmlspecialchars($question_data["explanations"][$question_data["correct"]] ?? 'Không có giải thích') ?></p> -->
                         </div>
                     <?php endif; ?>
                     <hr>
@@ -211,7 +208,6 @@ $pass_status = ($score >= $pass_score) ? 'Đạt' : 'Không đạt';
 
         <a href="FAQ.php<?= $attempts >= $max_attempts ? '#' : 'FAQ.php?reset=1&ten_khoa=' . urlencode($ten_khoa) . '&id_baitest=' . urlencode($id_baitest) ?>" 
            class="try-again <?= $attempts >= $max_attempts ? 'disabled' : '' ?>">🔁 Thử lại (<?= $attempts ?> / <?= $max_attempts ?>)
-        
         </a>
         
     </div>

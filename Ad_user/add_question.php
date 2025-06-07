@@ -1,4 +1,5 @@
 <?php
+
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "study");
     if ($conn->connect_error) {
@@ -26,9 +27,6 @@ if ($question_id) {
     $stmt->close();
     $conn->close();
 }
-
-
-
 
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $message = "<div style='color:green;'>Câu hỏi đã được lưu vào cơ sở dữ liệu!</div>";
@@ -120,19 +118,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
                 $choices['D'], $explanations['D'],
                 $correct);
         }
-
-        if ($stmt->execute()) {
-            $stmt->close();
-            $conn->close();
-            header("Location: question.php?success=1");
-            exit;
-        } else {
-            $message = "<div style='color:red;'>Lỗi khi lưu câu hỏi: " . $stmt->error . "</div>";
-            $stmt->close();
-            $conn->close();
+        // hiển thị thêm thành công
+            if ($stmt->execute()) {
+                $stmt->close();
+                $conn->close();
+                $message = "<div style='color:green;'>Thêm câu hỏi thành công!</div>";
+                // Không redirect nữa
+                // header("Location: question.php?success=1");
+                // exit;
+            } else {
+                $message = "<div style='color:red;'>Lỗi khi lưu câu hỏi: " . $stmt->error . "</div>";
+                $stmt->close();
+                $conn->close();
+            }
         }
     }
-}
 ?>
 
 <!DOCTYPE html>

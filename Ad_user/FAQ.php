@@ -204,7 +204,6 @@ $question_index = $_SESSION["selected_questions"][$current] ?? null;
 $question_data = isset($question_index, $questions[$question_index]) ? $questions[$question_index] : null;
 $answer_labels = ['A', 'B', 'C', 'D'];
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -213,7 +212,7 @@ $answer_labels = ['A', 'B', 'C', 'D'];
 </head>
 <body>
     <!-- lấy tên từ bảng students  -->
-    <h2>Xin chào học viên ID: <?= htmlspecialchars($_SESSION['user_ten']) ?> - bạn đang học khóa: <?= htmlspecialchars($ten_khoa) ?></h2>
+    <h2>Xin chào học viên ID: <?= htmlspecialchars($_SESSION['user_id']) ?> - bạn đang học khóa: <?= htmlspecialchars($ten_khoa) ?></h2>
     <h2>Kiểm tra <?= htmlspecialchars($id_baitest) ?> - <?= htmlspecialchars($ten_khoa) ?></h2>    
 
     <form method="post">
@@ -249,9 +248,9 @@ $answer_labels = ['A', 'B', 'C', 'D'];
         <button type="submit" name="goBack">⬅️ Quay lại</button>
         <button type="submit" name="next">Tiếp theo ➡️</button>
         
-        <?php if ($current >= $total - 1): ?>
+        <!-- <?php if ($current >= $total - 1): ?>
             <button type="submit" name="finish">Nộp bài</button>
-        <?php endif; ?>
+        <?php endif; ?> -->
         
     </form>
 </body>

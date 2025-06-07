@@ -44,8 +44,7 @@ try {
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
-
-
+    
 ?>
 
 <!DOCTYPE html>
@@ -123,19 +122,43 @@ try {
 </head>
 <body>
 
-<div class="content-container">
-    <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
-    <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
-    <tbody>
-        
-        <?php foreach ($question as $question )?>
-        <td>
-            <?php echo htmlspecialchars($question['cauhoi']); ?>
-            <?php echo htmlspecialchars($question['khoa_hoc']); ?>  
+<div class="container">
+        <form method="post">
+            <div class="question">Câu hỏi: <?= htmlspecialchars($question_data['question']) ?></div>
+            <?php if (!empty($question_data['image'])): ?>
+                <div class="question-image-container">
+                    <img src="<?= htmlspecialchars($question_data['image']) ?>" alt="Hình ảnh câu hỏi" class="question-image">
+                </div>
+            <?php endif; ?>
 
+            <?php foreach ($question_data['choices'] as $key => $value): ?>
+                <?php $label = $answer_labels[array_search($key, array_keys($question_data['choices']))]; ?>
+                <div class="answer">
+                    <input type="radio" name="answer" value="<?= htmlspecialchars($key) ?>" id="<?= htmlspecialchars($key) ?>"
+                        <?php if (isset($_SESSION['answers'][$current]['selected']) && $_SESSION['answers'][$current]['selected'] === $key): ?>
+                            checked
+                        <?php endif; ?>
+                    >
+                    <label for="<?= htmlspecialchars($key) ?>"><?= $label ?>. <?= htmlspecialchars($value) ?></label>
+                </div>
+            <?php endforeach; ?>
 
-        </td>
-    </tbody>
+            <div class="content-area">
+                <div class="left-area">
+                    <div class="progress">Câu <?= $current + 1 ?> / <?= $total ?> (Lần thử: <?= $_SESSION["attempts"] + 1 ?>/<?= $max_attempts ?>)</div>
+                    <?php if ($_SESSION['feedback']): ?>
+                        <div class="result-box">
+                            <?= $_SESSION['feedback'] ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="btn-area">
+                    <button type="submit" name="goBack" class="btn-prev">⬅️ Quay lại</button>
+                    <button type="submit" name="next" class="btn-next">Tiếp theo ➡️</button>
+                </div>
+            </div>
+        </form>
     </div>
-</body>
+    </body>
 </html>

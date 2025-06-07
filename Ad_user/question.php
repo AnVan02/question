@@ -152,7 +152,25 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                                 <!-- <td><?php echo htmlspecialchars($question['Id_cauhoi']); ?></td> -->
                                 <td><?php echo htmlspecialchars($question['id_baitest']); ?></td>
                                 <td><?php echo htmlspecialchars($question['ten_khoa']); ?></td>
-                                <td><?php echo htmlspecialchars($question['cauhoi']); ?></td>
+                                <td>
+                                    <?php echo htmlspecialchars($question['cauhoi']); ?>
+                                    <ul style="margin: 8px 0 0 20px; padding: 0;">
+                                        <p<?php if ($question['dap_an'] == 'A') echo ' style="color:blue;font-weight:bold;font-size:18px"'; ?>>
+                                            A. <?php echo htmlspecialchars($question['cau_a']); ?>
+                                        </p>
+                                        <p<?php if ($question['dap_an'] == 'B') echo ' style="color:blue;font-weight:bold;font-size:18px"'; ?>>
+                                            B. <?php echo htmlspecialchars($question['cau_a']); ?>
+                                        </p>
+                                        <p<?php if($question['dap_an'] == 'C') echo ' style="color:blue;font-weight:bold;font-size:18px"'; ?>>
+                                            C. <?php echo htmlspecialchars($question['cau_c']);?>
+                                        </p>
+                                        <p<?php if($question['dap_an'] == 'D') echo ' style="color:blue;font-weight:bold;font-size:18px"'; ?>>
+                                            D. <?php echo htmlspecialchars($question ['cau_d']);?>
+                                        </p>
+
+                                    </ul>
+                                </td>
+
                                 
                                 <td>
                                     <a href="add_question.php?question_id=<?php echo htmlspecialchars($question['Id_cauhoi']); ?>&id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-edit">Sửa</a>

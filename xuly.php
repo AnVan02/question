@@ -38,6 +38,7 @@ $article_tag = strtolower($article_tag); // Chuyển thành chữ thường
 $article_tag = preg_replace('/\s+/', ' ', $article_tag); // Xóa khoảng trắng thừa ở giữa
 $article_tag = str_replace('#', '', $article_tag);
 
+
 // Thư mục lưu trữ
 $imageDir = "uploads/images/";
 $videoDir = "uploads/videos/";

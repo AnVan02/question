@@ -213,14 +213,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
     }
 }
 
-// xu ly xoa bai kiem tra 
-if (isset($_get ['id_khoa']) ?? $id_khoa > 0){
-    $id_test(int($_get['delete_test'];
-    $stmt = $conn -> prepare ("DELETE FROM test WHERE ")
-    
-    
-    
-    ))}
+
 ?>
 
 <!DOCTYPE html>

@@ -35,8 +35,6 @@ if (isset($_GET['delete'])) {
     }
     $conn->close();
 }
-// xử lý 
-
 
 // Xử lý sửa khóa học
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_course"])) {
@@ -324,6 +322,7 @@ if (isset($_GET['edit'])) {
                 <button type="submit" name="add_course">Thêm khóa học</button>
             <?php endif; ?>
         </form>
+
         <br><h2>Danh sách khóa học</h2>
         <?php if (empty($khoa_hoc_list)): ?>
             <p style="text-align: center; color: #666;">Chưa có khóa học nào.</p>

@@ -65,8 +65,6 @@ if (isset($_GET['edit_test']) && $id_khoa > 0) {
     }
 }
 
-// lấy tổng số cau hỏi trong quix
-
 // Xử lý cập nhật bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_khoa > 0) {
     $id_test = (int)$_POST['id_test'];
@@ -138,6 +136,7 @@ if ($id_khoa > 0) {
         }
         $stmt->close();
     }
+    
 } else {
     $error_message = "<p>Lỗi: Không có ID khóa học được cung cấp. Vui lòng chọn khóa học từ danh sách.</p>";
 }
@@ -173,7 +172,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
             }
             $stmt_count->close();
         }
-            
 
         if ($so_cau_hien_thi > $so_cau) {
             $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
@@ -196,6 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
         }
     }
 }
+
 // Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
 $result = null;
 if ($id_khoa > 0 && $khoa_hoc) {
@@ -214,8 +213,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
     }
 }
 
-// lấy đúng câu hỏi va tong so cau trong quiz
-$result = null 
+
 ?>
 
 <!DOCTYPE html>
@@ -250,10 +248,10 @@ $result = null
                 <input type="text" id="pass" name="pass" value="<?php echo $editing ? htmlspecialchars($edit_test['pass']) : ''; ?>" required>
             </div>
 
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="so_cau_hien_thi">Số câu hiển thị:</label>
                 <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : '5'; ?>" min="1" required>
-            </div>
+            </div> -->
 
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
@@ -300,22 +298,19 @@ $result = null
                     } else {
                         $error_message = "<p>Lỗi chuẩn bị truy vấn đếm câu hỏi: " . $conn->error . "</p>";
                     }
-                    // Xác định hiển thị cho cột "câu hỏi" 
-                    // $cau_hoi_display = ($so_cau < $row['so_cau_hien_thi']) ? "$so_cau/{$row['so_cau_hien_thi']}" : $row['so_cau_hien_thi'];
-                    // $cau_hoi_display = "$so_cau/{$row['so_cau_hien_thi']}";
-                     $cau_hoi_display = "$so_cau/5";
-                    ?>
-
-                
+                    $cau_hoi_display = "$so_cau/$so_cau"?>
+                    
                     <tr>
                         <td><?php echo htmlspecialchars($row['id_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
                         <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
                         <td><?php echo htmlspecialchars($row['pass']); ?></td>
-                        <td><?php echo htmlspecialchars($cau_hoi_display);?>
-                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo ' <span style="color: red;">(Không đủ câu)</span>'; ?>
+                        <td><?php echo htmlspecialchars($cau_hoi_display); ?>
+                        
+                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo ' <span style="color: red;">(Không đủ hiển thị)</span>'; ?>
                             <?php if ($so_cau == 0) echo ' <span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
+                            
                         </td>
                             <td><?php echo htmlspecialchars($so_cau); ?></td>
                         <td>
@@ -323,8 +318,10 @@ $result = null
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
                             <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
                         </td>
-                        
 
+                        <td >
+                            <!-- <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a> -->
+                    
                     </tr>
                 <?php endwhile; ?>
             </table>

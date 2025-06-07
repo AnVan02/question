@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         $_SESSION['student_id'] = $user['Id'];
         
-        // Redirect based on student_id
+        // Chuyển hướng dựa trên student_id
         switch($user['Id']) {
             case 1:
                 header("Location: content1.php");
@@ -43,6 +43,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Mã sinh viên hoặc mật khẩu không đúng!";
     }
 }
+
+
 
 ?>
 
@@ -131,5 +133,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <p class="error"><?php echo $error; ?></p>
         <?php } ?>
     </div>
+
 </body>
 </html>
