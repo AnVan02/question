@@ -52,30 +52,7 @@
             </a>
         </li>
 
-        <li class="nav-item <?php if ($action === 'baohanh') { echo "active"; } ?>">
-            <a class="nav-link" href="index.php?action=baohanh&query=baohanh">
-                <i class="mdi mdi-import menu-icon"></i>
-                <span class="menu-title">Upload bảo hành</span>
-            </a>
-        </li>
-
-         <li class="nav-item <?php if ($action === 'check') { echo "active"; } ?>">
-            <a class="nav-link" href="index.php?action=check&query=check">
-                <i class="mdi mdi-file-excel menu-icon"></i>
-                <span class="menu-title">Xuất file excel</span>
-            </a>
-        </li>
-                
-        <li class="nav-item <?php if ($action === 'user') { echo "active"; } ?>">
-        <a class="nav-link" href="index.php?action=user&query=user">
-                <i class="mdi mdi-account-box-outline menu-icon"></i>
-                <span class="menu-title">User</span>
-            </a>
-        </li>
-    
-        
-        
-
+       
         <?php if($_SESSION['account_type'] == 2): ?>
             <li class="nav-item <?php if ($action === 'account') { echo "active"; } ?>">
                 <a class="nav-link" href="index.php?action=account&query=account_list">

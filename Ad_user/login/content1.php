@@ -126,8 +126,11 @@ try {
 <div class="content-container">
     <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
     <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
+    
     <tbody>
-        
+        <div class="question">Câu hỏi 
+            
+        </div>
         <?php foreach ($question as $question )?>
         <td>
             <?php echo htmlspecialchars($question['cauhoi']); ?>

@@ -1,263 +1,156 @@
 <?php
-// Hiển thị lỗi
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
+require_once "cauhoi.php";
 
-// Kết nối CSDL
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
-    if ($conn->connect_error) {
-        die("Không thể kết nối CSDL: " . $conn->connect_error);
-    }
-    $conn->set_charset("utf8mb4");
-    return $conn;
+
+// Initialize session variables
+if (!isset($_SESSION["current"])) $_SESSION["current"] = 0;
+if (!isset($_SESSION["score"])) $_SESSION["score"] = 0;
+if (!isset($_SESSION["feedback"])) $_SESSION["feedback"] = "";
+if (!isset($_SESSION["answers"])) $_SESSION["answers"] = [];
+if (!isset($_SESSION["attempts"])) $_SESSION["attempts"] = 0;
+if (!isset($_SESSION["highest_score"])) $_SESSION["highest_score"] = 0;
+if (!isset($_SESSION["time"])) $_SESSION["time"] = date("d-m-Y H:i:s");
+
+// Select 5 random questions at the start of the quiz
+if (!isset($_SESSION["selected_questions"]) || isset($_GET["reset"])) {
+    $question_keys = array_keys($questions);
+    shuffle($question_keys);
+    $_SESSION["selected_questions"] = array_slice($question_keys, 0, 5);
 }
 
-//  Lấy danh sách khóa học 
-function getCoursesFromDB() {
-    $conn = dbconnect();
-    $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
-    $result = $conn->query($sql);
-    $courses = [];
-    while ($row = $result->fetch_assoc()) {
-        $courses[$row['id']] = $row['khoa_hoc'];
-    }
-    $conn->close();
-    return $courses;
-}
-
-// Lấy thông tin bài test 
-function getTestInfo($ten_test, $ten_khoa) {
-    $conn = dbconnect();
-    $courses = getCoursesFromDB();
-    $id_khoa = array_search($ten_khoa, $courses);
-    if ($id_khoa === false) die("Không tìm thấy khóa học '$ten_khoa'");
-
-    $stmt = $conn->prepare("SELECT lan_thu FROM test WHERE ten_test = ? AND id_khoa = ?");
-    $stmt->bind_param("si", $ten_test, $id_khoa);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $info = $result->fetch_assoc();
-    $stmt->close();
-    $conn->close();
-    return $info ?: ['lan_thu' => 1];
-}
-
-//  Lấy câu hỏi 
-function getQuestionsFromDB($ten_khoa, $id_baitest, $required_count = 5) {
-    $conn = dbconnect();
-    $stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
-    $stmt->bind_param("ss", $ten_khoa, $id_baitest);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $questions = [];
-    while ($row = $result->fetch_assoc()) {
-        $questions[] = [
-            'id' => $row['Id_cauhoi'],
-            'question' => $row['cauhoi'],
-            'choices' => [
-                'A' => $row['cau_a'],
-                'B' => $row['cau_b'],
-                'C' => $row['cau_c'],
-                'D' => $row['cau_d']
-            ],
-            'correct' => $row['dap_an'],
-            'image' => $row['hinhanh']
-        ];
-    }
-    $stmt->close();
-    $conn->close();
-
-    if (count($questions) < $required_count) {
-        die("Số câu hỏi không hợp lệ (" . count($questions) . ").");
-    }
-    return $questions;
-}
-
-//  Lưu kết quả 
-function saveTestResult($student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $trial, $max_trial) {
-    $conn = dbconnect();
-    $sql = "INSERT INTO kiem_tra (Student_ID, Khoa_ID, Test_ID, Best_Score, Max_Score, Pass, Trial, Max_trial)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE Best_Score = ?, Trial = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iiisssissi", $student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $trial, $max_trial, $best_score, $trial);
-    $stmt->execute();
-    $stmt->close();
-    $conn->close();
-}
-
-// Kiểm tra session 
-if (!isset($_SESSION['user_id'], $_SESSION['ten_khoa'], $_SESSION['id_baitest'])) {
-    header("Location: login.php");
+// Check attempt limit
+if ($_SESSION["attempts"] >= 3) {
+    header("Location: ketqua.php?limit_exceeded=1");
     exit;
 }
 
-$ten_khoa = $_GET['ten_khoa'] ?? $_SESSION['ten_khoa'];
-$id_baitest = $_GET['id_baitest'] ?? $_SESSION['id_baitest'];
-$courses = getCoursesFromDB();
-$student_khoahoc = explode(',', $_SESSION['students']['Khoahoc'] ?? '');
-$khoa_id = array_search($ten_khoa, $courses);
-if ($khoa_id === false || !in_array($khoa_id, $student_khoahoc)) {
-    die("Bạn không có quyền vào khóa học '$ten_khoa'");
+// Handle reset
+if (isset($_GET["reset"]) && $_SESSION["attempts"] < 3) {
+    $_SESSION["current"] = 0;
+    $_SESSION["score"] = 0;
+    $_SESSION["feedback"] = "";
+    $_SESSION["answers"] = [];
+    $_SESSION["time"] = date("d-m-Y H:i:s");
+    // Re-select random questions
+    $question_keys = array_keys($questions);
+    shuffle($question_keys);
+    $_SESSION["selected_questions"] = array_slice($question_keys, 0, 5);
+    header("Location: FAQ.php");
+    exit;
 }
-
-// Thông tin test
-$test_info = getTestInfo($id_baitest, $ten_khoa);
-$max_attempts = $test_info['lan_thu'];
-$total_questions = 5; // Số câu hỏi mặc định là 5
-$questions = getQuestionsFromDB($ten_khoa, $id_baitest, $total_questions);
-
-// Session init
-$_SESSION["current"] ??= 0;
-$_SESSION["score"] ??= 0;
-$_SESSION["answers"] ??= [];
-$_SESSION["feedback"] ??= "";
-$_SESSION["attempts"] ??= 0;
-$_SESSION["highest_score"] ??= 0;
-$_SESSION["time"] ??= date("d-m-Y H:i:s");
-
-// Chọn câu hỏi 
-if (!isset($_SESSION["selected_questions"])) {
-    $keys = array_keys($questions);
-    shuffle($keys);
-    $_SESSION["selected_questions"] = array_slice($keys, 0, $total_questions);
-}
+//
 
 $current = $_SESSION["current"];
-$total = $total_questions;
+$total = 5; // Fixed to 5 questions
 
-//  Xử lý form 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    if (isset($_POST["next"])) {
-        if (isset($_POST["answer"])) {
-            $selected = $_POST["answer"];
-            $q_index = $_SESSION["selected_questions"][$current];
-            $correct = $questions[$q_index]["correct"];
-            $_SESSION["answers"][$current] = [
-                "selected" => $selected,
-                "is_correct" => ($selected === $correct),
-                "question" => $q_index
-            ];
-            if ($selected === $correct) $_SESSION["score"]++;
-            $_SESSION["current"]++;
-            $_SESSION["feedback"] = "";
-            header("Location: FAQ.php?ten_khoa=$ten_khoa&id_baitest=$id_baitest");
-            exit;
-        } else {
-            $_SESSION["feedback"] = "<div style='color: orange;'>⚠️ Vui lòng chọn một đáp án!</div>";
-        }
-    }
+// Handle form submissions
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["next"])) {
+    if (isset($_POST["answer"])) {
+        $selected = $_POST["answer"];
+        $reason = isset($_POST["reason"]) ? trim($_POST["reason"]) : "";
+        $question_index = $_SESSION["selected_questions"][$current];
+        $correct = $questions[$question_index]["correct"];
 
-    if (isset($_POST["goBack"])) {
-        if ($_SESSION["current"] > 0) {
-            $_SESSION["current"]--;
+        // Store answer
+        $_SESSION["answers"][$current] = [
+            "selected" => $selected,
+            "is_correct" => ($selected === $correct),
+            "reason" => $reason
+        ];
+
+        // Update score
+        if ($selected === $correct) {
+            $_SESSION["score"]++;
         }
-        header("Location: FAQ.php?ten_khoa=$ten_khoa&id_baitest=$id_baitest");
+
+        $_SESSION["current"]++;
+        $_SESSION["feedback"] = "";
+        header("Location: FAQ.php");
         exit;
+    } else {
+        $_SESSION["feedback"] = "<div style='color: orange;'>⚠️ Vui lòng chọn một đáp án!</div>";
     }
 }
-// kiêm tra xem có câu hỏi nào chưa trả lời không
-$unanswered = array_filter($_SESSION["answers"], function($answer) {
-    return !isset($answer["selected"]);
-});
-if (count($unanswered) > 0) {
-    $_SESSION["feedback"] = "<div style='color: red;'>⚠️ Bạn chưa trả lời tất cả câu hỏi!</div>";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
+    $_SESSION["current"]++;
+    $_SESSION["feedback"] = "";
+    header("Location: FAQ.php");
+    exit;
 }
 
-// Kết thúc test 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
+    if ($_SESSION["current"] > 0) {
+        $_SESSION["current"]--;
+        $_SESSION["feedback"] = "";
+    }
+    header("Location: FAQ.php");
+    exit;
+}
+
+// Check if quiz is complete
 if ($current >= $total) {
     $_SESSION["attempts"]++;
     if ($_SESSION["score"] > $_SESSION["highest_score"]) {
         $_SESSION["highest_score"] = $_SESSION["score"];
     }
-
-    $student_id = $_SESSION['user_id'];
-    $test_id = $id_baitest;
-    $best_score = $_SESSION["highest_score"];
-    $max_score = $total > 0 ? $total : 1;
-    $pass = ($best_score / $max_score * 100 >= 80) ? 'Đạt' : 'Không đạt';
-    saveTestResult($student_id, $khoa_id, $test_id, $best_score, $max_score, $pass, $_SESSION["attempts"], $max_attempts);
+    $_SESSION["time"] = date("d-m-Y H:i:s");
     header("Location: ketqua.php");
     exit;
 }
-// bài thì sô 2 hoặc những bài khác học xong mới ktra
-if ($test_info['lan_thu'] > 1) {
-    $sql = "SELECT COUNT(*) FROM kiem_tra WHERE Student_ID = ? AND Khoa_ID = ? AND Test_ID = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iis", $_SESSION['user_id'], $khoa_id, $id_baitest);
-    $stmt->execute();
-    $stmt->bind_result($attempts);
-    $stmt->fetch();
-    $stmt->close();
 
-    if ($attempts >= $max_attempts) {
-        die("Bạn đã hoàn thành bài kiểm tra này.");
-    }
-}
+// Get current question
+$question_index = $_SESSION["selected_questions"][$current];
+$question_data = $questions[$question_index];
 
-
-// Hiển thị câu hỏi
-$question_index = $_SESSION["selected_questions"][$current] ?? null;
-$question_data = isset($question_index, $questions[$question_index]) ? $questions[$question_index] : null;
+// Map answer keys to A, B, C, D
 $answer_labels = ['A', 'B', 'C', 'D'];
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Kiểm tra - <?= htmlspecialchars($ten_khoa) ?></title>
-</head>
-<body>
-    <!-- lấy tên từ bảng students  -->
-    <h2>Xin chào học viên ID: <?= htmlspecialchars($_SESSION['user_id']) ?> - bạn đang học khóa: <?= htmlspecialchars($ten_khoa) ?></h2>
-    <h2>Kiểm tra <?= htmlspecialchars($id_baitest) ?> - <?= htmlspecialchars($ten_khoa) ?></h2>    
 
+<div class="container">
     <form method="post">
-        <?php if ($question_data): ?>
-            <p><strong>Câu hỏi <?= $current + 1 ?>/<?= $total ?>:</strong> <?= htmlspecialchars($question_data['question']) ?></p>
-
-            <?php if (!empty($question_data['image']) && file_exists($question_data['image'])): ?>
-                <img src="<?= htmlspecialchars($question_data['image']) ?>" alt="Hình minh họa" style="max-width: 400px;"><br>
-            <?php endif; ?>
-
-            <?php foreach ($question_data['choices'] as $key => $value): ?>
-                <div>
-                    <label>
-                        <input type="radio" name="answer" value="<?= $key ?>"
-                            <?= (isset($_SESSION['answers'][$current]) && $_SESSION['answers'][$current]['selected'] === $key) ? 'checked' : '' ?>>
-                        <?= $key ?>. <?= htmlspecialchars($value) ?>
-                    </label>
-                </div>
-            <?php endforeach; ?>
-
-        <?php else: ?>
-            <p style="color: red;">⚠️ Không thể tải câu hỏi. Vui lòng thử lại hoặc liên hệ quản trị viên.</p>
-        <?php endif; ?>
-    
-        <?php if ($_SESSION['feedback']): ?>
-            <p style="color: red;"><?= $_SESSION['feedback'] ?></p>
-        <?php endif; ?>
-
-        <?php if ($_SESSION ['feedback']) : ?>
-            <p style="color:blue;"><?= $_SESSION['feedback'] ?></p>
-        <?php endif; ?>
-
-        <button type="submit" name="goBack">⬅️ Quay lại</button>
-        <button type="submit" name="next">Tiếp theo ➡️</button>
+        <div class="question">Câu hỏi: <?= htmlspecialchars($question_data["question"]) ?></div>
         
-        <!-- <?php if ($current >= $total - 1): ?>
-            <button type="submit" name="finish">Nộp bài</button>
-        <?php endif; ?> -->
-        
-    </form>
-</body>
-</html>
+        <?php if (!empty($question_data["image"])): ?>
+            <div class="question-image-container">
+                <img src="<?= htmlspecialchars($question_data["image"]) ?>" alt="Hình ảnh câu hỏi" class="question-image">
+            </div>
+        <?php endif; ?>
+
+        <?php foreach ($question_data["choices"] as $key => $value): ?>
+            <?php $label = $answer_labels[array_search($key, array_keys($question_data["choices"]))]; ?>
+            <div class="answer">
+                <input type="radio" name="answer" value="<?= $key ?>" id="<?= $key ?>"
+                    <?php if (isset($_SESSION["answers"][$current]["selected"]) && $_SESSION["answers"][$current]["selected"] === $key): ?>
+                        checked
+                    <?php endif; ?>>
+
+                <label for="<?= $key ?>"><?= $label ?>. <?= htmlspecialchars($value) ?></label>
+            </div>
+        <?php endforeach; ?>
+        <div class="content-area">
+            <div class="left-area">
+                <div class="progress">Câu <?= $current + 1 ?> / <?= $total ?></div>
+                <?php if ($_SESSION["feedback"]): ?>
+                    <div class="result-box">
+                        <?= $_SESSION["feedback"] ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="btn-area">
+                <button type="submit" name="goBack" class="btn-prev">⬅️ Quay lại</button>
+                <button type="submit" name="next" class="btn-next">Tiếp theo ➡️</button>
+            </div>
+
+        </form>
+    </div>
+</div>
 
 <style>
-    body {
+    /* Your existing CSS remains unchanged */
+      body {
         font-family: 'Arial', sans-serif;
         margin: 20px auto;
         max-width: 1300px;
@@ -265,57 +158,106 @@ $answer_labels = ['A', 'B', 'C', 'D'];
         color: #333;
         line-height: 1.6;
     }
-    h2 {
-        margin-bottom: 25px;
-        color: #2d3748;
-        font-size: 24px;
-        font-weight: 600;
-        text-align: center;
-        padding: 10px;
-        background-color: #edf2f7;
-        border-radius: 8px;
-    }
-   
-    form {
+    .container {
         max-width: 800px;
-        width: 100%;
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        margin: 0 auto;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
     }
-    p {
-        font-size: 1.1em;
-    }
-    label {
-        display: block;
-        margin: 10px 0;
-        cursor: pointer;
-    }
-    input[type="radio"] {
-        margin-right: 8px;
-    }
-    button {
-        background: #007bff;
-        color: #fff;
-        border: none;
-        padding: 10px 18px;
-        border-radius: 4px;
-        margin: 10px 8px 0 0;
-        font-size: 1em;
-        cursor: pointer;
-        transition: background 0.2s;
-    }
-   
-    img {
-        margin: 16px 0;
-        border-radius: 4px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-    }
-    .feedback {
-        color: #d9534f;
+    .question {
+        font-size: 20px;
         font-weight: bold;
-        margin: 12px 0;
+        color: #1a1a1a;
+        margin-bottom: 15px;
+    }
+    .question-image-container {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .question-image {
+        max-width: 100%;
+        height: auto;
+        display: inline-block;
+    }
+    .answer {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    .answer label {
+        display: block;
+        padding: 10px 15px;
+        border: 1px solid #d1d1d1;
+        border-radius: 25px;
+        font-size: 16px;
+        color: #1a1a1a;
+        cursor: pointer;
+        width: 100%;
+        transition: border-color 0.2s, color 0.2s;
+    }
+    .answer input[type="radio"]:checked + label {
+        border-color: #6f42c1;
+        color: #6f42c1;
+    }
+    .answer label:hover {
+        border-color: #6f42c1;
+    }
+    .content-area {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .left-area {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .progress {
+        font-size: 14px;
+        font-weight: bold;
+        color: #1a1a1a;
+    }
+    .result-box {
+        padding: 15px;
+        background: #f9f9f9;
+        border-left: 5px solid #ccc;
+        flex: 1;
+        font-size: 14px;
+    }
+    .btn-area {
+        flex: 1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        align-items: center;
+    }
+    .btn-skip, .btn-next, .btn-prev {
+        padding: 8px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn-skip, .btn-prev {
+        background: #fff;
+        border: 2px solid #6f42c1;
+        color: #6f42c1;
+    }
+    .btn-skip:hover, .btn-prev:hover {
+        background: #6f42c1;
+        color: #fff;
+        border-color: #6f42c1;
+    }
+    .btn-next {
+        background: #6f42c1;
+        border: none;
+        color: #fff;
+    }
+    .btn-next:hover {
+        background: #563d7c;
     }
 </style>

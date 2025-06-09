@@ -29,6 +29,8 @@ try {
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
+
+
 ?>
 
 
@@ -67,7 +69,26 @@ try {
 <body>
     <div class="content-container">
         <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
-        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
+        <p>Xin chào, <?htmlspecialchars($_SESSION ['student_name'])?></p>
+
+        <?php foreach ($questions as $index => $question): ?>
+        <div class =" question">
+            <h3>Câu hỏi <?= $index + 1 ?>: <?= htmlspecialchars($question['cauhoi']) ?></h3>
+            <?php if (!empty($question['hinhanh'])): ?>
+                <img src="<?= htmlspecialchars($question['hinhanh']) ?>" alt="Hình ảnh câu hỏi" style="max-width: 300px;">
+            <?php endif; ?>
+            <div class="options">
+                <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="A" required> A. <?= htmlspecialchars($question['cau_a']) ?></label><br>
+                <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="B"> B. <?= htmlspecialchars($question['cau_b']) ?></label><br>
+                <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="C"> C. <?= htmlspecialchars($question['cau_c']) ?></label><br>
+                <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="D"> D. <?= htmlspecialchars($question['cau_d']) ?></label>
+            </div>
+        </div>
+        <?php endforeach; ?>
+        <button type="submit" class="btn-sucmit">Nộp bài</button>        
+        
+   
+   
     </div>
 </body>
 </html>

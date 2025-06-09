@@ -33,7 +33,6 @@ if (isset($_GET['delete'])) {
     header("Location: baitest.php?ten_khoa=" . urlencode($ten_khoa) . "&message=" . urlencode($message));
     exit;
 }
-
 // Xử lý sửa câu hỏi
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_question"])) {
     $id = (int)$_POST["id"];

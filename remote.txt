@@ -1,0 +1,5 @@
+- tạo 1 file hiển thị 
++ lấy id + test_id = trên sql 
++ lấy sql nhập vap khi nhập vao sẽ hiện ra cau hỏi thuộc khoá học đó
++ khi nhập id + test_id chỉ có 1 file template duy nhất
+

@@ -12,10 +12,11 @@ function dbconnect () {
 
     }
     return $conn ;
-
     }
     $conn = dbconnect ();
 }
+
+
 
 $khoa_hoc = null;
 if ($id_khoa > 0) {
