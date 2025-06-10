@@ -1,5 +1,25 @@
-- tạo 1 file hiển thị 
-+ lấy id + test_id = trên sql 
-+ lấy sql nhập vap khi nhập vao sẽ hiện ra cau hỏi thuộc khoá học đó
-+ khi nhập id + test_id chỉ có 1 file template duy nhất
+- Tạo 1 template -> nhập id khoá học 
 
+<?php
+<?php if (!empty($questions)): ?>
+    <h3>Danh sách câu hỏi thuộc khoá học <?php echo htmlspecialchars($ten_khoa); ?>:</h3>
+    <?php foreach ($questions as $question): ?>
+        <div style="margin-bottom: 25px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #eee;">
+            <strong>Câu hỏi:</strong> <?php echo htmlspecialchars($question['cauhoi']); ?><br>
+            <?php if (!empty($question['hinhanh'])): ?>
+                <img src="<?php echo htmlspecialchars($question['hinhanh']); ?>" alt="Hình ảnh câu hỏi" style="max-width:300px;display:block;margin:10px 0;">
+            <?php endif; ?>
+            <ul>
+                <li>A. <?php echo htmlspecialchars($question['cau_a']); ?></li>
+                <li>B. <?php echo htmlspecialchars($question['cau_b']); ?></li>
+                <li>C. <?php echo htmlspecialchars($question['cau_c']); ?></li>
+                <li>D. <?php echo htmlspecialchars($question['cau_d']); ?></li>
+            </ul>
+            <div style="color: green; font-weight: bold;">
+                Đáp án đúng: <?php echo htmlspecialchars($question['dap_an']); ?>
+            </div>
+        </div>
+    <?php endforeach; ?>
+<?php elseif (isset($_POST['khoa_id'])): ?>
+    <p>Không tìm thấy câu hỏi nào cho khoá học này.</p>
+<?php endif; ?>

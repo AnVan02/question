@@ -13,6 +13,7 @@ $message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
 // Lấy ten_khoa từ GET
 $ten_khoa = isset($_GET['ten_khoa']) ? trim(urldecode($_GET['ten_khoa'])) : '';
 
+
 // Kiểm tra ten_khoa hợp lệ
 if (empty($ten_khoa)) {
     echo "<p>Tên môn học không hợp lệ.</p>";

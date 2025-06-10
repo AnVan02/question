@@ -97,7 +97,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
             }
             $stmt_count->close();
         }
-
+        
+        
         if ($so_cau_hien_thi > $so_cau) {
             $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
         } else {
@@ -118,6 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
         }
     }
 }
+
 
 // Lấy thông tin khóa học
 $khoa_hoc = null;
@@ -140,6 +142,7 @@ if ($id_khoa > 0) {
 } else {
     $error_message = "<p>Lỗi: Không có ID khóa học được cung cấp. Vui lòng chọn khóa học từ danh sách.</p>";
 }
+
 
 // Xử lý thêm bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
@@ -196,24 +199,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
 }
 
 // Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
-$result = null;
-if ($id_khoa > 0 && $khoa_hoc) {
-    $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, t.pass, t.so_cau_hien_thi, k.khoa_hoc 
-            FROM test t 
-            LEFT JOIN khoa_hoc k ON t.id_khoa = k.id 
-            WHERE t.id_khoa = ?";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
-    } else {
-        $stmt->bind_param("i", $id_khoa);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
+    $result = null;
+    if ($id_khoa > 0 && $khoa_hoc) {
+        $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, t.pass, t.so_cau_hien_thi, k.khoa_hoc 
+                FROM test t 
+                LEFT JOIN khoa_hoc k ON t.id_khoa = k.id 
+                WHERE t.id_khoa = ?";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            $error_message = "<p>Lỗi chuẩn bị truy vấn: " . $conn->error . "</p>";
+        } else {
+            $stmt->bind_param("i", $id_khoa);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+        }
     }
-}
 
-
+    
 ?>
 
 <!DOCTYPE html>
@@ -275,6 +278,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                     <th>Tổng số câu hỏi</th>
                     <th>Hành động</th>
                 </tr>
+                
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <?php
                     // Xác định loại bài test (Giữa kỳ hoặc Cuối kỳ) dựa trên ten_test

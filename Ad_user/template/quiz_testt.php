@@ -18,10 +18,10 @@ $khoa_hoc = $_SESSION['khoa_hoc'];
 $sql = "SELECT * FROM quiz WHERE ten_khoa = ? ORDER BY Id_cauhoi";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
-    die("Lỗi chuẩn bị truy vấn: " . $conn->error); 
+    die("Lỗi chuẩn bị truy vấn: " . $conn->error);
 }
 $stmt->bind_param("s", $khoa_hoc);
-$stmt->execute(); // chạy câu lệnh sql
+$stmt->execute();
 $result = $stmt->get_result();
 $questions = $result->fetch_all(MYSQLI_ASSOC);
 
@@ -62,25 +62,6 @@ $stmt->bind_param("sss", $student_id, $_SESSION['khoa_id'], $test_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $saved_answer = $result->fetch_assoc();
-
-
-// Kiểm tra nếu đã nộp bài
-$is_submitted = isset($_POST['submit_quiz']) || isset($_GET['view_answer']);
-
-if ($is_submitted) {
-    echo "<h2>Kết quả & Đáp án đúng</h2>";
-    echo "<table border='1' cellpadding='8' style='margin:auto;'>";
-    echo "<tr><th>Câu hỏi</th><th>Đáp án đúng</th></tr>";
-    foreach ($questions as $q) {
-        echo "<tr>";
-        echo "<td>" . htmlspecialchars($q['cauhoi']) . "</td>";
-        echo "<td style='color:green;font-weight:bold'>" . htmlspecialchars($q['dap_an']) . "</td>";
-        echo "</tr>";
-    }
-    echo "</table>";
-    echo "<div style='text-align:center;margin-top:20px;'><a href='quiz.php'><button>Quay lại làm lại</button></a></div>";
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -304,16 +285,26 @@ if ($is_submitted) {
     </style>
 </head>
 <body>
-    <!-- hiển thị tên môn học, loại bài thì  -->
+    <?php $so_cau_toi_thieu =5 ; ?>
+
     <div class="container">
-        <?php if (!empty ($questions)):?>
-        <h2>
-            <?php
-                echo "Môn học: <span style='color:#1565c0; margin:5px'>" . htmlspecialchars($questions[0]['ten_khoa']) . "</span><br>";
-                echo "Bài thi: <span style='color:#e67e22; margin:5px'>" . htmlspecialchars($questions[0]['id_baitest']) . "</span>";               
-            ?>
-        </h2>
-            <?php endif; ?>
+        <?php if (!empty ($questions) < $so_cau_toi_thieu):?>
+            <div class="error">
+                <div class="error">
+                    Không đủ câu hỏi (tối thiểu <?= $so_cau_toi_thieu ?> câu). Không hiển thị bài kiểm tra.
+                </div>
+            <?php elseif (!empty ($questions)) : ?>
+            <h2>
+                <?php
+                    echo "Môn học: <span style='color:#1565c0; margin:5px'>" . htmlspecialchars($questions[0]['ten_khoa']) . "</span><br>";
+                    echo "Bài thi: <span style='color:#e67e22; margin:5px'>" . htmlspecialchars($questions[0]['id_baitest']) . "</span>";               
+                ?>
+            </h2>
+            <?php else: ?>
+            <p class="error">Không tim thấy câu hỏi nào cho khoá hoc : <?php echo htmlspecialchars($khoa_hoc); ?></p>
+              <p>Vui lòng kiểm tra lại mã khoá học của bạn </p>
+            <?php endif;?>
+        </div>
 
         <!-- <h2>Câu hỏi <?php echo $current_question; ?> / <?php echo count($questions); ?></h2> -->
         
@@ -321,7 +312,7 @@ if ($is_submitted) {
             <div class="progress-bar">
                 <div class="progress" style="width: <?php echo ($current_question / count($questions)) * 100; ?>%"></div>
             </div>
-            <!-- Hiện thị câu hỏi, hình ảnh (nếu có ) -->
+
             <div class="question">
                 <h3><?php echo htmlspecialchars($questions[$current_question-1]['cauhoi']); ?></h3>
                 <?php if ($questions[$current_question-1]['hinhanh']): ?>
@@ -354,7 +345,7 @@ if ($is_submitted) {
                     <!-- <button type="submit">Lưu câu trả lời</button> -->
                 </form>
             </div>
-            <!-- Nút chuyển câu trước sau  -->
+
             <div class="navigation">
                 <?php if ($current_question > 1): ?>
                     <a href="?q=<?php echo $current_question-1; ?>"><button type="button">← Câu trước</button></a>
@@ -365,20 +356,17 @@ if ($is_submitted) {
                 <?php endif; ?>
             </div>
 
-          <!-- Nếu không có câu hỏi hỏi báo lỗi  -->
+          
         <?php else: ?>
             <p class="error">Không tìm thấy câu hỏi nào cho khóa học: <?php echo htmlspecialchars($khoa_hoc); ?></p>
             <p>Vui lòng kiểm tra lại mã khóa học của bạn.</p>
         <?php endif; ?>
 
         
-        
 
         <!-- <div style="text-align: center; margin-top: 30px;">
             <a href="logout.php"><button type="button" class="logout-btn">Đăng xuất</button></a>
         </div> -->
-
-        
         
     
     </div>

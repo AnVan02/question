@@ -25,9 +25,6 @@ $stmt->execute(); // chạy câu lệnh sql
 $result = $stmt->get_result();
 $questions = $result->fetch_all(MYSQLI_ASSOC);
 
-// Debug thông tin
-echo "<!-- Debug: Khoa học: " . htmlspecialchars($khoa_hoc) . " -->";
-echo "<!-- Debug: Số câu hỏi tìm thấy: " . count($questions) . " -->";
 
 // Lấy câu hỏi hiện tại
 $current_question = isset($_GET['q']) ? (int)$_GET['q'] : 1;
@@ -63,24 +60,16 @@ $stmt->execute();
 $result = $stmt->get_result();
 $saved_answer = $result->fetch_assoc();
 
-
-// Kiểm tra nếu đã nộp bài
-$is_submitted = isset($_POST['submit_quiz']) || isset($_GET['view_answer']);
-
-if ($is_submitted) {
-    echo "<h2>Kết quả & Đáp án đúng</h2>";
-    echo "<table border='1' cellpadding='8' style='margin:auto;'>";
-    echo "<tr><th>Câu hỏi</th><th>Đáp án đúng</th></tr>";
-    foreach ($questions as $q) {
-        echo "<tr>";
-        echo "<td>" . htmlspecialchars($q['cauhoi']) . "</td>";
-        echo "<td style='color:green;font-weight:bold'>" . htmlspecialchars($q['dap_an']) . "</td>";
-        echo "</tr>";
-    }
-    echo "</table>";
-    echo "<div style='text-align:center;margin-top:20px;'><a href='quiz.php'><button>Quay lại làm lại</button></a></div>";
-    exit;
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn-> setAttribute (PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $sql ="SELECT khoa_hoc FROM khoa_hoc WHERE id= K001";
+    $stmt = $conn ->query ($sql);
+    $khoa_hoc = $stmt ->fetchColum();
+} catch (PDOException $e) {
+    die("Connection failed: ". $e -> getMessage());
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -121,36 +110,7 @@ if ($is_submitted) {
             padding-bottom: 15px;
         }
 
-        /* ...existing code... */
-          .question {
-               margin-bottom: 30px;
-               padding: 35px 30px;
-               border: 2px solid #3498db;
-               border-radius: 18px;
-               background: linear-gradient(120deg, #e3f0ff 0%, #f9fcff 100%);
-               box-shadow: 0 4px 16px rgba(52,152,219,0.10);
-               position: relative;
-               transition: box-shadow 0.3s;
-          }
-
-          .question:hover {
-               box-shadow: 0 8px 32px rgba(52,152,219,0.18);
-          }
-
-          .question h3 {
-               color: #1565c0;
-               font-size: 22px;
-               margin-bottom: 22px;
-               line-height: 1.6;
-               font-weight: bold;
-               letter-spacing: 0.5px;
-               text-shadow: 0 2px 8px #e3f0ff;
-               background: linear-gradient(90deg, #e3f0ff 60%, #bbdefb 100%);
-               padding: 10px 18px;
-               border-radius: 8px;
-               display: inline-block;
-               box-shadow: 0 1px 4px rgba(21,101,192,0.08);
-          }
+         
         .question img {
             max-width: 100%;
             height: auto;
@@ -177,7 +137,6 @@ if ($is_submitted) {
             min-height: 60px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
-
         .option:hover, .option:has(input[type="radio"]:checked) {
             background: #eaf6ff;
             box-shadow: 0 2px 8px rgba(52,152,219,0.08);
@@ -338,7 +297,8 @@ if ($is_submitted) {
                               'C' => ['text' => $questions[$current_question-1]['cau_c']],
                               'D' => ['text' => $questions[$current_question-1]['cau_d']] 
                         ];
-                       foreach ($options as $key => $option) {
+
+                        foreach ($options as $key => $option) {
                             $checked = ($saved_answer && $saved_answer['Best_Score'] == 1 && $key == $questions[$current_question-1]['dap_an']) ? 'checked' : '';
                             echo "<div class='option'>";
                             // Đặt input bên trong label để click vào đâu cũng chọn được
@@ -370,15 +330,11 @@ if ($is_submitted) {
             <p class="error">Không tìm thấy câu hỏi nào cho khóa học: <?php echo htmlspecialchars($khoa_hoc); ?></p>
             <p>Vui lòng kiểm tra lại mã khóa học của bạn.</p>
         <?php endif; ?>
-
-        
         
 
         <!-- <div style="text-align: center; margin-top: 30px;">
             <a href="logout.php"><button type="button" class="logout-btn">Đăng xuất</button></a>
         </div> -->
-
-        
         
     
     </div>

@@ -36,6 +36,8 @@ if (isset($_GET['delete'])) {
     $conn->close();
 }
 
+
+
 // Xử lý sửa khóa học
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_course"])) {
     $id = (int) $_POST["course_id"];
@@ -55,6 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_course"])) {
         $conn->close();
     }
 }
+
 
 // Xử lý thêm mới
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_course"])) {
@@ -86,7 +89,6 @@ if ($result && $result->num_rows > 0) {
 }
 $conn->close();
 
-// Nếu đang sửa
 $editing = false;
 $edit_khoa_hoc = '';
 $edit_id = 0;
@@ -105,7 +107,6 @@ if (isset($_GET['edit'])) {
     $conn->close();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -339,6 +340,8 @@ if (isset($_GET['edit'])) {
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
+    </div>
+
     </div>
 </body>
 </html>
