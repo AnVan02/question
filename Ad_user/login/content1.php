@@ -5,11 +5,12 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
 
-// session_start();
-// if (!isset($_SESSION['student_id'])) {
-//     header("Location: login.php");
-//     exit();
-// }
+session_start();
+if (!isset($_SESSION['student_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
 
 function dbconnect (){
    $conn = new mysqli("localhost", "root", "", "study");

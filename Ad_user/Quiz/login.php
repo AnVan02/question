@@ -27,21 +27,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Chuyển hướng dựa trên student_id
         switch($user['Id']) {
             case 1:
-                header("Location: content1.php");
+                header("Location:Hoahoc.php");
                 break;
             case 2:
-                header("Location: content2.php");
+                header("Location:Van.php");
                 break;
             case 3:
-                header("Location: content3.php");
+                header("Location:Yolo.php");
                 break;
-             
+            case 4:
+                header("Location:Toan.php");
+                break;
+            case 5:
+                header("Location:Python_nc.php");
+                break;
+             case 6:
+                header("Location:Python_cb.php");
+                break;
+            case 7:
+                header("Location:Tienganh.php");
+                break;
+            case 8:
+                header("Location:sinhhoc.php");
+                break;
+        
             default:
                 $error = "Không có quyền truy cập!";
         }
         exit();
     } else {
-        $error = "Mã sinh viên hoặc mật khẩu không đúng!";
+        $error = "Id hoặc mật khẩu không đúng";
     }
 }
 
@@ -53,7 +68,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <title>Đăng nhập</title>
     <style>
-    
 
         body {
             font-family : Arial , sans-serif;

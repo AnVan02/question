@@ -6,11 +6,29 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+
+session_start();
+if (!isset($_SESSION['student_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
 // Database connection
 $conn = new mysqli("localhost", "root", "", "study");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
+
+$student_id = $_SESSION ['student_id'];
+
+// Kiểm tra quyền truy cập
+if ($student_id == 1 ) {
+    // Cho phép truy cập
+} else {
+    echo "Bạn không có quyền truy cập khoá học này";
+    exit();
+}
+
 
 // lấy khoá học từ bảng khoa_hoc
 function getCoursesFromDB($conn) {
@@ -45,7 +63,7 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
 }
 // Khởi tạo biến
 $ten_khoa = '';
-$ma_khoa = 'K002';// Thay đồi khoá học
+$ma_khoa = 'K003';// Thay đồi khoá học
 $current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
 $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
