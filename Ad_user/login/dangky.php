@@ -3,7 +3,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }

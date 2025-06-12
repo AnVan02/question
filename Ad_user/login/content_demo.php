@@ -6,7 +6,7 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Kết nối thất bại: " . $conn->connect_error);
     }
@@ -16,7 +16,7 @@ function dbconnect() {
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "study";
+$dbname = "student";
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);

@@ -12,10 +12,19 @@ lấy dữ liệu id khoá học từ bảng khoa_hoc
 kết nối sql 
 
 # function dbconnect () {
-#    $conn = new mysql ("localhost" , "root" ,"", "study");
+#    $conn = new mysql ("localhost" , "root" ,"", "student");
 #    if($conn -> connect_error) {
 #        die("lỗi kết nối CSDL: ".$conn -> connect_error);
 #    }
 #    return $conn 
 # }
 
+// quyền truy cập vào vào bài 1 
+
+# // Kiểm tra quyền truy cập
+# if ($student_id == 1 ) {
+#   // Cho phép truy cập
+#  } else {
+#   echo "Bạn không có quyền truy cập khoá học này";
+#   exit();
+}

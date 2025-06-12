@@ -1,6 +1,6 @@
 <?php
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Kết nối CSDL thất bại: " . $conn->connect_error);
     }
@@ -21,6 +21,8 @@ if (isset($_GET['delete'])) {
     $count = $stmt->get_result()->fetch_assoc()['count'];
     $stmt->close();
 
+    // kiểm tr 
+
     if ($count > 0) {
         $message = "<div class='message error'>Không thể xóa khóa học vì có bài kiểm tra liên quan!</div>";
     } else {
@@ -35,6 +37,8 @@ if (isset($_GET['delete'])) {
     }
     $conn->close();
 }
+
+
 
 
 
@@ -78,6 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_course"])) {
     }
 }
 
+
 // Lấy danh sách khóa học
 $conn = dbconnect();
 $khoa_hoc_list = [];
@@ -91,6 +96,7 @@ $conn->close();
 
 $editing = false;
 $edit_khoa_hoc = '';
+
 $edit_id = 0;
 if (isset($_GET['edit'])) {
     $edit_id = (int) $_GET['edit'];
@@ -102,6 +108,8 @@ if (isset($_GET['edit'])) {
     if ($row = $result->fetch_assoc()) {
         $editing = true;
         $edit_khoa_hoc = $row['khoa_hoc'];
+
+
     }
     $stmt->close();
     $conn->close();
@@ -323,7 +331,6 @@ if (isset($_GET['edit'])) {
                 <button type="submit" name="add_course">Thêm khóa học</button>
             <?php endif; ?>
         </form>
-
         <br><h2>Danh sách khóa học</h2>
         <?php if (empty($khoa_hoc_list)): ?>
             <p style="text-align: center; color: #666;">Chưa có khóa học nào.</p>
@@ -341,7 +348,6 @@ if (isset($_GET['edit'])) {
             </ul>
         <?php endif; ?>
     </div>
-
     </div>
 </body>
 </html>

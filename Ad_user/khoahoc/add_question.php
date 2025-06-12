@@ -1,7 +1,7 @@
 <?php
 
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Kết nối thất bại: " . $conn->connect_error);
     }
@@ -11,6 +11,7 @@ function dbconnect() {
 $question_data = [];
 $question_id = isset($_GET['question_id']) && is_numeric($_GET['question_id']) ? (int)$_GET['question_id'] : null;
 $message = "";
+
 
 if ($question_id) {
     $conn = dbconnect();

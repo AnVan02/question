@@ -6,7 +6,7 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 function dbconnect () {
-    $conn = new mysql ("localhost", "root", "","study");
+    $conn = new mysql ("localhost", "root", "","student");
     if($conn ->connect_errono) {
         die ("kết nối cơ sở dữ liệu thất bại: ".$conn -> connect_error) ;{
 

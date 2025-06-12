@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Cơ sở dữ liệu: `study`
+-- Cơ sở dữ liệu: `student`
 --
 
 -- --------------------------------------------------------
@@ -37,13 +37,15 @@ CREATE TABLE `khoa_hoc` (
 --
 
 INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
-('005', 'Văn'),
-('10', 'Hoá học'),
-('K006', 'Python nâng cao'),
+('K001', 'Python cơ bản');
 ('K002', 'Tiếng anh'),
 ('K003', 'YOLO'),
 ('K004', 'Toán'),
-('K001', 'Python cơ bản');
+('005', 'Văn'),
+('10', 'Hoá học'),
+('K006', 'Python nâng cao'),
+('K008', 'Sinhhoc');
+
 
 -- --------------------------------------------------------
 
@@ -79,9 +81,9 @@ CREATE TABLE `login` (
 --
 
 INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
-(1, '1', '1'),
-(2, '2', '2'),
-(3, '3', '3'),
+(1, 'A', '1'),
+(2, 'B', '2'),
+(3, 'C', '3'),
 (4, '4', '4');
 
 -- --------------------------------------------------------
@@ -112,7 +114,7 @@ CREATE TABLE `quiz` (
 --
 
 INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
-(1, 'Giữa kỳ', 'Python nâng cao', 'Trong JavaScript, phương thức nào dùng để thêm phần tử vào cuối mảng?', NULL, 'push()', 'Phương thức push() thêm phần tử vào cuối mảng', 'pop()', 'pop() xóa phần tử cuối mảng', 'shift()', 'shift() xóa phần tử đầu mảng', 'unshift()', 'unshift() thêm phần tử vào đầu mảng', 'A'),
+(1, 'Giữa kỳ', 'Python cơ bản', 'Trong JavaScript, phương thức nào dùng để thêm phần tử vào cuối mảng?', NULL, 'push()', 'Phương thức push() thêm phần tử vào cuối mảng', 'pop()', 'pop() xóa phần tử cuối mảng', 'shift()', 'shift() xóa phần tử đầu mảng', 'unshift()', 'unshift() thêm phần tử vào đầu mảng', 'A'),
 (2, 'Cuối kỳ', 'Python nâng cao', 'Kết quả của đoạn code C sau là gì? ```int main() { int x = 3; printf(\"%d\", x++); return 0; }```', 'uploads/c_code.png', '3', 'x++ tăng x sau khi in, nên in 3', '4', 'Sai: x++ tăng sau khi in, không phải ++x', '0', 'Sai: code không trả về 0', 'Lỗi cú pháp', 'Code không có lỗi cú pháp', 'A'),
 (3, 'Cuối kỳ', 'Yolo', 'Trong lập trình, \"đệ quy\" là gì?', NULL, 'Hàm gọi chính nó', 'Đệ quy là khi hàm tự gọi lại với tham số khác', 'Vòng lặp vô hạn', 'Sai: đệ quy không phải vòng lặp vô hạn', 'Hàm không trả về', 'Sai: đệ quy không liên quan đến việc không trả về', 'Gọi hàm khác', 'Sai: đệ quy là gọi chính hàm đó', 'A'),
 (4, 'Cuối kỳ', 'Python cơ bản', 'Trong Java, từ khóa nào dùng để tạo đối tượng mới?', 'uploads/java_new.png', 'new', 'Từ khóa new cấp phát bộ nhớ cho đối tượng', 'create', 'Sai: Java không có từ khóa create', 'instance', 'Sai: instance không phải từ khóa', 'object', 'Sai: object không phải từ khóa tạo đối tượng', 'A'),
@@ -125,7 +127,7 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 (15, 'Giữa kỳ', 'Hoá học', 'H20 có nghĩa là gì', NULL, 'Nước', 'H2O được cấu tạo từ nước', 'khí', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'oxi', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'nito', 'JavaScript chủ yếu chạy trên trình duyệt.', 'A'),
 (17, 'Cuối kỳ', 'Hoá học', 'Công thức đường Glucose là gì', NULL, 'C6H12O12', 'đường glu là một loại monosaccharide', 'C6H12O6', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'C2H10O5', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'C12H23O8', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'A'),
 (18, 'Giữa kỳ', 'Văn', 'Đề thi THPT 2020 là bài nào', 'images/681dd199800ea.png', 'Tây tiến', 'PHP là ngôn ngữ phía server phổ biến.', 'Đất nước', 'CSS dùng để định dạng giao diện', 'Sóng', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'Ai đã đặt ten cho dòng sống', 'JavaScript chủ yếu chạy trên trình duyệt', 'B'),
-(19, 'Giữa kỳ', 'Python nâng cao', 'qqqqqqqqqqqqqq', NULL, 'PHP', 'PHP là ngôn ngữ phía server phổ biến.', 'CSS', 'CSS dùng để định dạng giao diện.', 'HTML', 'HTML là ngôn ngữ đánh dấu.', 'JavaScript', 'JavaScript chủ yếu chạy trên trình duyệt.', 'A'),
+(19, 'Giữa kỳ', 'Python cơ bản', 'qqqqqqqqqqqqqq', NULL, 'PHP', 'PHP là ngôn ngữ phía server phổ biến.', 'CSS', 'CSS dùng để định dạng giao diện.', 'HTML', 'HTML là ngôn ngữ đánh dấu.', 'JavaScript', 'JavaScript chủ yếu chạy trên trình duyệt.', 'A'),
 (20, 'Giữa kỳ', 'Python nâng cao', 'qqqqq', NULL, 'PHP', 'PHP là ngôn ngữ phía server phổ biến.', 'CSS', 'CSS dùng để định dạng giao diện', 'do-while', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'JavaScript', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'B'),
 (21, 'Giữa kỳ', 'Python nâng cao', '22222', NULL, 'PHP', 'Trong JavaScript, typeof null trả về \\\'object\\\' do một lỗi lịch sử trong thiết kế ngôn ngữ.', 'CSS', 'CSS dùng để định dạng giao diện', 'HTML', 'Python không có cấu trúc do-while. Nó sử dụng for, while và if để điều khiển luồng chương trình.', 'd', 'JavaScript chủ yếu chạy trên trình duyệt', 'C'),
 (22, 'Giữa kỳ', 'Python nâng cao', '2222222222', NULL, 'For', 'PHP là ngôn ngữ phía server phổ biến.', 'CSS', 'fdksghidfsi', 'HTML', 'echo dùng để xuất dữ liệu.', 'JavaScript', 'là 1 loại ngôn ngữ tieng anh', 'D'),
@@ -145,6 +147,9 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 (37, 'Cuối ky', 'Hoá học', 'saaaa', NULL, 'sa', 'sasas', 'hdhfhidshi', 'sss', 'hdskjhkdsh', 'ssasasa', 'sasa', 'dfkjshkdh', 'C'),
 (38, 'Giữa kỳ', 'Hoá học', 'assss', NULL, 'sa', 'á', 'sss', 'ssasa', 'sas', 'sss', 'sss', 'sas', 'C'),
 (39, 'Cuối ky', 'Hoá học', 'sssssssssss', NULL, 'saa', 'saa', 'aaaa', 'aabbb', 'sas', 'vccccccc', 'gkggdkfg', 'dsgg', 'C');
+(40,'Giữa kỳ', 'Sinh học', 'Bộ phận nào của tế bào chịu trách nhiệm sản xuất năng lượng?', NULL, 'Nhân tế bào', 'Nhân chứa ADN nhưng không sản xuất năng lượng', 'Ty thể', 'Ty thể là nơi tổng hợp ATP - nguồn năng lượng cho tế bào', 'Lưới nội chất', 'Lưới nội chất tham gia vào quá trình tổng hợp protein nhưng không trực tiếp tạo năng lượng', 'Màng tế bào', 'Màng tế bào giúp điều tiết chất đi vào và ra ngoài nhưng không sản xuất năng lượng', 'B'),
+(41, 'Giữa kỳ', 'Sinh học', 'Gen quy định màu mắt nằm trên nhiễm sắc thể nào?', NULL, 'NST số 1', 'Không đúng, gen quy định màu mắt thường nằm trên NST giới tính X', 'NST số 11', 'Một số gen liên quan đến màu mắt có thể nằm trên NST số 11', 'NST X', 'NST X chứa một số gen quyết định màu mắt', 'NST Y', 'NST Y chủ yếu liên quan đến các đặc điểm nam giới', 'C'),
+(42, 'Giữa kỳ ', 'Sinh học', 'Loài nào đóng vai trò chủ yếu trong việc cân bằng hệ sinh thái rừng?', NULL, 'Cây xanh', 'Cây xanh giúp chuyển hóa CO2 nhưng không chủ yếu duy trì cân bằng hệ sinh thái', 'Động vật ăn cỏ', 'Động vật ăn cỏ kiểm soát thực vật, ảnh hưởng đến cân bằng hệ sinh thái', 'Động vật ăn thịt', 'Động vật ăn thịt kiểm soát quần thể động vật ăn cỏ, giúp duy trì cân bằng sinh thái', 'Vi khuẩn phân hủy', 'Vi khuẩn phân hủy tái chế chất dinh dưỡng trong đất', 'C');
 
 -- --------------------------------------------------------
 

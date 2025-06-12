@@ -1,7 +1,7 @@
 <?php
 // Kết nối cơ sở dữ liệu
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "snt");
     if ($conn->connect_error) {
         die("Kết nối cơ sở dữ liệu thất bại: " . $conn->connect_error);
     }

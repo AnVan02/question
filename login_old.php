@@ -6,7 +6,7 @@ error_log("Debug: Login.php started");
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "study";
+$dbname = "student";
 
 // Connect DB
 try {

@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['ten_khoa']) || !isset($_SE
 
 // Hàm kết nối cơ sở dữ liệu
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Kết nối cơ sở dữ liệu thất bại: " . $conn->connect_error);
     }

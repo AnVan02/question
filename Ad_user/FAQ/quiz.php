@@ -7,7 +7,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Database connection
-$conn = new mysqli("localhost", "root", "", "study");
+$conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }

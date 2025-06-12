@@ -1,6 +1,6 @@
 <?php
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }

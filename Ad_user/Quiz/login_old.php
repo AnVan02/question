@@ -50,9 +50,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case 8:
                 header("Location:sinhhoc.php");
                 break;
-            case 9:
-                header("Location:hoahoc_old.php");
-                break;
         
             default:
                 $error = "Không có quyền truy cập!";

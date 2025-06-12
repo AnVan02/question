@@ -7,7 +7,7 @@ ini_set('error_log', '/var/log/php_errors.log'); // Điều chỉnh đường d�
 
 // Hàm kết nối cơ sở dữ liệu
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         error_log("Database connection failed: " . $conn->connect_error);
         die("Lỗi kết nối CSDL: " . $conn->connect_error);

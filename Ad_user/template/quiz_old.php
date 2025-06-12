@@ -8,7 +8,7 @@ if (!isset($_SESSION['khoa_hoc']) || !isset($_SESSION['student_id'])) {
 }
 
 // Kết nối database
-$conn = new mysqli("localhost", "root", "", "study");
+$conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }

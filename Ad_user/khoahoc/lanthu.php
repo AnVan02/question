@@ -6,7 +6,7 @@ if (!isset($_SESSION['csrf_token'])) {
 
 // Kết nối cơ sở dữ liệu
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }

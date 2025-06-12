@@ -18,7 +18,7 @@ if ($student_id == 1 || $student_id == 3) {
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "study";
+$dbname = "student";
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);

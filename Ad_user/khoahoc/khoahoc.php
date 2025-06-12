@@ -8,7 +8,7 @@ error_reporting(E_ALL);
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "study";
+$dbname = "student";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -23,6 +23,9 @@ $error_message = '';
 
 // Lấy id_khoa từ URL
 $id_khoa = isset($_GET['id_khoa']) ? (int)$_GET['id_khoa'] : 0;
+
+
+
 
 // Xử lý xóa bài kiểm tra
 if (isset($_GET['delete_test']) && $id_khoa > 0) {
@@ -42,6 +45,8 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
         $stmt->close();
     }
 }
+
+
 
 // Xử lý sửa bài kiểm tra
 $editing = false;
@@ -119,7 +124,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
         }
     }
 }
-
 
 // Lấy thông tin khóa học
 $khoa_hoc = null;

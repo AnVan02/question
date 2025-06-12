@@ -7,7 +7,7 @@ session_start();
 
 // Kết nối CSDL
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Không thể kết nối CSDL: " . $conn->connect_error);
     }

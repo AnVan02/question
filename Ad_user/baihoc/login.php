@@ -13,7 +13,7 @@ mb_http_output('UTF-8');
 
 // Kết nối cơ sở dữ liệu
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Kết nối thất bại: " . $conn->connect_error);
     }

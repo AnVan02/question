@@ -67,7 +67,7 @@
         }
 
         // Kết nối cơ sở dữ liệu
-        $conn = new mysqli("localhost", "root", "", "study");
+        $conn = new mysqli("localhost", "root", "", "student");
         if ($conn->connect_error) {
             echo "<p class='error'>Kết nối cơ sở dữ liệu thất bại: " . $conn->connect_error . "</p>";
             exit;

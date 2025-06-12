@@ -14,7 +14,7 @@ if (!isset($_SESSION['student_id'])) {
 
 // Hàm kết nối CSDL
 function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "study");
+    $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
         die("Kết nối thất bại: " . $conn->connect_error);
     }
@@ -22,7 +22,7 @@ function dbconnect() {
 }
 
 // Lấy id_test và id_khoa từ URL
-$id_test = $_GET['id_test'] ?? '';
+$baitest = $_GET['id_baitest'] ?? '';
 $id_khoa = $_GET['id_khoa'] ?? '';
 $enrolled_courses = $_SESSION['courses'] ?? [];
 $message = "";
@@ -120,8 +120,10 @@ if (empty($test_id) || empty($khoa_id)) {
 </head>
 <body>
     <div class="container">
-        <h2>Bài kiểm tra (ID: <?= htmlspecialchars($test_id) ?>)</h2>
-        <p>Xin chào, <?= htmlspecialchars($_SESSION['student_name'] ?? $_SESSION['student_id']) ?> | <a href="logout.php">Đăng xuất</a></p>
+        <h2>Bài kiểm tra  <?php echo htmlspecialchars($ten_khoa); ?></h2>
+        <p>Xin chào, <?php echo htmlspecialchars($id_baitest); ?>
+        
+
         <p><a href="tests.php">Quay lại danh sách bài kiểm tra</a></p>
         <?php if (!empty($message)) echo $message; ?>
 

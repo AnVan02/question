@@ -13,8 +13,11 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
+$ma_khoa = 'K002';// Thay đồi khoá học
+
+
 // Database connection
-$conn = new mysqli("localhost", "root", "", "study");
+$conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
@@ -41,6 +44,20 @@ function getCoursesFromDB($conn) {
     return $courses;
 }
 
+// Lấy tên bài test từ id_test
+$stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
+$stmt->bind_param("i", $id_test);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($row = $result->fetch_assoc()) {
+    $id_baitest = $row['ten_test'];
+} else {
+    die("Không tìm thấy tên bài test cho ID = $id_test");
+}
+$stmt->close();
+
+
+
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
     $courses = getCoursesFromDB($conn);
@@ -63,7 +80,6 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
 }
 // Khởi tạo biến
 $ten_khoa = '';
-$ma_khoa = 'K002';// Thay đồi khoá học
 $current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
 $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
@@ -79,7 +95,6 @@ $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     $ten_khoa = $row['khoa_hoc'];
-    $id_baitest = 'Giữa kỳ'; // Thay đổi phù hợp với cau hỏi 
     $stmt2 = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
     $stmt2->bind_param("ss", $ten_khoa, $id_baitest);
     $stmt2->execute();
@@ -172,6 +187,7 @@ $conn->close();
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
+            font-size:17px;
             color: #333;
         }
         .container {
@@ -317,7 +333,7 @@ $conn->close();
                                 $icon = '';
                                 if (isset($answers[$index]['selected']) && $key === $answers[$index]['selected']) {
                                     $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
-                                    $icon = $answers[$index]['is_correct'] ? 'grean' : 'red';
+                                    $icon = $answers[$index]['is_correct'] ? '' : '';
                                 }
                                 ?>
                                 <li class="<?php echo $style; ?>">

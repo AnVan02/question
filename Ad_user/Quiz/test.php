@@ -3,7 +3,7 @@
 session_start();
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
-$conn = new mysqli("localhost", "root", "", "study");
+$conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
@@ -66,7 +66,7 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-$conn = new mysqli("localhost", "root", "", "study");
+$conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     echo "Kết nối thất bại: " . $conn->connect_error;
     exit();
