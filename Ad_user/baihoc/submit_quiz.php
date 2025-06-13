@@ -1,111 +1,134 @@
 <?php
 session_start();
+require_once("dbconnect.php");
 
-// Kiểm tra đăng nhập
-if (!isset($_SESSION['student_id'])) {
+if (!isset($_SESSION['student_id']) || !isset($_SESSION['Khoahoc'])) {
     header("Location: login.php");
     exit();
 }
 
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "student");
-    if ($conn->connect_error) {
-        die("Kết nối thất bại: " . $conn->connect_error);
-    }
-    return $conn;
+if ($_SERVER["REQUEST_METHOD"] != "POST") {
+    header("Location: dashboard.php");
+    exit();
 }
 
-// Xử lý nộp bài
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $answers = $_POST['answer'] ?? [];
-    $test_id = $_GET['test_id'] ?? '';
-    $khoa_id = $_GET['khoa_id'] ?? '';
-    $student_id = $_SESSION['student_id'];
-    $enrolled_courses = $_SESSION['courses'] ?? [];
+$answers = $_POST['answers'] ?? [];
+$id_cauhoi = $_POST['id_cauhoi'] ?? [];
+$score = 0;
+$total_questions = count($id_cauhoi);
+
+$conn = dbconnect();
+foreach ($id_cauhoi as $index => $cauhoi_id) {
+    $stmt = $conn->prepare("SELECT dapan FROM quiz WHERE Id_cauhoi = ?");
+    $stmt->bind_param("i", $cauhoi_id);
+    $stmt->execute();
+    $stmt->bind_result($correct_answer);
+    $stmt->fetch();
+    $stmt->close();
     
-    if (!in_array($khoa_id, $enrolled_courses)) {
-        $message = "<div style='color:red;'>Bạn không có quyền vào khóa học này!</div>";
-    } else {
-        $conn = dbconnect();
-        
-        // Kiểm tra số lượt làm bài
-        $sql = "SELECT Tral, Max_tral FROM kiem_tra WHERE Student_ID = ? AND Test_ID = ? AND Khoa_ID = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sis", $student_id, $test_id, $khoa_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        
-        if ($row['Tral'] >= $row['Max_tral']) {
-            $message = "<div style='color:red;'>Bạn đã hết lượt làm bài kiểm tra này!</div>";
-        } else {
-            // Tính điểm
-            $score = 0;
-            $max_score = 0;
-            $sql = "SELECT Id_cauhoi, dap_an FROM quiz WHERE id_baitest = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("s", $test_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            while ($row = $result->fetch_assoc()) {
-                $max_score += 10; // Giả sử mỗi câu 10 điểm
-                if (isset($answers[$row['Id_cauhoi']]) && $answers[$row['Id_cauhoi']] === $row['dap_an']) {
-                    $score += 10;
-                }
-            }
-            
-            // Cập nhật điểm và số lượt làm bài
-            $sql = "UPDATE kiem_tra SET Best_Scone = GREATEST(Best_Scone, ?), Max_Scone = ?, Tral = Tral + 1 
-                    WHERE Student_ID = ? AND Test_ID = ? AND Khoa_ID = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("isisi", $score, $max_score, $student_id, $test_id, $khoa_id);
-            $stmt->execute();
-            
-            $message = "<div style='color:green;'>Nộp bài thành công! Điểm của bạn: $score/$max_score</div>";
-            $stmt->close();
-        }
-        $conn->close();
+    if (isset($answers[$cauhoi_id]) && $answers[$cauhoi_id] === $correct_answer) {
+        $score++;
     }
 }
 
+$conn->close();
+$percentage = ($total_questions > 0) ? ($score / $total_questions) * 100 : 0;
 ?>
 
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
+    <title>Kết quả</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kết quả bài kiểm tra</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .result-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .logout {
+            padding: 8px 16px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Kết quả bài kiểm tra</h2>
-        <p>Xin chào, <?= htmlspecialchars($_SESSION['student_name']) ?> | <a href="logout.php">Đăng xuất</a></p>
-        <p><a href="tests.php">Quay lại danh sách bài kiểm tra</a></p>
-        <?php if (!empty($message)) echo $message; ?>
+    <div class="header">
+        <h2>Xin chào, <?php echo htmlspecialchars($_SESSION['student_name'] ?? 'Người dùng'); ?></h2>
+        <a href="logout.php" class="logout">Đăng xuất</a>
+    </div>
+     <h1> Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?> </h1>
+            <p><strong>Khóa học:</strong> <?php echo htmlspecialchars($ten_khoa); ?></p>
+            <p><strong>Bài test:</strong> <?php echo htmlspecialchars($id_baitest); ?></p>
+            <p><strong>Thời gian hoàn thành:</strong> <?php echo date('H:i:s d/m/Y'); ?></p>
+            <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
+            <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
+            <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
+            <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <hr>
+            <?php if (empty($answers)): ?>
+                <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>
+            <?php else: ?>
+                <?php foreach ($_SESSION['questions'] as $index => $question): ?>
+                    <div class="question-block">
+                        <p class="question-text">Câu <?php echo $index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></p>
+                        <?php if (!empty($question['image'])): ?>
+                            <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
+                        <?php endif; ?>
+                        <ul>
+                            <?php foreach ($question['choices'] as $key => $value): ?>
+                                <?php
+                                $style = '';
+                                $icon = '';
+                                if (isset($answers[$index]['selected']) && $key === $answers[$index]['selected']) {
+                                    $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
+                                    $icon = $answers[$index]['is_correct'] ? '' : '';
+                                }
+                                ?>
+                                <li class="<?php echo $style; ?>">
+                                    <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?> <?php echo $icon; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if (isset($answers[$index]['selected'])): ?>
+                            
+                            <div class="explanation-block" style="border-color: <?php echo $answers[$index]['is_correct'] ? 'orange' : 'red'; ?>;">
+                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
+                            </div>
+                        <?php else: ?>
+                            <div class="explanation-block" style="border-color: orange;">
+                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
+                            </div>
+                        <?php endif; ?>
+                        <hr>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            <form method="POST" action="">
+                <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)</button>
+            </form>
     </div>
 </body>
 </html>
-
-<style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f4f4f4;
-    margin: 0;
-}
-h2 {
-    text-align: center;
-    color: rgb(247, 18, 18);
-    margin-bottom: 25px;
-}
-.container {
-    max-width: 1500px;
-    margin: auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-</style>

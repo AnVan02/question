@@ -10,10 +10,14 @@ error_reporting(E_ALL);
 session_start();
 if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
+    echo "<script>
+        alert('Vui lòng đăng nhập để truy cập!');
+        window.location.href = 'login.php';
+    </script>";
     exit();
 }
-$ma_khoa = 'K003';// Thay đồi khoá học
-$id_baitest = 'Giữa kỳ'; // Thay đổi phù hợp với cau hỏi 
+$ma_khoa = '3';// Thay đồi khoá học
+$id_test = '30'; // Thay đổi test phù hơp
 
 
 
@@ -29,9 +33,13 @@ $student_id = $_SESSION ['student_id'];
 if ($student_id == 1 ) {
     // Cho phép truy cập
 } else {
-    echo "Bạn không có quyền truy cập khoá học này";
+    echo "<script>
+        alert('Bạn không có quyền truy cập khóa học này!');
+        window.location.href = 'login.php';
+    </script>";
     exit();
 }
+
 
 
 // lấy khoá học từ bảng khoa_hoc
@@ -50,10 +58,12 @@ $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
 $stmt->execute();
 $result = $stmt->get_result();
-if ($row = $result->fetch_assoc()) {
-    $id_baitest = $row['ten_test'];
+
+if ($result->num_rows === 0) {
+    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
 } else {
-    die("Không tìm thấy tên bài test cho ID = $id_test");
+    $row = $result->fetch_assoc();
+    $id_baitest = $row['ten_test'];
 }
 $stmt->close();
 

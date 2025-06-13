@@ -8,12 +8,15 @@ error_reporting(E_ALL);
 
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    header("Location: login.php");
+    echo "<script>
+        alert('Vui lòng đăng nhập để truy cập!');
+        window.location.href = 'login.php';
+    </script>";
     exit();
 }
 
-$ma_khoa = 'K001';// Thay đồi khoá học
-$id_baitest = 'Cuối kỳ'; // Thay đổi phù hợp với cau hỏi 
+$ma_khoa = '1';// Thay đồi khoá học
+$id_test = '30'; // Thay đổi phù hợp với cau hỏi 
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
@@ -22,12 +25,14 @@ if ($conn->connect_error) {
 }
 
 $student_id = $_SESSION ['student_id'];
-
 // Kiểm tra quyền truy cập
-if ($student_id == 2 ) {
+if ($student_id == 1 ) {
     // Cho phép truy cập
 } else {
-    echo "Bạn không có quyền truy cập khoá học này";
+    echo "<script>
+        alert('Bạn không có quyền truy cập khóa học này!');
+        window.location.href = 'login.php';
+    </script>";
     exit();
 }
 
@@ -42,19 +47,20 @@ function getCoursesFromDB($conn) {
     }
     return $courses;
 }
-// lấy tên bai test từ id_test
-$stmt = $conn -> prepare ("SELECT ten_test FROM test WHERE id_test = ?");
-$stmt -> bind_param ("i",$id_test);
-$stmt -> execute ();
-$result = $stmt -> get_result ();
-if ($row = $result -> fetch_assoc ()) {
-    $id_baitest = $row ['ten_test'];
+
+// lấy tên bài test từ id_test
+$stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
+$stmt->bind_param("i", $id_test);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($result->num_rows === 0) {
+    echo "<script>alert('ID bai test ($id_test)không tôn tại trong hệ thông. Vui lòng kiêm tra lại!');</script>";
 } else {
-    die ("Không tim thấy tên bai test cho ID = $id_test");
+    $row = $result->fetch_assoc();
+    $id_baitest = $row['ten_test'];
+
 }
-$stmt -> close ();
-
-
+$stmt->close();
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {

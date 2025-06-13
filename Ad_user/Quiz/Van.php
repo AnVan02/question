@@ -6,16 +6,17 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    header("Location: login.php");
+    echo "<script>
+        alert('Vui lòng đăng nhập để truy cập!');
+        window.location.href = 'login.php';
+    </script>";
     exit();
 }
-$ma_khoa = 'K005';// Thay đồi khoá học
-$id_baitest = 'Cuối kỳ'; // Thay đổi phù hợp với cau hỏi 
 
-
+$ma_khoa = '10'; // Thay đồi khoá học
+$id_test = '24'; // Thay đổi test phù hơp
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
@@ -24,16 +25,17 @@ if ($conn->connect_error) {
 }
 
 
-$student_id = $_SESSION ['student_id'];
 
+$student_id = $_SESSION ['student_id'];
 // Kiểm tra quyền truy cập
 if ($student_id == 3 ) {
     // Cho phép truy cập
 } else {
-    echo "Bạn không có quyền truy cập khoá học này";
+    echo "<script>
+        alert('Bạn không có quyền truy cập khóa học này!');
+    </script>";
     exit();
 }
-
 
 // lấy khoá học từ bảng khoa_hoc
 function getCoursesFromDB($conn) {
@@ -51,16 +53,20 @@ $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
 $stmt->execute();
 $result = $stmt->get_result();
-if ($row = $result->fetch_assoc()) {
-    $id_baitest = $row['ten_test'];
+
+if ($result->num_rows === 0) {
+    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
 } else {
-    die("Không tìm thấy tên bài test cho ID = $id_test");
+    $row = $result->fetch_assoc();
+    $id_baitest = $row['ten_test'];
 }
 $stmt->close();
+
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
     $courses = getCoursesFromDB($conn);
+
     $id_khoa = array_search($ten_khoa, $courses);
     if ($id_khoa === false) {
         die("Lỗi: Không tìm thấy khóa học '$ten_khoa'");
@@ -187,9 +193,8 @@ $conn->close();
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
-            color: #333;
             font-size:17px;
-
+            color: #333;
         }
         .container {
             max-width: 1100px;
@@ -199,9 +204,11 @@ $conn->close();
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
+        
         h1, h2, h3 {
             color: #2c3e50;
             text-align: center;
+            
         }
         .question-box {
             background: #fff;
@@ -293,6 +300,7 @@ $conn->close();
                 Môn học: <span style="color:#1565c0;"><?php echo htmlspecialchars($ten_khoa); ?></span><br>
                 Bài thi: <span style="color:#e67e22;"><?php echo htmlspecialchars($id_baitest); ?></span>
             </h2>
+            
             <form method="POST" action="">
                 <div class="question-box">
                     <h3>Câu <?php echo $current_index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></h3>
@@ -361,5 +369,6 @@ $conn->close();
             </form>
         <?php endif; ?>
     </div>
+    
 </body>
 </html>

@@ -13,8 +13,8 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-$ma_khoa = 'K008';// Thay đồi khoá học
-$id_baitest = 'Giữa kỳ'; // Thay đổi phù hợp với cau hỏi 
+$ma_khoa = '8';// Thay đồi khoá học
+$id_test = '1'; // Thay đổi phù hợp với cau hỏi 
 
 
 // Database connection
@@ -50,11 +50,13 @@ $stmt -> bind_param ("i", $id_test);
 $stmt -> execute ();
 $result = $result -> get_result();
 if ($row = $result -> fetch_assoc()) {
-    $id_baitest = $row ['ten_test'];
+    echo "<script> alert ('ID bài test ($id_test) không tồn tại trong hệ thông. Vui lòng kiểm tra lại!');</script>";
 } else {
-    die ("Không tim thấy tên bài test cho id = $id_test");
+    $row = $result -> fetch_assoc();
+    $id_baitest = $row['ten_test'];
 }
 $stmt -> close ();
+
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {

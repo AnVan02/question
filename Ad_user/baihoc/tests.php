@@ -1,9 +1,8 @@
 <?php
 session_start();
 
-// Bật báo lỗi PHP để debug
+// Hiển thị lỗi
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Kiểm tra đăng nhập
@@ -16,53 +15,52 @@ if (!isset($_SESSION['student_id'])) {
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
-        die("Kết nối thất bại: " . $conn->connect_error);
+        die("Kết nối CSDL thất bại: " . $conn->connect_error);
     }
     return $conn;
 }
 
-// Lấy id_test và id_khoa từ URL
-$baitest = $_GET['id_baitest'] ?? '';
-$id_khoa = $_GET['id_khoa'] ?? '';
-$enrolled_courses = $_SESSION['courses'] ?? [];
-$message = "";
-$questions = [];
+$student_name = $_SESSION['student_name'] ?? $_SESSION['student_id'];
+$allowed_khoa_ids = $_SESSION['courses'] ?? [];
 
-// Kiểm tra quyền và dữ liệu đầu vào
-if (empty($test_id) || empty($khoa_id)) {
-    
-    $message = "<div style='color:red;'>Thiếu test_id hoặc khoa_id trong URL!</div>";
-} elseif (!in_array($khoa_id, $enrolled_courses)) {
-    $message = "<div style='color:red;'>Bạn không có quyền vào khóa học này!</div>";
-} else {
+$tests = [];
+
+if (!empty($allowed_khoa_ids)) {
     $conn = dbconnect();
 
-    // Lấy tên khóa học từ id
-    $stmt_khoa = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
-    $stmt_khoa->bind_param("i", $khoa_id);
+    // Lấy tên khóa học từ bảng `khoa_hoc`
+    $placeholders = implode(',', array_fill(0, count($allowed_khoa_ids), '?'));
+    $types = str_repeat('i', count($allowed_khoa_ids));
+
+    $stmt_khoa = $conn->prepare("SELECT id, khoa_hoc FROM khoa_hoc WHERE id IN ($placeholders)");
+    $stmt_khoa->bind_param($types, ...$allowed_khoa_ids);
     $stmt_khoa->execute();
-    $stmt_khoa->bind_result($ten_khoa);
-    $stmt_khoa->fetch();
+    $result_khoa = $stmt_khoa->get_result();
+
+    $khoa_map = [];
+    while ($row = $result_khoa->fetch_assoc()) {
+        $khoa_map[$row['id']] = $row['khoa_hoc'];
+    }
     $stmt_khoa->close();
 
-    if (!$ten_khoa) {
-        $message = "<div style='color:red;'>Không tìm thấy tên khóa học với id này!</div>";
-    } else {
-        // Lấy danh sách câu hỏi cho bài kiểm tra
-        $sql = "SELECT * FROM quiz WHERE id_baitest = ? AND ten_khoa = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ss", $test_id, $ten_khoa);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $questions[] = $row;
-            }
-        } else {
-            $message = "<div style='color:red;'>Không tìm thấy câu hỏi nào cho bài kiểm tra này.</div>";
+    // Lấy bài kiểm tra liên quan đến các khóa học này
+    foreach ($khoa_map as $khoa_id => $ten_khoa) {
+        $stmt_test = $conn->prepare("SELECT DISTINCT id_baitest FROM quiz WHERE ten_khoa = ?");
+        $stmt_test->bind_param("s", $ten_khoa);
+        $stmt_test->execute();
+        $result_test = $stmt_test->get_result();
+
+        while ($row = $result_test->fetch_assoc()) {
+            $tests[] = [
+                'id_test' => $row['id_baitest'],
+                'khoa_id' => $khoa_id,
+                'ten_khoa' => $ten_khoa
+            ];
         }
-        $stmt->close();
+
+        $stmt_test->close();
     }
+
     $conn->close();
 }
 ?>
@@ -71,84 +69,65 @@ if (empty($test_id) || empty($khoa_id)) {
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bài kiểm tra</title>
+    <title>Danh sách bài kiểm tra</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background: #eef;
             padding: 20px;
-            background: #f4f4f4;
-            margin: 0;
         }
         h2 {
-            text-align: center;
-            color: rgb(247, 18, 18);
-            margin-bottom: 25px;
+            color: #333;
         }
-        .container {
-            max-width: 900px;
-            margin: auto;
+        .test-list {
             background: #fff;
-            padding: 20px;
             border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        .question {
-            margin-bottom: 20px;
+        .test-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
         }
-        .options {
-            margin-top: 10px;
+        .test-item:last-child {
+            border-bottom: none;
         }
-        .options label {
-            display: block;
-            margin: 5px 0;
+        a.start-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
         }
-        .btn-submit {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+        a.start-link:hover {
+            text-decoration: underline;
         }
-        .btn-submit:hover {
-            background-color: #218838;
+        .logout {
+            text-align: right;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Bài kiểm tra  <?php echo htmlspecialchars($ten_khoa); ?></h2>
-        <p>Xin chào, <?php echo htmlspecialchars($id_baitest); ?>
-        
-
-        <p><a href="tests.php">Quay lại danh sách bài kiểm tra</a></p>
-        <?php if (!empty($message)) echo $message; ?>
-
-        <?php if (empty($questions) && empty($message)): ?>
-            <p>Không có câu hỏi nào cho bài kiểm tra này.</p>
-        <?php elseif (empty($message)): ?>
-            <form method="POST" action="submit_quiz.php?test_id=<?= urlencode($test_id) ?>&khoa_id=<?= urlencode($khoa_id) ?>">
-                <?php foreach ($questions as $index => $question): ?>
-                    <div class="question">
-                        <h3>Câu hỏi <?= $index + 1 ?>: <?= htmlspecialchars($question['cauhoi']) ?></h3>
-                        <?php if (!empty($question['hinhanh'])): ?>
-                            <img src="<?= htmlspecialchars($question['hinhanh']) ?>" alt="Hình ảnh câu hỏi" style="max-width: 300px;">
-                        <?php endif; ?>
-                        <div class="options">
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="A" required> A. <?= htmlspecialchars($question['cau_a']) ?></label><br>
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="B"> B. <?= htmlspecialchars($question['cau_b']) ?></label><br>
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="C"> C. <?= htmlspecialchars($question['cau_c']) ?></label><br>
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="D"> D. <?= htmlspecialchars($question['cau_d']) ?></label>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-                <button type="submit" class="btn-submit">Nộp bài</button>
-            </form>
-        <?php endif; ?>
-        
+<div class="test-list">
+    <div class="logout">
+        Xin chào, <?= htmlspecialchars($student_name) ?> | <a href="logout.php">Đăng xuất</a>
     </div>
+    <h2>Danh sách bài kiểm tra</h2>
+
+    <?php if (empty($tests)): ?>
+        <p>Không có bài kiểm tra nào có sẵn cho bạn.</p>
+    <?php else: ?>
+        <?php foreach ($tests as $test): ?>
+            <div class="test-item">
+                <strong>Khóa học:</strong> <?= htmlspecialchars($test['ten_khoa']) ?><br>
+                <strong>ID Bài kiểm tra:</strong> <?= htmlspecialchars($test['id_test']) ?><br>
+                <a class="start-link" href="quiz.php?id_test=<?= urlencode($test['id_test']) ?>&ma_khoa=<?= urlencode($test['khoa_id']) ?>">Làm bài</a>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
+
 </body>
 </html>

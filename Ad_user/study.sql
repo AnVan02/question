@@ -37,15 +37,14 @@ CREATE TABLE `khoa_hoc` (
 --
 
 INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
-('K001', 'Python cơ bản');
+('10', 'Hoá học'),
+('K001', 'Python cơ bản'),
 ('K002', 'Tiếng anh'),
 ('K003', 'YOLO'),
 ('K004', 'Toán'),
-('005', 'Văn'),
-('10', 'Hoá học'),
+('K005', 'Văn'),
 ('K006', 'Python nâng cao'),
-('K008', 'Sinhhoc');
-
+('K008', 'Sinh học');
 
 -- --------------------------------------------------------
 
