@@ -9,28 +9,24 @@ error_reporting(E_ALL);
 
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    header("Location: login.php");
     echo "<script>
         alert('Vui lòng đăng nhập để truy cập!');
         window.location.href = 'login.php';
     </script>";
     exit();
+    
 }
-$ma_khoa = '3';// Thay đồi khoá học
-$id_test = '11'; // Thay đổi test phù hơp
-
-
+$ma_khoa = '4';// Thay đồi khoá học
+$id_test = '11'; // Thay đổi phù hợp với cau hỏi 
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
-
 $student_id = $_SESSION ['student_id'];
-
 // Kiểm tra quyền truy cập
-if ($student_id == 1 ) {
+if ($student_id == 1 || $student_id == 2) {
     // Cho phép truy cập
 } else {
     echo "<script>
@@ -39,7 +35,6 @@ if ($student_id == 1 ) {
     </script>";
     exit();
 }
-
 
 
 // lấy khoá học từ bảng khoa_hoc
@@ -65,6 +60,7 @@ if ($result->num_rows === 0) {
     $row = $result->fetch_assoc();
     $id_baitest = $row['ten_test'];
 }
+
 $stmt->close();
 
 
@@ -199,6 +195,7 @@ $conn->close();
             padding: 20px;
             color: #333;
             font-size:17px;
+
         }
         .container {
             max-width: 1100px;
@@ -302,7 +299,6 @@ $conn->close();
                 Môn học: <span style="color:#1565c0;"><?php echo htmlspecialchars($ten_khoa); ?></span><br>
                 Bài thi: <span style="color:#e67e22;"><?php echo htmlspecialchars($id_baitest); ?></span>
             </h2>
-
             <form method="POST" action="">
                 <div class="question-box">
                     <h3>Câu <?php echo $current_index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></h3>

@@ -15,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['student_id'] = $db_student_id;
         $_SESSION['student_name'] = $student_name;
         $_SESSION['Khoahoc'] = $khoahoc; // Lưu danh sách khóa học
-        header("Location: quiz.php?id_test={$row['id_test']}&ma_khoa={$row['id_khoa']}'>{$row['ten_test']} ({$row['khoa_hoc']})");
+        header("Location: quiz.php?course_id=$id_test ");
         exit();
     } else {
         $error = "Đăng nhập thất bại. Vui lòng kiểm tra ID hoặc mật khẩu.";

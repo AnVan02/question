@@ -16,7 +16,7 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 $ma_khoa = '10'; // Thay đồi khoá học
-$id_test = '11'; // Thay đổi test phù hơp
+$id_test = ''; // Thay đổi test phù hơp
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
@@ -24,16 +24,6 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$student_id = $_SESSION ['student_id'];
-// Kiểm tra quyền truy cập
-if ($student_id == 1 ) {
-    // Cho phép truy cập khoa hoc
-} else {
-    echo "<script>
-        alert('Bạn không có quyền truy cập khóa học này!');
-    </script>";
-    exit();
-}
 
 
 // lấy khoá học từ bảng khoa_hoc

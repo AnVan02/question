@@ -12,13 +12,10 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
-
-$success_message = '';
-$error = '';
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $student_id = $_POST['student_id'];
     $password = $_POST['password'];
+    $khoahoc = $_POST['khoahoc'];
 
     $sql = "SELECT * FROM login WHERE Student_ID = :student_id AND Password = :password";
     $stmt = $conn->prepare($sql);
@@ -26,70 +23,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($stmt->rowCount() > 0) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        $_SESSION['student_id'] = $user['Id'];
-
-        $success_message = "Đăng nhập thành công! Chào mừng, " . htmlspecialchars($user['Student_ID']) . "!";
-
-        // Hiển thị thông báo rồi chuyển hướng
-       switch($user['Id']) {
-             case 1:
-                $redirect_url = "content1.php";
+        $_SESSION['khoahoc, student_id'] = $user['Id'];
+        
+        // Chuyển hướng dựa trên student_id
+        switch($user['Id']) {
+            case 1:
+                header("Location:Hoahoc.php");
                 break;
             case 2:
-                $redirect_url = "content2.php";
+                header("Location:Van.php");
                 break;
             case 3:
-                $redirect_url = "content3.php";
+                header("Location:Yolo.php");
                 break;
-          
-            
+            case 4:
+                header("Location:Toan.php");
+                break;
+            case 5:
+                header("Location:Python_nc.php");
+                break;
+             case 6:
+                header("Location:Python_cb.php");
+                break;
+            case 7:
+                header("Location:Tienganh.php");
+                break;
+            case 8:
+                header("Location:sinhhoc.php");
+                break;
+            case 9:
+                header("Location:hoahoc_old.php");
+                break;
         
             default:
                 $error = "Không có quyền truy cập!";
         }
-
-        if (empty($error)) {
-            echo "<!DOCTYPE html>
-<html lang='vi'>
-<head>
-    <meta charset='UTF-8'>
-    <title>Đăng nhập thành công</title>
-    <meta http-equiv='refresh' content='2;url=$redirect_url'>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .message-box {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .success {
-            color: green;
-            font-size: 18px;
-        }
-    </style>
-</head>
-<body>
-    <div class='message-box'>
-        <p class='success'>$success_message</p>
-        <p>Đang chuyển hướng, vui lòng chờ...</p>
-    </div>
-</body>
-</html>";
-            exit();
-        }
+        exit();
     } else {
-        $error = "Sai mã sinh viên hoặc mật khẩu.";
+        $error = "Id hoặc mật khẩu không đúng";
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -98,6 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <title>Đăng nhập</title>
     <style>
+
         body {
             font-family : Arial , sans-serif;
             background: linear-gradient(135deg, #74ebd5, #ACB6E5);
@@ -106,15 +81,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         form {
             display : flex ;
-            flex-direction : column ;
+            flex-direction :column ;
             gap: 10px;
+
         }
         button {
             padding: 10px;
             background-color: #007bff;
-            color : white;
-            border : none;
-            cursor: pointer;
+            color : white  ;
+            border : none ; 
+            cursot: pointer ;
         }
         .login-container {
             background-color: white;
@@ -124,9 +100,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             width: 300px;
             text-align: center;
         }
+
         h2 {
             color: #333;
         }
+
         input[type="text"], input[type="password"] {
             width: 100%;
             padding: 10px;
@@ -152,21 +130,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-size: 14px;
             margin-top: 10px;
         }
+        
     </style>
 </head>
 <body>
     <div class="login-container">
         <h2>Đăng nhập</h2>
-
-        <?php if (!empty($error)): ?>
-            <p class="error"><?php echo $error; ?></p>
+        <?php if(isset ($error)) :?>
+            <p class ="error"><?php echo $error; ?></p>
         <?php endif; ?>
         
         <form method="post" action="">
             <input type="text" name="student_id" placeholder="Mã sinh viên" required>
             <input type="password" name="password" placeholder="Mật khẩu" required>
             <input type="submit" value="Đăng nhập">
+         
         </form>
+        <?php if (isset($error)) { ?>
+            <p class="error"><?php echo $error; ?></p>
+        <?php } ?>
     </div>
+
 </body>
 </html>

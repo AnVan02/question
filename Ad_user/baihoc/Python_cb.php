@@ -13,8 +13,8 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
  
-$ma_khoa = '10'; // Thay đồi khoá học
-$id_test = '12'; // Thay đổi test phù hơp
+$ma_khoa = '1'; // Thay đồi khoá học
+$id_test = '25'; // Thay đổi test phù hơp
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
@@ -112,7 +112,7 @@ if ($row = $result->fetch_assoc()) {
         ];
     }
     if (count($questions) < 1) {
-        die("Lỗi: Bạn không có quyền truy cập vào ");
+        die("Lỗi: Bạn không có quyền truy cập vào '$ten_khoa' và '$id_test'.");
     }
     $_SESSION['questions'] = $questions;
     $_SESSION['ten_khoa'] = $ten_khoa;
@@ -358,7 +358,7 @@ $tests_result = $stmt->get_result();
         </div>
         
         <?php if (count($allowed_courses) > 1): ?>
-        <!-- <div class="course-switcher">
+        <div class="course-switcher">
             <select onchange="window.location.href='?course_id='+this.value">
                 <?php foreach ($allowed_courses as $course_id): ?>
                     <?php $course_name = $course_themes[$course_id]['name'] ?? "Khóa học $course_id"; ?>
@@ -367,7 +367,7 @@ $tests_result = $stmt->get_result();
                     </option>
                 <?php endforeach; ?>
             </select>
-        </div> -->
+        </div>
         <?php endif; ?>
         
         <div class="header">

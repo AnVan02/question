@@ -189,7 +189,7 @@ CREATE TABLE `test` (
 --
 
 INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau_hien_thi`) VALUES
-(11, 6, 'Giưa ky', 1, '100', 0),
+(11, 6, 'Giưa ky', 10, '100', 0),
 (16, 3, 'Giưa ky', 2, '80', 0),
 (18, 2, 'Cuối kỳ', 2, '80', 0),
 (19, 1, 'Cuối kỳ', 1, '80', 0),

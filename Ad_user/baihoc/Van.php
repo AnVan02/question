@@ -1,5 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Lấy giờ chuẩn 
+
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -12,9 +14,9 @@ if (!isset($_SESSION['student_id'])) {
     </script>";
     exit();
 }
- 
+
 $ma_khoa = '10'; // Thay đồi khoá học
-$id_test = '12'; // Thay đổi test phù hơp
+$id_test = '24'; // Thay đổi test phù hơp
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
@@ -47,6 +49,7 @@ if ($result->num_rows === 0) {
     $id_baitest = $row['ten_test'];
 }
 $stmt->close();
+
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
@@ -112,7 +115,7 @@ if ($row = $result->fetch_assoc()) {
         ];
     }
     if (count($questions) < 1) {
-        die("Lỗi: Bạn không có quyền truy cập vào ");
+        die("Lỗi: Không đủ câu hỏi cho '$ten_khoa' và '$id_baitest'.");
     }
     $_SESSION['questions'] = $questions;
     $_SESSION['ten_khoa'] = $ten_khoa;
@@ -167,16 +170,8 @@ $conn->close();
 ?>
 
 <?php
-date_default_timezone_set('Asia/Ho_Chi_Minh');
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-// Cấu hình database
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'student');
+
 
 // Kiểm tra đăng nhập
 if (!isset($_SESSION['student_id'])) {
@@ -358,7 +353,7 @@ $tests_result = $stmt->get_result();
         </div>
         
         <?php if (count($allowed_courses) > 1): ?>
-        <!-- <div class="course-switcher">
+        <div class="course-switcher">
             <select onchange="window.location.href='?course_id='+this.value">
                 <?php foreach ($allowed_courses as $course_id): ?>
                     <?php $course_name = $course_themes[$course_id]['name'] ?? "Khóa học $course_id"; ?>
@@ -367,7 +362,7 @@ $tests_result = $stmt->get_result();
                     </option>
                 <?php endforeach; ?>
             </select>
-        </div> -->
+        </div>
         <?php endif; ?>
         
         <div class="header">

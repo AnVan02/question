@@ -5,22 +5,144 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
 
-session_start();
 if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
     exit();
 }
-
-
-function dbconnect (){
-   $conn = new mysqli("localhost", "root", "", "student");
-    if ($conn->connect_error) {
-        die("Kết nối thất bại: " . $conn->connect_error);
-    }
-    $conn->set_charset("utf8mb4");
-    return $conn; 
+// Database connection
+$conn = new mysqli("localhost", "root", "", "student");
+if ($conn->connect_error) {
+    die("Kết nối thất bại: " . $conn->connect_error);
 }
-$student_id = intval($_SESSION['student_id']);
+
+
+// lấy khoá học từ bảng khoa_hoc
+function getCoursesFromDB($conn) {
+    $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
+    $result = $conn->query($sql);
+    $courses = [];
+    while ($row = $result->fetch_assoc()) {
+        $courses[$row['id']] = $row['khoa_hoc'];
+    }
+    return $courses;
+}
+
+
+// Lấy thông tin kiểm tra (số lần thử tối đa)
+function getTestInfo($conn, $ten_test, $ten_khoa) {
+    $courses = getCoursesFromDB($conn);
+
+    $id_khoa = array_search($ten_khoa, $courses);
+    if ($id_khoa === false) {
+        die("Lỗi: Không tìm thấy khóa học '$ten_khoa'");
+    }
+    $sql = "SELECT lan_thu FROM test WHERE ten_test = ? AND id_khoa = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("si", $ten_test, $id_khoa);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return $row['lan_thu'];
+    }
+    $stmt->close();
+    return 1; 
+}
+// Khởi tạo biến
+$ten_khoa = '';
+$current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
+$answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
+$score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
+$highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
+$attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
+$pass_score = 4; //số câu hỏi qua 
+
+
+// Lấy tên khoá học và câu hỏi 
+$stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
+$stmt->bind_param("s", $ma_khoa);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($row = $result->fetch_assoc()) {
+    $ten_khoa = $row['khoa_hoc'];
+    $stmt2 = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
+    $stmt2->bind_param("ss", $ten_khoa, $id_baitest);
+    $stmt2->execute();
+    $result2 = $stmt2->get_result();
+    $questions = [];
+    while ($row2 = $result2->fetch_assoc()) {
+        $questions[] = [
+            'id' => $row2['Id_cauhoi'],
+            'question' => $row2['cauhoi'],
+            'choices' => [
+                'A' => $row2['cau_a'],
+                'B' => $row2['cau_b'],
+                'C' => $row2['cau_c'],
+                'D' => $row2['cau_d']
+            ],
+            'explanations' => [
+                'A' => $row2['giaithich_a'],
+                'B' => $row2['giaithich_b'],
+                'C' => $row2['giaithich_c'],
+                'D' => $row2['giaithich_d']
+            ],
+            'correct' => $row2['dap_an'],
+            'image' => $row2['hinhanh']
+        ];
+    }
+    if (count($questions) < 1) {
+        die("Lỗi: Bạn không có quyền truy cập vào '$ten_khoa' và '$id_test'.");
+    }
+    $_SESSION['questions'] = $questions;
+    $_SESSION['ten_khoa'] = $ten_khoa;
+    $_SESSION['id_baitest'] = $id_baitest;
+    $_SESSION['current_index'] = 0;
+    if (!isset($_SESSION['attempts'])) {
+        $_SESSION['attempts'] = 1;
+    }
+} else {
+    die("Lỗi: Không tìm thấy khóa học với mã '$ma_khoa'");
+}
+$stmt->close();
+$stmt2->close();
+
+// xử lý gửi câu trả lời 
+if (isset($_POST['answer']) && isset($_SESSION['questions'])) {
+    $user_answer = $_POST['answer'];
+    $current_question = $_SESSION['questions'][$current_index];
+    $is_correct = ($user_answer === $current_question['correct']);
+    $answers[$current_index] = [
+        'selected' => $user_answer,
+        'is_correct' => $is_correct
+    ];
+    $_SESSION['answers'] = $answers;
+    if ($is_correct) {
+        $score++;
+        $_SESSION['score'] = $score;
+        if ($score > $highest_score) {
+            $_SESSION['highest_score'] = $score;
+        }
+    }
+    $current_index++;
+    $_SESSION['current_index'] = $current_index;
+}
+
+// Xử lý thiết lập lại
+if (isset($_POST['reset'])) {
+    $attempts++;
+    $_SESSION['attempts'] = $attempts;
+    $_SESSION['score'] = 0;
+    $_SESSION['answers'] = [];
+    $_SESSION['current_index'] = 0;
+    $current_index = 0;
+    $score = 0;
+    $answers = [];
+}
+
+// sổ lần thử tối đa
+$max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
+$conn->close();
 
 
 // Kiểm tra quyền truy cập
@@ -128,18 +250,7 @@ try {
     <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
     <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
     
-    <tbody>
-        <div class="question">Câu hỏi 
-            
-        </div>
-        <?php foreach ($question as $question )?>
-        <td>
-            <?php echo htmlspecialchars($question['cauhoi']); ?>
-            <?php echo htmlspecialchars($question['khoa_hoc']); ?>  
-
-
-        </td>
-    </tbody>
+    
     </div>
 </body>
 </html>

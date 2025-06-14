@@ -1,5 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Lấy giờ chuẩn 
+
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -12,15 +14,16 @@ if (!isset($_SESSION['student_id'])) {
     </script>";
     exit();
 }
- 
-$ma_khoa = '10'; // Thay đồi khoá học
-$id_test = '12'; // Thay đổi test phù hơp
+
+$ma_khoa = '1';// Thay đồi khoá học
+$id_test = '12'; // Thay đổi phù hợp với cau hỏi 
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
+
 
 
 // lấy khoá học từ bảng khoa_hoc
@@ -34,24 +37,23 @@ function getCoursesFromDB($conn) {
     return $courses;
 }
 
-// Lấy tên bài test từ id_test
+// lấy tên bài test từ id_test
 $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
 $stmt->execute();
 $result = $stmt->get_result();
-
 if ($result->num_rows === 0) {
-    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
+    echo "<script>alert('ID bai test ($id_test)không tôn tại trong hệ thông. Vui lòng kiêm tra lại!');</script>";
 } else {
     $row = $result->fetch_assoc();
     $id_baitest = $row['ten_test'];
+
 }
 $stmt->close();
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
     $courses = getCoursesFromDB($conn);
-
     $id_khoa = array_search($ten_khoa, $courses);
     if ($id_khoa === false) {
         die("Lỗi: Không tìm thấy khóa học '$ten_khoa'");
@@ -86,6 +88,18 @@ $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     $ten_khoa = $row['khoa_hoc'];
+    // lấy dữ liệu bài kiêm tra giữa kỳ or cuối kỳ 
+    $stmt_baitest = $conn->prepare("SELECT id_baitest FROM quiz WHERE ten_khoa = ? LIMIT 1");
+    $stmt_baitest->bind_param("s", $ten_khoa);
+    $stmt_baitest->execute();
+    $result_baitest = $stmt_baitest->get_result();
+    if ($row_baitest = $result_baitest->fetch_assoc()) {
+        $id_baitest = $row_baitest['id_baitest'];
+    } else {
+        die("Lỗi: Không tìm thấy bài test cho khóa học '$ten_khoa'");
+    }
+    $stmt_baitest->close();
+
     $stmt2 = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
     $stmt2->bind_param("ss", $ten_khoa, $id_baitest);
     $stmt2->execute();
@@ -112,7 +126,7 @@ if ($row = $result->fetch_assoc()) {
         ];
     }
     if (count($questions) < 1) {
-        die("Lỗi: Bạn không có quyền truy cập vào ");
+        die("Lỗi: Không đủ câu hỏi cho '$ten_khoa' và '$id_baitest'.");
     }
     $_SESSION['questions'] = $questions;
     $_SESSION['ten_khoa'] = $ten_khoa;
@@ -165,6 +179,7 @@ $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
 
 ?>
+
 
 <?php
 date_default_timezone_set('Asia/Ho_Chi_Minh');
@@ -358,7 +373,7 @@ $tests_result = $stmt->get_result();
         </div>
         
         <?php if (count($allowed_courses) > 1): ?>
-        <!-- <div class="course-switcher">
+        <div class="course-switcher">
             <select onchange="window.location.href='?course_id='+this.value">
                 <?php foreach ($allowed_courses as $course_id): ?>
                     <?php $course_name = $course_themes[$course_id]['name'] ?? "Khóa học $course_id"; ?>
@@ -367,7 +382,7 @@ $tests_result = $stmt->get_result();
                     </option>
                 <?php endforeach; ?>
             </select>
-        </div> -->
+        </div>
         <?php endif; ?>
         
         <div class="header">

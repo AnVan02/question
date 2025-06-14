@@ -9,16 +9,15 @@ error_reporting(E_ALL);
 
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    header("Location: login.php");
     echo "<script>
         alert('Vui lòng đăng nhập để truy cập!');
         window.location.href = 'login.php';
     </script>";
     exit();
 }
-$ma_khoa = '3';// Thay đồi khoá học
-$id_test = '11'; // Thay đổi test phù hơp
 
+$ma_khoa = '6';// Thay đồi khoá học
+$id_test = '10'; // Thay đổi test phu hơp
 
 
 // Database connection
@@ -28,9 +27,8 @@ if ($conn->connect_error) {
 }
 
 $student_id = $_SESSION ['student_id'];
-
 // Kiểm tra quyền truy cập
-if ($student_id == 1 ) {
+if ($student_id == 1 || $student_id == 3) {
     // Cho phép truy cập
 } else {
     echo "<script>
@@ -39,7 +37,6 @@ if ($student_id == 1 ) {
     </script>";
     exit();
 }
-
 
 
 // lấy khoá học từ bảng khoa_hoc
@@ -58,15 +55,13 @@ $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
 $stmt->execute();
 $result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
-} else {
-    $row = $result->fetch_assoc();
-    $id_baitest = $row['ten_test'];
+if ($result -> num_rows === 0) {
+    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại !');</script>";
+}else {
+    $row = $result -> fetch_assoc();
+    $id_baitest = $row ['ten_test'];
 }
 $stmt->close();
-
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
@@ -197,8 +192,8 @@ $conn->close();
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
-            color: #333;
             font-size:17px;
+            color: #333;
         }
         .container {
             max-width: 1100px;
@@ -302,7 +297,6 @@ $conn->close();
                 Môn học: <span style="color:#1565c0;"><?php echo htmlspecialchars($ten_khoa); ?></span><br>
                 Bài thi: <span style="color:#e67e22;"><?php echo htmlspecialchars($id_baitest); ?></span>
             </h2>
-
             <form method="POST" action="">
                 <div class="question-box">
                     <h3>Câu <?php echo $current_index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></h3>

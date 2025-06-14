@@ -1,4 +1,4 @@
-<?php
+Ad_user/baihoc/Hoahoc.php Ad_user/baihoc/Python_cb.php Ad_user/baihoc/Python_nc.php Ad_user/baihoc/Sinhhoc.php Ad_user/baihoc/Tienganh.php Ad_user/baihoc/Toan.php Ad_user/baihoc/Van.php Ad_user/baihoc/Yolo.php<?php
 session_start();
 $servername = "localhost";
 $username = "root";
@@ -11,7 +11,6 @@ try {
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
-
 
 $success_message = '';
 $error = '';
@@ -31,8 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $success_message = "Đăng nhập thành công! Chào mừng, " . htmlspecialchars($user['Student_ID']) . "!";
 
         // Hiển thị thông báo rồi chuyển hướng
-       switch($user['Id']) {
-             case 1:
+        switch($user['Id']) {
+            case 1:
                 $redirect_url = "content1.php";
                 break;
             case 2:
@@ -41,11 +40,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             case 3:
                 $redirect_url = "content3.php";
                 break;
-          
-            
-        
             default:
                 $error = "Không có quyền truy cập!";
+                break;
         }
 
         if (empty($error)) {
