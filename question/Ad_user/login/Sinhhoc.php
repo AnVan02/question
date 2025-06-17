@@ -1,11 +1,9 @@
 <?php
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Lấy giờ chuẩn 
 
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
 
 session_start();
 if (!isset($_SESSION['student_id'])) {
@@ -13,18 +11,66 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-$ma_khoa = '8';// Thay đồi khoá học
-$id_test = '1'; // Thay đổi phù hợp với cau hỏi 
 
-
-// Database connection
-$conn = new mysqli("localhost", "root", "", "student");
+// Kết nối cơ sở dữ liệu
+$conn = new mysqli("localhost", "root", "", "student"); // Nếu tên thật là 'students'
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
+$ma_khoa = '8'; // Thay đổi mã khóa học
+$id_test = '1'; // Thay đổi ID bài test 
 
+// Lấy mã khóa học từ bảng students và kiểm tra
+$student_id = $_SESSION['student_id'];
+$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-// lấy khoá học từ bảng khoa_hoc
+if ($row = $result->fetch_assoc()) {
+    $khoahoc = $row['Khoahoc']; // Lấy chuỗi mã khóa học, ví dụ: "6,4"
+    // Chuyển chuỗi thành mảng
+    $khoahoc_list = explode(',', $khoahoc);
+    // Chuyển các giá trị thành số nguyên
+    $khoahoc_list = array_map('intval', $khoahoc_list);
+    // Kiểm tra xem $ma_khoa có trong danh sách không
+    if (!in_array(intval($ma_khoa), $khoahoc_list)) {
+        die("Lỗi: Sinh viên không được đăng ký khóa học này (mã khóa: $ma_khoa).");
+    }
+} else {
+    die("Lỗi: Không tìm thấy thông tin sinh viên với ID: $student_id.");
+}
+$stmt->close();
+
+// Kiểm tra quyền truy cập khóa học
+$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$student = $result->fetch_assoc();
+
+if ($student) {
+    // Chuyển chuỗi Khoahoc thành mảng
+    $allowed_courses = explode(',', $student['Khoahoc']);
+    
+    // Kiểm tra xem ma_khoa có nằm trong mảng allowed_courses không
+    if (!in_array($ma_khoa, $allowed_courses)) {
+        echo "<script>
+            alert('Bạn không có quyền truy cập khóa học này!');
+            window.location.href = 'login.php';
+        </script>";
+        exit();
+    }
+} else {
+    echo "<script>
+        alert('Không tìm thấy thông tin sinh viên!');
+        window.location.href = 'login.php';
+    </script>";
+    exit();
+}
+$stmt->close();
+
+// Lấy khóa học từ bảng khoa_hoc
 function getCoursesFromDB($conn) {
     $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
     $result = $conn->query($sql);
@@ -35,19 +81,18 @@ function getCoursesFromDB($conn) {
     return $courses;
 }
 
-// lấy tên bai test từ id_test
-$stmt = $conn -> prepare ("SELECT ten_test FROM test WHERE id_test = ?");
-$stmt -> bind_param ("i", $id_test);
-$stmt -> execute ();
-$result = $result -> get_result();
-if ($row = $result -> fetch_assoc()) {
-    echo "<script> alert ('ID bài test ($id_test) không tồn tại trong hệ thông. Vui lòng kiểm tra lại!');</script>";
-} else {
-    $row = $result -> fetch_assoc();
-    $id_baitest = $row['ten_test'];
+// Lấy tên bài test từ id_test
+$stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
+$stmt->bind_param("i", $id_test);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($result->num_rows == 0) {
+    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
+    exit();
 }
-$stmt -> close ();
-
+$row = $result->fetch_assoc();
+$id_baitest = $row['ten_test'];
+$stmt->close();
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
@@ -69,6 +114,7 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
     $stmt->close();
     return 1; 
 }
+
 // Khởi tạo biến
 $ten_khoa = '';
 $current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
@@ -76,17 +122,15 @@ $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
 $highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
 $attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
-$pass_score = 4; //số câu hỏi qua 
+$pass_score = 4; // Số câu hỏi để đạt
 
-
-// Lấy tên khoá học và câu hỏi 
+// Lấy tên khóa học và câu hỏi 
 $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
 $stmt->bind_param("s", $ma_khoa);
 $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     $ten_khoa = $row['khoa_hoc'];
- 
     $stmt2 = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
     $stmt2->bind_param("ss", $ten_khoa, $id_baitest);
     $stmt2->execute();
@@ -128,7 +172,7 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $stmt2->close();
 
-// xử lý gửi câu trả lời 
+// Xử lý gửi câu trả lời 
 if (isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $user_answer = $_POST['answer'];
     $current_question = $_SESSION['questions'][$current_index];
@@ -161,10 +205,9 @@ if (isset($_POST['reset'])) {
     $answers = [];
 }
 
-// sổ lần thử tối đa
+// Số lần thử tối đa
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
-
 ?>
 
 <!DOCTYPE html>
@@ -203,7 +246,6 @@ $conn->close();
             border-left: 6px solid #007bff;
             transition: box-shadow 0.2s;
         }
-        
         .question-box h3 {
             color: #007bff;
             margin-top: 0;
@@ -228,8 +270,8 @@ $conn->close();
             font-weight: bold;
         }
         li.incorrect {
-            background-color: #d4edda;
-            color:rgb(255, 5, 5);
+            background-color: #f8d7da;
+            color: #721c24;
             font-weight: bold;
         }
         button, a.try-again, a.back-to-quiz {
@@ -245,7 +287,6 @@ $conn->close();
             display: inline-block;
             transition: background-color 0.3s;
         }
-       
         a.try-again.disabled {
             background-color: #ccc;
             pointer-events: none;
@@ -334,7 +375,6 @@ $conn->close();
                             <?php endforeach; ?>
                         </ul>
                         <?php if (isset($answers[$index]['selected'])): ?>
-                            
                             <div class="explanation-block" style="border-color: <?php echo $answers[$index]['is_correct'] ? 'orange' : 'red'; ?>;">
                                 <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
                             </div>

@@ -16,14 +16,13 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 $ma_khoa = '10'; // Thay đồi khoá học
-$id_test = ''; // Thay đổi test phù hơp
+$id_test = '12'; // Thay đổi test phù hơp
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
-
 
 
 // lấy khoá học từ bảng khoa_hoc

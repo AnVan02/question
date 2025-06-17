@@ -84,11 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     Đang chuyển hướng...
                 </div>
             </div>
-            <script>
-                setTimeout(function() {
-                    window.location.href = 'course_list.php';
-                }, 2000);
-            </script>
+            
         </body>
         </html>";
         exit();
@@ -109,7 +105,7 @@ function getCourseFileName($course_name) {
         'Hoá học' => 'Hoahoc.php'
     ];
     
-    return $course_files[$course_name] ?? 'index.php';
+    return $course_files[$course_name];
 }
 ?>
 

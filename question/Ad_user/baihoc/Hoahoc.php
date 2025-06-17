@@ -17,28 +17,33 @@ if (!isset($_SESSION['student_id'])) {
 
 $ma_khoa = '6'; // ID của khóa học Hóa học
 $id_test = '11'; // ID của bài test Giữa kỳ Hóa học
-// Có thể thay đổi $id_test thành:
-// - '11' cho Giữa kỳ
-// - '21' cho Cuối kỳ
 
-// Database connection
-$conn = new mysqli("localhost", "root", "", "student");
-if ($conn->connect_error) {
-    die("Kết nối thất bại: " . $conn->connect_error);
-}
+// Lấy danh sách khóa học của học sinh đang đăng nhập
+$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-// Kiểm tra quyền truy cập
-$student_id = $_SESSION['student_id'];
-// Kiểm tra quyền truy cập
-if ($student_id == 1) {
-    // Cho phép truy cập
+if ($row = $result->fetch_assoc()) {
+    $khoahoc_str = $row['Khoahoc']; // Ví dụ: "6,4"
+    $khoahoc_list = array_map('trim', explode(',', $khoahoc_str)); // chuyển thành mảng: ['6', '4']
+
+    if (!in_array($ma_khoa, $khoahoc_list)) {
+        echo "<script>
+            alert('Bạn không có quyền truy cập khóa học này!');
+            window.location.href = 'login.php';
+        </script>";
+        exit();
+    }
 } else {
     echo "<script>
-        alert('Bạn không có quyền truy cập khóa học này!');
+        alert('Không tìm thấy thông tin học sinh!');
         window.location.href = 'login.php';
     </script>";
     exit();
 }
+$stmt->close();
+
 
 // lấy khóa học từ bảng khoa_hoc
 function getCoursesFromDB($conn) {

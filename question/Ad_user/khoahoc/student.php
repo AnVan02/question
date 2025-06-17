@@ -420,7 +420,6 @@ if ($mode == 'edit' && $student_id) {
                     echo "<td>" . htmlspecialchars($row['Ten'] ?? '') . "</td>";
                     echo "<td>" . htmlspecialchars($row['Email'] ?? '') . "</td>";
 
-                    
                     // Lấy danh sách khóa học
                     $khoa_hoc_ids = !empty($row['Khoahoc']) && $row['Khoahoc'] !== NULL ? explode(',', $row['Khoahoc']) : [];
                     $khoa_hoc_names = [];
@@ -629,6 +628,7 @@ if ($mode == 'edit' && $student_id) {
                 closeModal();
             }
         }
+
     </script>
 
     <style>

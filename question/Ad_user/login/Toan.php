@@ -28,19 +28,19 @@ $ma_khoa = '4'; // ID khóa học Hóa học
 $id_test = '37'; // ID bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
-// Xác minh quyền truy cập khóa học
-$stmt = $conn->prepare("SELECT s.Student_ID, s.Ten, s.Khoahoc, kh.khoa_hoc 
-                       FROM students s 
-                       LEFT JOIN khoa_hoc kh ON FIND_IN_SET(kh.id, s.Khoahoc)
-                       WHERE s.Student_ID = ?");
+
+// Kiểm tra quyền truy cập khóa học
+$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
 $stmt->bind_param("s", $student_id);
 $stmt->execute();
 $result = $stmt->get_result();
+$student = $result->fetch_assoc();
 
-if ($result->num_rows > 0) {
-    $student_info = $result->fetch_assoc();
-    $allowed_courses = explode(',', $student_info['Khoahoc']);
+if ($student) {
+    // Chuyển chuỗi Khoahoc thành mảng
+    $allowed_courses = explode(',', $student['Khoahoc']);
     
+    // Kiểm tra xem ma_khoa có nằm trong mảng allowed_courses không
     if (!in_array($ma_khoa, $allowed_courses)) {
         echo "<script>
             alert('Bạn không có quyền truy cập khóa học này!');

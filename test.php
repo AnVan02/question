@@ -1,4 +1,3 @@
-
 <?php
 // Bật hiển thị lỗi để gỡ lỗi (xóa dòng này trong môi trường sản xuất)
 error_reporting(E_ALL);
@@ -120,6 +119,27 @@ if ($mode == 'edit' && $student_id) {
         $message = "Không tìm thấy sinh viên với Student_ID: " . htmlspecialchars($student_id);
     }
     $stmt->close();
+}
+
+// Hàm kiểm tra quyền truy cập
+function checkCourseAccess($conn, $student_id, $ma_khoa) {
+    $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
+    $stmt->bind_param("s", $student_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $student = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!$student) {
+        return "Không tìm thấy sinh viên";
+    }
+
+    $allowed_courses = explode(',', $student['Khoahoc']);
+    if (in_array($ma_khoa, $allowed_courses)) {
+        return "Có quyền truy cập";
+    } else {
+        return "Không có quyền truy cập";
+    }
 }
 
 ?>

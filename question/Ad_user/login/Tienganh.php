@@ -1,32 +1,60 @@
 <?php
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Lấy giờ chuẩn 
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
 if (!isset($_SESSION['student_id'])) {
-    echo "<script>
-        alert('Vui lòng đăng nhập để truy cập!');
-        window.location.href = 'login.php';
-    </script>";
+    header("Location: login.php");
     exit();
 }
- 
-$ma_khoa = '10'; // Thay đồi khoá học
-$id_test = '12'; // Thay đổi test phù hơp
 
-// Truy vấn khóa học từ bảng students
+
+// Kết nối cơ sở dữ liệu
+$conn = new mysqli("localhost", "root", "", "student"); // Nếu tên thật là 'students'
+if ($conn->connect_error) {
+    die("Kết nối thất bại: " . $conn->connect_error);
+}
+$ma_khoa = '6'; // Thay đổi mã khóa học
+$id_test = '12'; // Thay đổi ID bài test 
+
+// Lấy mã khóa học từ bảng students và kiểm tra
+$student_id = $_SESSION['student_id'];
 $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
 $stmt->bind_param("s", $student_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $student_courses = array_map('trim', explode(',', $row['Khoahoc']));
+if ($row = $result->fetch_assoc()) {
+    $khoahoc = $row['Khoahoc']; // Lấy chuỗi mã khóa học, ví dụ: "6,4"
+    // Chuyển chuỗi thành mảng
+    $khoahoc_list = explode(',', $khoahoc);
+    // Chuyển các giá trị thành số nguyên
+    $khoahoc_list = array_map('intval', $khoahoc_list);
+    // Kiểm tra xem $ma_khoa có trong danh sách không
+    if (!in_array(intval($ma_khoa), $khoahoc_list)) {
+        die("Lỗi: Sinh viên không được đăng ký khóa học này (mã khóa: $ma_khoa).");
+    }
+} else {
+    die("Lỗi: Không tìm thấy thông tin sinh viên với ID: $student_id.");
+}
+$stmt->close();
+
+// Kiểm tra quyền truy cập khóa học
+$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$student = $result->fetch_assoc();
+
+if ($student) {
+    // Chuyển chuỗi Khoahoc thành mảng
+    $allowed_courses = explode(',', $student['Khoahoc']);
     
-    if (!in_array($ma_khoa, $student_courses)) {
+    // Kiểm tra xem ma_khoa có nằm trong mảng allowed_courses không
+    if (!in_array($ma_khoa, $allowed_courses)) {
         echo "<script>
             alert('Bạn không có quyền truy cập khóa học này!');
             window.location.href = 'login.php';
@@ -42,9 +70,7 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-
-
-// lấy khoá học từ bảng khoa_hoc
+// Lấy khóa học từ bảng khoa_hoc
 function getCoursesFromDB($conn) {
     $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
     $result = $conn->query($sql);
@@ -55,25 +81,22 @@ function getCoursesFromDB($conn) {
     return $courses;
 }
 
-
 // Lấy tên bài test từ id_test
 $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
 $stmt->execute();
 $result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
+if ($result->num_rows == 0) {
     echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
-} else {
-    $row = $result->fetch_assoc();
-    $id_baitest = $row['ten_test'];
+    exit();
 }
+$row = $result->fetch_assoc();
+$id_baitest = $row['ten_test'];
 $stmt->close();
 
 // Lấy thông tin kiểm tra (số lần thử tối đa)
 function getTestInfo($conn, $ten_test, $ten_khoa) {
     $courses = getCoursesFromDB($conn);
-
     $id_khoa = array_search($ten_khoa, $courses);
     if ($id_khoa === false) {
         die("Lỗi: Không tìm thấy khóa học '$ten_khoa'");
@@ -91,6 +114,7 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
     $stmt->close();
     return 1; 
 }
+
 // Khởi tạo biến
 $ten_khoa = '';
 $current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
@@ -98,10 +122,9 @@ $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
 $highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
 $attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
-$pass_score = 4; //số câu hỏi qua 
+$pass_score = 4; // Số câu hỏi để đạt
 
-
-// Lấy tên khoá học và câu hỏi 
+// Lấy tên khóa học và câu hỏi 
 $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
 $stmt->bind_param("s", $ma_khoa);
 $stmt->execute();
@@ -134,7 +157,7 @@ if ($row = $result->fetch_assoc()) {
         ];
     }
     if (count($questions) < 1) {
-        die("Lỗi: Bạn không có quyền truy cập vào '$ten_khoa' và '$id_test'.");
+        die("Lỗi: Không đủ câu hỏi cho '$ten_khoa' và '$id_baitest'.");
     }
     $_SESSION['questions'] = $questions;
     $_SESSION['ten_khoa'] = $ten_khoa;
@@ -149,7 +172,7 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $stmt2->close();
 
-// xử lý gửi câu trả lời 
+// Xử lý gửi câu trả lời 
 if (isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $user_answer = $_POST['answer'];
     $current_question = $_SESSION['questions'][$current_index];
@@ -182,90 +205,9 @@ if (isset($_POST['reset'])) {
     $answers = [];
 }
 
-// sổ lần thử tối đa
+// Số lần thử tối đa
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
-
-?>
-
-<?php
-date_default_timezone_set('Asia/Ho_Chi_Minh');
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Cấu hình database
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'student');
-
-// Kiểm tra đăng nhập
-if (!isset($_SESSION['student_id'])) {
-    die("<script>alert('Vui lòng đăng nhập!'); window.location.href='login.php';</script>");
-}
-
-// Kiểm tra khóa học được gán
-if (!isset($_SESSION['Khoahoc']) || empty($_SESSION['Khoahoc'])) {
-    showNoCourseTemplate();
-    exit();
-}
-// Lấy danh sách khóa học được phép
-$allowed_courses = array_filter(explode(',', $_SESSION['Khoahoc']), function($value) {
-    return is_numeric($value) && (int)$value > 0;
-});
-
-if (empty($allowed_courses)) {
-    die("<script>alert('Danh sách khóa học không hợp lệ!'); window.location.href='logout.php';</script>");
-}
-if (isset($_GET['test_id'])) {
-    $id_test = (int)$_GET['test_id'];
-    
-    // Kiểm tra bài test có thuộc khóa học được phép không
-    $stmt_check = $conn->prepare("SELECT t.id_test FROM test t 
-                                JOIN khoa_hoc kh ON t.id_khoa = kh.id 
-                                WHERE t.id_test = ? AND t.id_khoa IN (".implode(',', array_fill(0, count($allowed_courses), '?')).")");
-    
-    $params = array_merge([$id_test], $allowed_courses);
-    $types = str_repeat('i', count($params));
-    $stmt_check->bind_param($types, ...$params);
-    $stmt_check->execute();
-    $check_result = $stmt_check->get_result();
-    
-    if ($check_result->num_rows === 0) {
-        die("<script>alert('Bạn không có quyền truy cập bài test này!'); window.location.href='select_test.php';</script>");
-    }
-    $stmt_check->close();
-}
-
-
-
-// Xác định khóa học hiện tại
-$current_course = isset($_GET['course_id']) && in_array($_GET['course_id'], $allowed_courses) 
-                ? $_GET['course_id'] 
-                : $allowed_courses[0];
-
-// Kết nối database
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($conn->connect_error) {
-    die("Kết nối database thất bại: " . $conn->connect_error);
-}
-
-
-// Lấy thông tin khóa học hiện tại
-$current_theme = $course_themes[$current_course] ?? [
-    'name' => 'Khóa học ' . $current_course,
-    'color' => '#607D8B',
-    'class' => 'theme-default'
-];
-
-
-// Lấy danh sách bài test cho khóa học hiện tại
-$stmt = $conn->prepare("SELECT t.id_test, t.ten_test, t.lan_thu, t.Pass, t.so_cau_hien_thi 
-                       FROM test t WHERE t.id_khoa = ?");
-$stmt->bind_param('i', $current_course);
-$stmt->execute();
-$tests_result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -273,178 +215,182 @@ $tests_result = $stmt->get_result();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $current_theme['name']; ?> - Hệ Thống Thi Trắc Nghiệm</title>
+    <title>Quiz - <?php echo htmlspecialchars($ten_khoa); ?></title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
+            font-size:17px;
             color: #333;
         }
         .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1100px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        .course-banner {
-            background: <?php echo $current_theme['color']; ?>;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        h1, h2, h3 {
+            color: #2c3e50;
             text-align: center;
-            font-size: 20px;
+        }
+        .question-box {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 24px;
+            margin-bottom: 30px;
+            border-left: 6px solid #007bff;
+            transition: box-shadow 0.2s;
+        }
+        .question-box h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        ul li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+        }
+        ul li label {
+            font-size: 17px;
+            cursor: pointer;
+        }
+        li.correct {
+            background-color: #d4edda;
+            color: #155724;
             font-weight: bold;
         }
-        .course-switcher {
-            margin-bottom: 20px;
-            text-align: center;
+        li.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
         }
-        .course-switcher select {
-            padding: 8px 15px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            font-size: 16px;
-            background: white;
-            cursor: pointer;
-        }
-        .test-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-        }
-        .test-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border-left: 4px solid <?php echo $current_theme['color']; ?>;
-        }
-        .test-item h3 {
-            margin-top: 0;
-            color: <?php echo $current_theme['color']; ?>;
-        }
-        .btn-start {
-            display: inline-block;
-            padding: 8px 15px;
-            background: <?php echo $current_theme['color']; ?>;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        .btn-start:hover {
-            opacity: 0.9;
-        }
-        .user-info {
-            text-align: right;
-            margin-bottom: 10px;
-        }
-        .logout-btn {
-            background: #dc3545;
+        button, a.try-again, a.back-to-quiz {
+            padding: 10px 28px;
+            background-color: #007bff;
             color: white;
             border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
+            border-radius: 5px;
+            font-size: 16px;
             cursor: pointer;
+            margin-top: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s;
         }
-        .no-tests {
+        a.try-again.disabled {
+            background-color: #ccc;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+        img {
+            max-width: 300px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #eee;
+            display: block;
+        }
+        .explanation-block {
+            margin-top: 10px;
+            padding: 15px;
+            border-left: 6px solid;
+            background-color: #fff3cd;
+            border-radius: 6px;
+        }
+        .correct-answer {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .no-answers {
+            color: #e74c3c;
             text-align: center;
-            color: #777;
-            font-style: italic;
-            grid-column: 1 / -1;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="user-info">
-            Xin chào, <strong><?php echo htmlspecialchars($_SESSION['student_name']); ?></strong> | 
-            <button class="logout-btn" onclick="window.location.href='logout.php'">Đăng xuất</button>
-        </div>
-        
-        <div class="course-banner">
-            <?php echo $current_theme['name']; ?>
-        </div>
-        
-        <?php if (count($allowed_courses) > 1): ?>
-        <div class="course-switcher">
-            <select onchange="window.location.href='?course_id='+this.value">
-                <?php foreach ($allowed_courses as $course_id): ?>
-                    <?php $course_name = $course_themes[$course_id]['name'] ?? "Khóa học $course_id"; ?>
-                    <option value="<?php echo $course_id; ?>" <?php echo $course_id == $current_course ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($course_name); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <?php endif; ?>
-        
-        <div class="header">
-            <h2>Danh sách bài kiểm tra</h2>
-        </div>
-        
-        <div class="test-list">
-            <?php if ($tests_result->num_rows > 0): ?>
-                <?php while ($test = $tests_result->fetch_assoc()): ?>
-                    <div class="test-item">
-                        <h3><?php echo htmlspecialchars($test['ten_test']); ?></h3>
-                        <p><strong>Số lần thi:</strong> <?php echo $test['lan_thu']; ?></p>
-                        <p><strong>Điểm đạt:</strong> <?php echo $test['Pass']; ?>%</p>
-                        <p><strong>Số câu hỏi:</strong> <?php echo $test['so_cau_hien_thi']; ?></p>
-                        <a href="take_test.php?test_id=<?php echo $test['id_test']; ?>" class="btn-start">
-                            Bắt đầu làm bài
-                        </a>
-                    </div>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <div class="no-tests">
-                    Hiện không có bài kiểm tra nào trong khóa học này
+        <?php if ($current_index < count($_SESSION['questions'])): ?>
+            <?php $question = $_SESSION['questions'][$current_index]; ?>
+            <h2>
+                Môn học: <span style="color:#1565c0;"><?php echo htmlspecialchars($ten_khoa); ?></span><br>
+                Bài thi: <span style="color:#e67e22;"><?php echo htmlspecialchars($id_baitest); ?></span>
+            </h2>
+            <form method="POST" action="">
+                <div class="question-box">
+                    <h3>Câu <?php echo $current_index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></h3>
+                    <?php if (!empty($question['image'])): ?>
+                        <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
+                    <?php endif; ?>
+                    <ul>
+                        <?php foreach ($question['choices'] as $key => $value): ?>
+                            <li><label><input type="radio" name="answer" value="<?php echo $key; ?>" required> <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?></label></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <input type="hidden" name="current_index" value="<?php echo $current_index; ?>">
+                    <button type="submit">Trả lời »</button>
                 </div>
+            </form>
+        <?php else: ?>
+            <h1> Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?> </h1>
+            <p><strong>Khóa học:</strong> <?php echo htmlspecialchars($ten_khoa); ?></p>
+            <p><strong>Bài test:</strong> <?php echo htmlspecialchars($id_baitest); ?></p>
+            <p><strong>Thời gian hoàn thành:</strong> <?php echo date('H:i:s d/m/Y'); ?></p>
+            <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
+            <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
+            <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
+            <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <hr>
+            <?php if (empty($answers)): ?>
+                <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>
+            <?php else: ?>
+                <?php foreach ($_SESSION['questions'] as $index => $question): ?>
+                    <div class="question-block">
+                        <p class="question-text">Câu <?php echo $index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></p>
+                        <?php if (!empty($question['image'])): ?>
+                            <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
+                        <?php endif; ?>
+                        <ul>
+                            <?php foreach ($question['choices'] as $key => $value): ?>
+                                <?php
+                                $style = '';
+                                $icon = '';
+                                if (isset($answers[$index]['selected']) && $key === $answers[$index]['selected']) {
+                                    $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
+                                    $icon = $answers[$index]['is_correct'] ? '' : '';
+                                }
+                                ?>
+                                <li class="<?php echo $style; ?>">
+                                    <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?> <?php echo $icon; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if (isset($answers[$index]['selected'])): ?>
+                            <div class="explanation-block" style="border-color: <?php echo $answers[$index]['is_correct'] ? 'orange' : 'red'; ?>;">
+                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
+                            </div>
+                        <?php else: ?>
+                            <div class="explanation-block" style="border-color: orange;">
+                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
+                            </div>
+                        <?php endif; ?>
+                        <hr>
+                    </div>
+                <?php endforeach; ?>
             <?php endif; ?>
-        </div>
+            <form method="POST" action="">
+                <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)</button>
+            </form>
+        <?php endif; ?>
     </div>
 </body>
 </html>
-
-<?php
-// Đóng kết nối
-$stmt->close();
-$conn->close();
-
-function showNoCourseTemplate() {
-    echo '<!DOCTYPE html>
-    <html lang="vi">
-    <head>
-        <meta charset="UTF-8">
-        <title>Không có khóa học</title>
-        <style>
-            body { font-family: Arial; background: #f5f5f5; margin: 0; padding: 20px; }
-            .container { max-width: 600px; margin: 100px auto; background: white; padding: 30px; 
-                        border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-            .logout-btn { background: #dc3545; color: white; border: none; padding: 10px 20px; 
-                         border-radius: 5px; text-decoration: none; margin-top: 20px; display: inline-block; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>Không có khóa học nào được gán</h2>
-            <p>Vui lòng liên hệ quản trị viên để được gán khóa học.</p>
-            <a href="logout.php" class="logout-btn">Đăng xuất</a>
-        </div>
-    </body>
-    </html>';
-}
-?>

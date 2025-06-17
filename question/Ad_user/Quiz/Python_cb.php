@@ -17,24 +17,24 @@ if (!isset($_SESSION['student_id'])) {
 
 $ma_khoa = '1';// Thay đồi khoá học
 $id_test = '30'; // Thay đổi phù hợp với cau hỏi 
-
-// Database connection
-$conn = new mysqli("localhost", "root", "", "student");
-if ($conn->connect_error) {
-    die("Kết nối thất bại: " . $conn->connect_error);
-}
-
 $student_id = $_SESSION ['student_id'];
-// Kiểm tra quyền truy cập
-if ($student_id == 1 ) {
-    // Cho phép truy cập
-} else {
-    echo "<script>
-        alert('Bạn không có quyền truy cập khóa học này!');
-        window.location.href = 'login.php';
-    </script>";
-    exit();
+
+// lấy mã khoá học từ bảng student và kiem tra
+$stmt = $conn ->prepare ("SELECT Khoahoc FROM students WHERE student_id =?");
+$stmt -> bind_param("s", $student_id);
+$smt -> execute ();
+$result = $stmt -> get_result();
+
+if ($row = $result -> fetch_assoc ()) {
+    $khoahoc = $row['khoahoc']; 
+    $khoahoc_list = explode (';', $khoahoc);
+    if (!in_array(intval($ma_khoa), $khoahoc_list)) {
+        die ("Lỗi: Sinh viên không được đăng ký khoa học này (mã khoa :$ma_khoa).");
+    } 
+}else {
+    die("lỗi :không tìm thấy thông tin sinh vien với ID : $student_id");
 }
+$stmt -> close ();
 
 
 // lấy khoá học từ bảng khoa_hoc
