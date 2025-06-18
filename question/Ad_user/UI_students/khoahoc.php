@@ -25,6 +25,8 @@ $error_message = '';
 $id_khoa = isset($_GET['id_khoa']) ? (int)$_GET['id_khoa'] : 0;
 
 
+
+
 // Xử lý xóa bài kiểm tra
 if (isset($_GET['delete_test']) && $id_khoa > 0) {
     $id_test = (int)$_GET['delete_test'];
@@ -43,6 +45,8 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
         $stmt->close();
     }
 }
+
+
 
 // Xử lý sửa bài kiểm tra
 $editing = false;
@@ -143,32 +147,6 @@ if ($id_khoa > 0) {
     $error_message = "<p>Lỗi: Không có ID khóa học được cung cấp. Vui lòng chọn khóa học từ danh sách.</p>";
 }
 
-
-// xử lý lấy tổng câu hỏi 
-$conn = dbconnect ();
-$khoa_hoc = [];
-
-$sql ="SELECT t.so_cau_hien_thị, k.id_khoa
-       FROM test t 
-       LEET JOIN khoa_hoc k ON t.id_khoa = k.id
-       WHERE t.id_test =?";
-    $stmt = $conn -> prepare ($sql);
-    $stmt ->bind_param ("i", $id_test);
-    $ten_test = $row ['so_cau_hien_thi'];
-    $ten_test = $row ['id_test'];
-    
-    // kiêm tra và xoá hinh ảnh nêu có 
-    $sql = "SELECT hinhanh FROM quiz WHERE Id_cauhoi = ? AND id_baitest = ? AND ten_khoa =?";
-    $stmt = $conn -> prepare ($sql);
-    $stmt ->brind_param ("iss", $delete_id , $ten_test , $khoa_hoc);
-    $stmt -> execute ();
-    $result = $stmt -> get_result ();
-    if($result -> num_rows >0) {
-        $row = $result -> fetch_assoc ();
-        if (!empty ($row ['hinhanh']) && file_exists ($row['hinhanh'])) {
-            unlink ($row['hinhanh']);
-        }
-    }
 
 // Xử lý thêm bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
@@ -277,11 +255,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                 <input type="text" id="pass" name="pass" value="<?php echo $editing ? htmlspecialchars($edit_test['pass']) : ''; ?>" required>
             </div>
 
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label for="so_cau_hien_thi">Số câu hiển thị:</label>
                 <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : '5'; ?>" min="1" required>
-            </div>
-            
+            </div> -->
+
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
                 <button type="submit" name="update_test">Cập nhật</button>
@@ -337,9 +315,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                         <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
                         <td><?php echo htmlspecialchars($row['pass']); ?></td>
                         <td><?php echo htmlspecialchars($cau_hoi_display); ?>
-    
-                            <?php if ($o_cau < $row ['so_cau_hieu_thi']) echo '<span style="color: red;">(lối số cau hoi) </span>';?>
-                            
+                        
+                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo ' <span style="color: red;">(Không đủ hiển thị)</span>'; ?>
                             <?php if ($so_cau == 0) echo ' <span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
                             
                         </td>
@@ -352,6 +329,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
 
                         <td >
                             <!-- <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a> -->
+                    
                     </tr>
                 <?php endwhile; ?>
             </table>
@@ -363,7 +341,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
     <?php endif; ?>
 </body>
 </html>
-
 
 <style>
     /* [Previous CSS unchanged, included for completeness] */

@@ -21,6 +21,7 @@ if (isset($_GET['delete'])) {
     $count = $stmt->get_result()->fetch_assoc()['count'];
     $stmt->close();
 
+    // kiểm tr 
 
     if ($count > 0) {
         $message = "<div class='message error'>Không thể xóa khóa học vì có bài kiểm tra liên quan!</div>";
@@ -36,6 +37,9 @@ if (isset($_GET['delete'])) {
     }
     $conn->close();
 }
+
+
+
 
 
 // Xử lý sửa khóa học

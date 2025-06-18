@@ -23,12 +23,28 @@ $message = isset ($_GET ['message'])? urldecode ($_get['message']):"";
 // xử lý yêu câu lấy khoá học của sinh viên đó
 
 if(isset($_GET ['acction ']) && $_get['action'] == 'get_courses' && isset ($_GET ['student_id'])) 
-    
-
-
-
-
-
+$student_id = $_GET [$student_id];
+$stmt = $conn -> prepare ("SELECT khoahoc FROM students WHERE student_id=?");
+if(!$stmt){
+    error_log ("file không thanh công get_courses: ".$conn -> error);
+    header ('Content-Type : application/json');
+    echo json_encode(['status' => 'error', 'message' => 'lỗi truy vấn cơ sở dữ liệu']);
+    exit ;
+}
+    $stmt->bind_param("s", $student_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $khoa_hoc_ids = [];
+    if ($row = $result->fetch_assoc()) {
+        $khoa_hoc_ids = !empty($row['Khoahoc']) && $row['Khoahoc'] !== NULL ? explode(',', $row['Khoahoc']) : [];
+        error_log("Fetched courses for student $student_id: " . print_r($khoa_hoc_ids, true));
+    } else {
+        error_log("No student found with Student_ID: $student_id");
+    }
+    $stmt->close();
+    header('Content-Type: application/json');
+    echo json_encode($khoa_hoc_ids);
+    exit;
 
 
 // Xử lý yêu cầu AJAX để lưu khóa học
@@ -43,7 +59,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         echo json_encode(['status' => 'error', 'message' => 'Student_ID không hợp lệ']);
         exit;
     }
-    
     // Debug
     error_log("Saving courses for student: $student_id");
     error_log("Selected courses: " . print_r($khoa_hoc_ids, true));
@@ -238,6 +253,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = $_POST['password'];
         $ten = $_POST['ten'];
         $email = $_POST['email'];
+        
+        
 
         // Kiểm tra Student_ID đã tồn tại
         $stmt = $conn->prepare("SELECT Student_ID FROM students WHERE Student_ID = ?");

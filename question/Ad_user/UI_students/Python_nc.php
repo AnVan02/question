@@ -17,8 +17,8 @@ $conn = new mysqli("localhost", "root", "", "student"); // Nếu tên thật là
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
-$ma_khoa = '10'; // Thay đổi mã khóa học
-$id_test = '24'; // Thay đổi ID bài test 
+$ma_khoa = '2'; // Thay đổi mã khóa học
+$id_test = '29'; // Thay đổi ID bài test 
 $student_id = $_SESSION['student_id'];
 
 // Lấy mã khóa học từ bảng students và kiểm tra
@@ -40,8 +40,8 @@ if ($row = $result->fetch_assoc()) {
 } else {
     die("Lỗi: Không tìm thấy thông tin sinh viên với ID: $student_id.");
 }
-
 $stmt->close();
+
 
 // Kiểm tra quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
@@ -115,6 +115,7 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
     $stmt->close();
     return 1; 
 }
+
 // Khởi tạo biến
 $ten_khoa = '';
 $current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
@@ -141,10 +142,10 @@ if ($row = $result->fetch_assoc()) {
             'id' => $row2['Id_cauhoi'],
             'question' => $row2['cauhoi'],
             'choices' => [
-                'A' => $row2['cau_a'],
-                'B' => $row2['cau_b'],
-                'C' => $row2['cau_c'],
-                'D' => $row2['cau_d']
+                'A' => $row2 ['cau_a'],
+                'B' => $row2 ['cau_b'],
+                'C' => $row2 ['cau_c'],
+                'D' => $row2 ['cau_d']
             ],
             'explanations' => [
                 'A' => $row2['giaithich_a'],
@@ -156,7 +157,6 @@ if ($row = $result->fetch_assoc()) {
             'image' => $row2['hinhanh']
         ];
     }
-
     if (count($questions) < 1) {
         die("Lỗi: Không đủ câu hỏi cho '$ten_khoa' và '$id_baitest'.");
     }
@@ -209,8 +209,26 @@ if (isset($_POST['reset'])) {
 // Số lần thử tối đa
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
-?>
 
+// xử lý câu tiêp câu sau 
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
+    $_SESSION["current"]++;
+    $_SESSION["feedback"] = "";
+    header("Location: Python_nc.php");
+    exit;
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
+    if ($_SESSION["current"] > 0) {
+        $_SESSION["current"]--;
+        $_SESSION["feedback"] = "";
+    }
+    header("Location: Python_nc.php");
+    exit;
+}
+
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -226,6 +244,7 @@ $conn->close();
             font-size:17px;
             color: #333;
         }
+        
         .container {
             max-width: 1100px;
             margin: 40px auto;
@@ -234,6 +253,7 @@ $conn->close();
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
+        
         h1, h2, h3 {
             color: #2c3e50;
             text-align: center;
@@ -334,11 +354,22 @@ $conn->close();
                     <?php endif; ?>
                     <ul>
                         <?php foreach ($question['choices'] as $key => $value): ?>
-                            <li><label><input type="radio" name="answer" value="<?php echo $key; ?>" required> <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?></label></li>
+                            <li>
+                                <label>
+                                    <input type="radio" name="answer" value="<?php echo $key; ?>" required> <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
+                                </label>
+                            </li>
                         <?php endforeach; ?>
                     </ul>
+                   
+                    <div class="btn-area">
+                        <button type="hidden" name="current_index" value="<?php echo $current_index; ?>">Câu trước </button>
+                        <button type="submit" name="next" class="btn-next" value="<?php echo $current_index; ?>">Câu tiếp</button>
+                    </div>
+
                     <input type="hidden" name="current_index" value="<?php echo $current_index; ?>">
                     <button type="submit">Trả lời »</button>
+
                 </div>
             </form>
         <?php else: ?>
@@ -350,7 +381,6 @@ $conn->close();
             <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
             <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
-            
             <hr>
             <?php if (empty($answers)): ?>
                 <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>
@@ -366,26 +396,30 @@ $conn->close();
                                 <?php
                                 $style = '';
                                 $icon = '';
-                                if (isset($answers[$index]['selected']) && $key === $answers[$index]['selected']) {
+                                
+                                $is_selected = isset($answers[$index]['selected']) && $key === $answers[$index]['selected'];
+                                // $is_correct = $key === $question['correct'];
+                                
+                                if ($is_selected) {
                                     $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
-                                    $icon = $answers[$index]['is_correct'] ? '' : '';
+                                } elseif ($is_correct) {
+                                    $style = 'correct';
                                 }
                                 ?>
                                 <li class="<?php echo $style; ?>">
-                                    <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?> <?php echo $icon; ?>
+                                    <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
+                                    <?php if ($is_selected && !$is_correct): ?>
+                                        <span></span>
+                                    <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        <?php if (isset($answers[$index]['selected'])): ?>
-                            <div class="explanation-block" style="border-color: <?php echo $answers[$index]['is_correct'] ? 'orange' : 'red'; ?>;">
-                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
-                            </div>
-                        <?php else: ?>
-                            
-                            <div class="explanation-block" style="border-color: orange;">
-                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
-                            </div>
-                        <?php endif; ?>
+                        
+                        <div class="explanation-block" style="border-color: <?php echo isset($answers[$index]) && $answers[$index]['is_correct'] ? '#28a745' : '#dc3545'; ?>;">
+                            <?php if (isset($answers[$index]['selected']) && !$answers[$index]['is_correct']): ?>
+                                <p><strong>Giải thích :</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index]['selected']]); ?></p>
+                            <?php endif; ?>
+                        </div>
                         <hr>
                     </div>
                 <?php endforeach; ?>

@@ -12,9 +12,11 @@ function dbconnect() {
         error_log("Database connection failed: " . $conn->connect_error);
         die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }
+
     $conn->set_charset("utf8mb4");
     return $conn;
 }
+
 
 // Kết nối cơ sở dữ liệu
 $conn = dbconnect();

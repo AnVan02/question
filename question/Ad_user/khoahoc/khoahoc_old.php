@@ -65,6 +65,52 @@ if (isset($_GET['edit_test']) && $id_khoa > 0) {
     }
 }
 
+
+// xử lý lấy tổng câu hỏi 
+$conn = dbconnect ();
+$khoa_hoc = [];
+
+$sql ="SELECT t.so_cau_hien_thị, k.id_khoa
+       FROM test t 
+       LEET JOIN khoa_hoc k ON t.id_khoa = k.id
+       WHERE t.id_test =?";
+    $stmt = $conn -> prepare ($sql);
+    $stmt ->bind_param ("i", $id_test);
+    $ten_test = $row ['so_cau_hien_thi'];
+    $ten_test = $row ['id_test'];
+    
+    // kiêm tra và xoá hinh ảnh nêu có 
+    $sql = "SELECT hinhanh FROM quiz WHERE Id_cauhoi = ? AND id_baitest = ? AND ten_khoa =?";
+    $stmt = $conn -> prepare ($sql);
+    $stmt ->brind_param ("iss", $delete_id , $ten_test , $khoa_hoc);
+    $stmt -> execute ();
+    $result = $stmt -> get_result ();
+    if($result -> num_rows >0) {
+        $row = $result -> fetch_assoc ();
+        if (!empty ($row ['hinhanh']) && file_exists ($row['hinhanh'])) {
+            unlink ($row['hinhanh']);
+        }
+    }
+    
+    $quesions =[];
+    if ($id_test > 0 && $test_info && $khoa_hoc) {
+        $sql ="SELECT t.id_cauhoi, t.id_test , t.cauhoi, t.hinhanh, t.cau_a, t.giaithich, t.cau_b, t.giaithich, t.cau_c, t.giaithich, t.cau_d, t.giaithich
+                FROM quiz t
+                LEET JOIN khoa_hoc k ON t.id_khoa = k.id 
+                WHERE t.id_test =? ";
+        $stmt = $conn -> prepare ($sql) ;
+        $stmt->bind_param("ss", $test_info['$cauhoi'], $_khoahoc);
+        $stmt -> execute ();
+        $stmt = $stmt -> get_result ();
+            if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $questions[] = $row;
+        }
+    }
+}
+    $stmt -> close();
+    $stmt ->close();
+
 // Xử lý cập nhật bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_khoa > 0) {
     $id_test = (int)$_POST['id_test'];

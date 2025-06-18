@@ -575,3 +575,106 @@ function checkCourseAccess($conn, $student_id, $ma_khoa) {
     </style>
 </body>
 </html>
+
+<!--  -->
+
+<form method="POST" action="">
+    <div class="question-box">
+        <h3>Câu <?php echo $current_index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></h3>
+        <?php if (!empty($question['image'])): ?>
+            <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
+        <?php endif; ?>
+        <ul>
+            <?php foreach ($question['choices'] as $key => $value): ?>
+                <li>
+                    <label>
+                        <input type="radio" name="answer" value="<?php echo $key; ?>" required>
+                        <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
+                    </label>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <input type="hidden" name="current_index" value="<?php echo $current_index; ?>">
+        <button type="submit">Trả lời »</button>
+    </div>
+</form>
+
+<script>
+    // Thêm đoạn code này sau khi lấy câu hỏi từ database
+if (!isset($_SESSION['shuffled_questions'])) {
+    // Xáo trộn thứ tự câu hỏi
+    shuffle($questions);
+    
+    // Xáo trộn đáp án cho từng câu hỏi
+    foreach ($questions as &$question) {
+        $choices = $question['choices'];
+        $explanations = $question['explanations'];
+        $correct = $question['correct'];
+        
+        // Kết hợp đáp án và giải thích thành mảng để xáo trộn
+        $combined = array_combine(array_keys($choices), array_values($choices));
+        $explanation_combined = array_combine(array_keys($explanations), array_values($explanations));
+        
+        // Xáo trộn đáp án
+        $keys = array_keys($combined);
+        shuffle($keys);
+        $shuffled_choices = [];
+        $shuffled_explanations = [];
+        
+        foreach ($keys as $key) {
+            $shuffled_choices[$key] = $combined[$key];
+            $shuffled_explanations[$key] = $explanation_combined[$key];
+        }
+        
+        // Cập nhật lại đáp án đúng sau khi xáo trộn
+        $question['choices'] = $shuffled_choices;
+        $question['explanations'] = $shuffled_explanations;
+        $question['original_correct'] = $correct; // Lưu đáp án đúng gốc
+        $question['correct'] = array_search($correct, $keys) !== false ? $correct : $keys[0];
+    }
+    
+    $_SESSION['shuffled_questions'] = $questions;
+} else {
+    $questions = $_SESSION['shuffled_questions'];
+}
+</script>
+
+<?php foreach ($_SESSION['questions'] as $index => $question): ?>
+    <div class="question-block">
+        <p class="question-text">Câu <?php echo $index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></p>
+        <?php if (!empty($question['image'])): ?>
+            <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
+        <?php endif; ?>
+        <ul>
+            <?php foreach ($question['choices'] as $key => $value): ?>
+                <?php
+                $style = '';
+                $icon = '';
+                $is_selected = isset($answers[$index]['selected']) && $key === $answers[$index]['selected'];
+                $is_correct = $key === $question['correct'];
+                
+                if ($is_selected) {
+                    $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
+                } elseif ($is_correct) {
+                    $style = 'correct';
+                }
+                ?>
+                <li class="<?php echo $style; ?>">
+                    <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
+                    <?php if ($is_selected && !$is_correct): ?>
+                        <span>(Bạn chọn)</span>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        
+        <div class="explanation-block" style="border-color: <?php echo isset($answers[$index]) && $answers[$index]['is_correct'] ? '#28a745' : '#dc3545'; ?>;">
+            <p><strong>Đáp án đúng:</strong> <?php echo $question['correct']; ?></p>
+            <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
+            <?php if (isset($answers[$index]['selected']) && !$answers[$index]['is_correct']): ?>
+                <p><strong>Giải thích lựa chọn của bạn:</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index]['selected']]); ?></p>
+            <?php endif; ?>
+        </div>
+        <hr>
+    </div>
+<?php endforeach; ?>
