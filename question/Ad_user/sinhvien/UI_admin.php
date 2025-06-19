@@ -158,26 +158,55 @@ if ($mode == 'edit' && !empty($ma_khoa) && !empty($id_baitest) && !empty($studen
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+            margin: 0;
+            padding: 20px;
+            font-size: 17px;
+            color: #333;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
+
         .form-container {
-            background-color: #f5f5f5;
+            background-color: #e0f7fa;
             padding: 20px;
             border-radius: 5px;
             margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .form-student {
             display: grid;
             grid-template-columns: 100px 1fr;
-            gap: 10px;
+            gap: 20px;
             margin-bottom: 15px;
+            justify-content: center;
         }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
         input[type="text"] {
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
         }
+
         button {
             background-color: #4CAF50;
             color: white;
@@ -185,39 +214,94 @@ if ($mode == 'edit' && !empty($ma_khoa) && !empty($id_baitest) && !empty($studen
             padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
+        .message, .error {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
         .message {
             color: green;
-            padding: 10px;
-            margin-bottom: 15px;
+            background-color: #d4edda;
         }
+
         .error {
             color: red;
-            padding: 10px;
-            margin-bottom: 15px;
+            background-color: #f8d7da;
         }
+
         .question-block {
             margin-bottom: 30px;
             border-bottom: 1px solid #eee;
             padding-bottom: 20px;
         }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
         .correct {
             color: green;
             font-weight: bold;
         }
+
         .incorrect {
             color: red;
             font-weight: bold;
         }
+
         .score-info {
             background-color: #e7f3fe;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
+            max-width: 1100px;
+            margin:  40px auto;
+            box-sizing: border-box;
         }
+
+        .question-block img {
+            max-width: 300px;
+            display: block;
+            margin-top: 10px;
+        }
+
+        form {
+            margin-bottom: 30px;
+        }
+
+        input[type="text"]:focus {
+            border-color: #66afe9;
+            outline: none;
+        }
+
+        input[type="text"]:hover {
+            border-color: #888;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        button:disabled:hover {
+            background-color: #cccccc;
+        }
+        
     </style>
 </head>
 <body>
@@ -246,17 +330,18 @@ if ($mode == 'edit' && !empty($ma_khoa) && !empty($id_baitest) && !empty($studen
             <?php echo htmlspecialchars($message); ?>
         </div>
     <?php endif; ?>
-
+            <p><strong>Kết quả :</strong> <?php echo count($questions); ?>/<?php echo $highest_score; ?></p>
+            
     <?php if ($mode == 'edit' && empty($message) && !empty($student_data)): ?>
-        <div class="score-info">
+        <!-- <div class="score-info">
             <h2>Kết quả bài test</h2>
             <p><strong>Sinh viên:</strong> <?php echo htmlspecialchars($student_data['Student_ID']); ?></p>
             <p><strong>Khóa học:</strong> <?php echo htmlspecialchars($ten_khoa); ?></p>
             <p><strong>Bài test:</strong> <?php echo htmlspecialchars($ten_baitest); ?></p>
             <p><strong>Điểm số:</strong> <?php echo $highest_score; ?>/<?php echo count($questions); ?></p>
-        </div>
+        </div> -->
 
-        <h3>Chi tiết bài làm</h3>
+        <h3 >Chi tiết bài làm</h3>
         <?php foreach ($questions as $index => $question): ?>
             <div class="question-block">
                 <p><strong>Câu <?php echo $index + 1; ?>:</strong> <?php echo htmlspecialchars($question['question']); ?></p>
@@ -281,16 +366,13 @@ if ($mode == 'edit' && !empty($ma_khoa) && !empty($id_baitest) && !empty($studen
                         <li class="<?php echo $class; ?>">
                             <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
                             <!-- <?php if ($is_correct): ?> (Đáp án đúng) <?php endif; ?> -->
-                            <?php if ($is_selected && !$is_correct): ?> (Sinh viên chọn) <?php endif; ?>
+                            <?php if ($is_selected && !$is_correct): ?> X && ? <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                
-                <!-- <?php if (isset($answers[$index + 1]) && $answers[$index + 1] !== $question['correct']): ?>
-                    <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index + 1]]); ?></p>
-                <?php endif; ?> -->
             </div>
         <?php endforeach; ?>
     <?php endif; ?>
+
 </body>
 </html>
