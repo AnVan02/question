@@ -17,8 +17,8 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$ma_khoa = '1'; // Course ID
-$id_test = '19'; // Test ID
+$ma_khoa = '1'; // id mã khoa hoc
+$id_test = '19'; // id mã bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Check course access
@@ -347,22 +347,36 @@ $conn->close();
                 </div>
             </form>
         <?php else: ?>
-            <?php
-            // Construct tt_bai_test as "Câu 1: A, Câu 2: B, ..."
+           <?php
             $tt_bai_test = '';
-            if (!empty($answers)) {
-                $answer_pairs = [];
-                foreach ($answers as $index => $answer) {
-                    $answer_pairs[] = "Câu " . ($index + 1) . ": " . $answer['selected'];
+                if (!empty($answers)) {
+                    $answer_pairs = [];
+                    $total_length = 0;
+                    foreach ($answers as $index => $answer) {
+                        $text = "Câu " . ($index + 1) . ": " . $answer['selected'];
+                        $text_length = strlen($text);
+
+                        // +2 để tính dấu phẩy và khoảng trắng nếu không phải câu đầu
+                        $additional_length = ($index > 0 ? 2 : 0) + $text_length;
+
+                        // Dừng nếu thêm câu này sẽ vượt quá 255
+                        if ($total_length + $additional_length > 255 - 3) { // -3 để dành cho "..."
+                            break;
+                        }
+
+                        $answer_pairs[] = $text;
+                        $total_length += $additional_length;
+                    }
+
+                    $tt_bai_test = implode(', ', $answer_pairs);
+
+                    // Nếu không đủ toàn bộ câu, thêm dấu ...
+                    if (count($answer_pairs) < count($answers)) {
+                        $tt_bai_test .= '...';
+                    }
+                } else {
+                    $tt_bai_test = 'Không có câu trả lời';
                 }
-                $tt_bai_test = implode(", ", $answer_pairs);
-                // Check length to avoid exceeding VARCHAR(1000)
-                if (strlen($tt_bai_test) > 1000) {
-                    $tt_bai_test = substr($tt_bai_test, 0, 997) . '...';
-                }
-            } else {
-                $tt_bai_test = 'Không có câu trả lời';
-            }
 
             // Save results to ket_qua table
             $conn = new mysqli("localhost", "root", "", "student");

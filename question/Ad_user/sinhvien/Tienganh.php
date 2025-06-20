@@ -17,8 +17,8 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$ma_khoa = '6'; // Course ID
-$id_test = '21'; // Test ID
+$ma_khoa = '6'; // id mã khoa hoc
+$id_test = '21'; // id mã bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Lấy mã khóa học từ bảng students và kiểm tra
@@ -348,22 +348,32 @@ $conn->close();
             </form>
         <?php else: ?>
             <?php
-            // Construct tt_bai_test as "Câu 1: A, Câu 2: B, ..."
-            $tt_bai_test = '';
-            if (!empty($answers)) {
-                $answer_pairs = [];
-                foreach ($answers as $index => $answer) {
-                    $answer_pairs[] = "Câu " . ($index + 1) . ": " . $answer['selected'];
-                }
-                $tt_bai_test = implode(", ", $answer_pairs);
-                // Check length to avoid exceeding VARCHAR(1000)
-                if (strlen($tt_bai_test) > 1000) {
-                    $tt_bai_test = substr($tt_bai_test, 0, 997) . '...';
-                }
-            } else {
-                $tt_bai_test = 'Không có câu trả lời';
-            }
+            // xư lý thay đổi đáp án
+            $tt_bai_test ='';
+                if (!empty ($answers)){
+                    $answers_pairs = [];
+                    $total_length = 0;
+                    foreach ($answers as $index => $answers) {
+                        $text ="Câu" . ($index + 1). ":" .$answers ['selected'];
+                        $text_length = strlen($test);
 
+                        $additional_length =($index >0 ? 2:0 ) +$text_length;
+
+                        if($total_length + $additional_length > 255 -3 ){
+                            break;
+                        }
+                        $answers_pairs[]= $text;
+                        $total_length += $additional_length;
+                    }
+                    // nếu không đủ toàn bộ câu thêm dấu..
+                    if (count($answers_pairs) < count($answers)) {
+                        $tt_bai_test .='..';
+
+                    }
+                }else {
+                    $tt_bai_test ='không có câu trả lời';
+                    
+                }
             // Save results to ket_qua table
             $conn = new mysqli("localhost", "root", "", "student");
             if ($conn->connect_error) {
@@ -401,6 +411,7 @@ $conn->close();
             <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
             <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <!-- <p><strong>Chi tiết câu trả lời:</strong> <?php echo htmlspecialchars($tt_bai_test); ?></p> -->
             <hr>
             <?php if (empty($answers)): ?>
                 <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>

@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set('Asia/Ho_Chi_Minh'); // Lấy giờ chuẩn 
+date_default_timezone_set('Asia/Ho_Chi_Minh'); // Set timezone
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -11,14 +11,14 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-
 // Kết nối cơ sở dữ liệu
-$conn = new mysqli("localhost", "root", "", "student"); // Nếu tên thật là 'students'
+$conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
-$ma_khoa = '5'; // Thay đổi mã khóa học
-$id_test = '22'; // Thay đổi ID bài test 
+
+$ma_khoa = '5'; // id mã khoa hoc
+$id_test = '22'; //id mã bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Lấy mã khóa học từ bảng students và kiểm tra
@@ -28,34 +28,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
-    $khoahoc = $row['Khoahoc']; // Lấy chuỗi mã khóa học, ví dụ: "6,4"
-    // Chuyển chuỗi thành mảng
-    $khoahoc_list = explode(',', $khoahoc);
-    // Chuyển các giá trị thành số nguyên
-    $khoahoc_list = array_map('intval', $khoahoc_list);
-    // Kiểm tra xem $ma_khoa có trong danh sách không
+    $khoahoc = $row['Khoahoc']; // e.g., "6,4"
+    $khoahoc_list = array_map('intval', explode(',', $khoahoc));
     if (!in_array(intval($ma_khoa), $khoahoc_list)) {
-        die("Lỗi: Sinh viên không được đăng ký khóa học này (mã khóa: $ma_khoa).");
-    }
-} else {
-    die("Lỗi: Không tìm thấy thông tin sinh viên với ID: $student_id.");
-}
-$stmt->close();
-
-
-// Kiểm tra quyền truy cập khóa học
-$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
-$stmt->bind_param("s", $student_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$student = $result->fetch_assoc();
-
-if ($student) {
-    // Chuyển chuỗi Khoahoc thành mảng
-    $allowed_courses = explode(',', $student['Khoahoc']);
-    
-    // Kiểm tra xem ma_khoa có nằm trong mảng allowed_courses không
-    if (!in_array($ma_khoa, $allowed_courses)) {
         echo "<script>
             alert('Bạn không có quyền truy cập khóa học này!');
             window.location.href = 'login.php';
@@ -71,18 +46,7 @@ if ($student) {
 }
 $stmt->close();
 
-// Lấy khóa học từ bảng khoa_hoc
-function getCoursesFromDB($conn) {
-    $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
-    $result = $conn->query($sql);
-    $courses = [];
-    while ($row = $result->fetch_assoc()) {
-        $courses[$row['id']] = $row['khoa_hoc'];
-    }
-    return $courses;
-}
-
-// Lấy tên bài test từ id_test
+// Kiểm tra quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
 $stmt->execute();
@@ -95,7 +59,18 @@ $row = $result->fetch_assoc();
 $id_baitest = $row['ten_test'];
 $stmt->close();
 
-// Lấy thông tin kiểm tra (số lần thử tối đa)
+// Lấy khóa học từ bảng khoa_hoc
+function getCoursesFromDB($conn) {
+    $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
+    $result = $conn->query($sql);
+    $courses = [];
+    while ($row = $result->fetch_assoc()) {
+        $courses[$row['id']] = $row['khoa_hoc'];
+    }
+    return $courses;
+}
+
+// Lấy tên bài test từ id_test
 function getTestInfo($conn, $ten_test, $ten_khoa) {
     $courses = getCoursesFromDB($conn);
     $id_khoa = array_search($ten_khoa, $courses);
@@ -113,17 +88,17 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
         return $row['lan_thu'];
     }
     $stmt->close();
-    return 1; 
+    return 1;
 }
 
 // Khởi tạo biến
 $ten_khoa = '';
-$current_index = isset($_POST['current_index']) ? intval($_POST['current_index']) : 0;
+$current_index = isset($_SESSION['current_index']) ? intval($_SESSION['current_index']) : 0;
 $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
 $highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
 $attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
-$pass_score = 4; // Số câu hỏi để đạt
+$pass_score = 4; // Passing score
 
 // Lấy tên khóa học và câu hỏi 
 $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
@@ -142,10 +117,10 @@ if ($row = $result->fetch_assoc()) {
             'id' => $row2['Id_cauhoi'],
             'question' => $row2['cauhoi'],
             'choices' => [
-                'A' => $row2 ['cau_a'],
-                'B' => $row2 ['cau_b'],
-                'C' => $row2 ['cau_c'],
-                'D' => $row2 ['cau_d']
+                'A' => $row2['cau_a'],
+                'B' => $row2['cau_b'],
+                'C' => $row2['cau_c'],
+                'D' => $row2['cau_d']
             ],
             'explanations' => [
                 'A' => $row2['giaithich_a'],
@@ -163,7 +138,6 @@ if ($row = $result->fetch_assoc()) {
     $_SESSION['questions'] = $questions;
     $_SESSION['ten_khoa'] = $ten_khoa;
     $_SESSION['id_baitest'] = $id_baitest;
-    $_SESSION['current_index'] = 0;
     if (!isset($_SESSION['attempts'])) {
         $_SESSION['attempts'] = 1;
     }
@@ -173,8 +147,8 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $stmt2->close();
 
-// Xử lý gửi câu trả lời 
-if (isset($_POST['answer']) && isset($_SESSION['questions'])) {
+// Handle answer submission
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $user_answer = $_POST['answer'];
     $current_question = $_SESSION['questions'][$current_index];
     $is_correct = ($user_answer === $current_question['correct']);
@@ -194,6 +168,25 @@ if (isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $_SESSION['current_index'] = $current_index;
 }
 
+// Chuyên cấu tiếp câu sau
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
+    if ($current_index < count($_SESSION['questions']) - 1) {
+        $current_index++;
+        $_SESSION['current_index'] = $current_index;
+    }
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
+    if ($current_index > 0) {
+        $current_index--;
+        $_SESSION['current_index'] = $current_index;
+    }
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
+
 // Xử lý thiết lập lại
 if (isset($_POST['reset'])) {
     $attempts++;
@@ -206,29 +199,11 @@ if (isset($_POST['reset'])) {
     $answers = [];
 }
 
-// Số lần thử tối đa
+// Get max attempts
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
-
-// xử lý câu tiêp câu sau 
-
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
-    $_SESSION["current"]++;
-    $_SESSION["feedback"] = "";
-    header("Location: van.php");
-    exit;
-}
-
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
-    if ($_SESSION["current"] > 0) {
-        $_SESSION["current"]--;
-        $_SESSION["feedback"] = "";
-    }
-    header("Location: van.php");
-    exit;
-}
-
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -241,10 +216,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             margin: 0;
             padding: 20px;
-            font-size:17px;
+            font-size: 17px;
             color: #333;
         }
-        
         .container {
             max-width: 1100px;
             margin: 40px auto;
@@ -253,7 +227,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-        
         h1, h2, h3 {
             color: #2c3e50;
             text-align: center;
@@ -336,6 +309,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
             text-align: center;
             font-weight: bold;
         }
+        .btn-area {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -361,19 +338,92 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                   
                     <div class="btn-area">
-                        <button type="hidden" name="current_index" value="<?php echo $current_index; ?>">Câu trước </button>
-                        <button type="submit" name="next" class="btn-next" value="<?php echo $current_index; ?>">Câu tiếp</button>
+                        <button type="submit" name="goBack" <?php echo $current_index == 0 ? 'disabled' : ''; ?>>Câu trước</button>
+                        <button type="submit" name="skip" <?php echo $current_index == count($_SESSION['questions']) - 1 ? 'disabled' : ''; ?>>Câu tiếp</button>
                     </div>
-
                     <input type="hidden" name="current_index" value="<?php echo $current_index; ?>">
                     <button type="submit">Trả lời »</button>
-
                 </div>
             </form>
         <?php else: ?>
-            <h1> Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?> </h1>
+            <?php
+            // // Construct tt_bai_test as "Câu 1: A, Câu 2: B, ..."
+            // $tt_bai_test = '';
+            // if (!empty($answers)) {
+            //     $answer_pairs = [];
+            //     foreach ($answers as $index => $answer) {
+            //         $answer_pairs[] = "Câu " . ($index + 1) . ": " . $answer['selected'];
+            //     }
+            //     $tt_bai_test = implode(", ", $answer_pairs);
+            //     // Check length to avoid exceeding VARCHAR(1000)
+            //     if (strlen($tt_bai_test) > 1000) {
+            //         $tt_bai_test = substr($tt_bai_test, 0, 997) . '...';
+            //     }
+            // } else {
+            //     $tt_bai_test = 'Không có câu trả lời';
+            // }
+            
+            $stt_bai_test ='';
+            if (!empty ($answer)) {
+                $answer_pairs = [];
+                $total_lenth = 0;
+                    foreach ($answers as $index => $answer) {
+                        $text ="câu". ($index + 1). ":". $answer ['selected'];
+                           $text_length = strlen($text);
+
+                        // +2 để tính dấu phẩy và khoảng trắng nếu không phải câu đầu
+                        $additional_length = ($index > 0 ? 2 : 0) + $text_length;
+
+                        // Dừng nếu thêm câu này sẽ vượt quá 255
+                        if ($total_length + $additional_length > 255 - 3) { // -3 để dành cho "..."
+                            break;
+                        }
+
+                        $answer_pairs[] = $text;
+                        $total_length += $additional_length;
+                    }
+
+                    $tt_bai_test = implode(', ', $answer_pairs);
+
+                    // Nếu không đủ toàn bộ câu, thêm dấu ...
+                    if (count($answer_pairs) < count($answers)) {
+                        $tt_bai_test .= '...';
+                    }
+                } else {
+                    $tt_bai_test = 'Không có câu trả lời';
+                }
+
+            // Save results to ket_qua table
+            $conn = new mysqli("localhost", "root", "", "student");
+            if ($conn->connect_error) {
+                die("Kết nối thất bại: " . $conn->connect_error);
+            }
+            $stmt = $conn->prepare("SELECT kq_cao_nhat FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+            $stmt->bind_param("sis", $student_id, $ma_khoa, $id_test);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                if ($highest_score > $row['kq_cao_nhat']) {
+                    $stmt = $conn->prepare("UPDATE ket_qua SET kq_cao_nhat = ?, tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+                    $stmt->bind_param("issis", $highest_score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
+                    $stmt->execute();
+                } else {
+                    $stmt = $conn->prepare("UPDATE ket_qua SET tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+                    $stmt->bind_param("siss", $tt_bai_test, $student_id, $ma_khoa, $id_test);
+                    $stmt->execute();
+                }
+            } else {
+                $stmt = $conn->prepare("INSERT INTO ket_qua (student_id, khoa_id, test_id, kq_cao_nhat, tt_bai_test) VALUES (?, ?, ?, ?, ?)");
+                $stmt->bind_param("isiss", $student_id, $ma_khoa, $id_test, $highest_score, $tt_bai_test);
+                $stmt->execute();
+            }
+            $stmt->close();
+
+            $conn->close();
+            ?>
+            <h1>Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?></h1>
             <p><strong>Khóa học:</strong> <?php echo htmlspecialchars($ten_khoa); ?></p>
             <p><strong>Bài test:</strong> <?php echo htmlspecialchars($id_baitest); ?></p>
             <p><strong>Thời gian hoàn thành:</strong> <?php echo date('H:i:s d/m/Y'); ?></p>
@@ -381,6 +431,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
             <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
             <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <!-- <p><strong>Chi tiết câu trả lời:</strong> <?php echo htmlspecialchars($tt_bai_test); ?></p> -->
             <hr>
             <?php if (empty($answers)): ?>
                 <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>
@@ -395,11 +446,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
                             <?php foreach ($question['choices'] as $key => $value): ?>
                                 <?php
                                 $style = '';
-                                $icon = '';
-                                
-                                $is_selected = isset($answers[$index]['selected']) && $key === $answers[$index]['selected'];
-                                // $is_correct = $key === $question['correct'];
-                                
+                                $is_selected = isset($answers[$index]) && $key === $answers[$index]['selected'];
+                                $is_correct = $key === $question['correct'];
                                 if ($is_selected) {
                                     $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
                                 } elseif ($is_correct) {
@@ -408,16 +456,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
                                 ?>
                                 <li class="<?php echo $style; ?>">
                                     <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
-                                    <?php if ($is_selected && !$is_correct): ?>
-                                        <span></span>
-                                    <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        
                         <div class="explanation-block" style="border-color: <?php echo isset($answers[$index]) && $answers[$index]['is_correct'] ? '#28a745' : '#dc3545'; ?>;">
                             <?php if (isset($answers[$index]['selected']) && !$answers[$index]['is_correct']): ?>
-                                <p><strong>Giải thích :</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index]['selected']]); ?></p>
+                                <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index]['selected']]); ?></p>
                             <?php endif; ?>
                         </div>
                         <hr>

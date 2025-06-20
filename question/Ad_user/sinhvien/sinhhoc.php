@@ -17,8 +17,8 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$ma_khoa = '8'; // Course ID
-$id_test = '1'; // Test ID
+$ma_khoa = '8'; // id mã khoa hoc
+$id_test = '1'; // id mã bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Lấy mã khóa học từ bảng students và kiểm tra
@@ -98,8 +98,7 @@ $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
 $highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
 $attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
-$pass_score = 5; // Passing score
-
+$pass_score = 4; // Passing score
 
 // Lấy tên khóa học và câu hỏi 
 $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
@@ -148,7 +147,7 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $stmt2->close();
 
-// Handle answer submission
+// xử lý việc gửi câu trả lời 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $user_answer = $_POST['answer'];
     $current_question = $_SESSION['questions'][$current_index];
@@ -169,7 +168,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_
     $_SESSION['current_index'] = $current_index;
 }
 
-// Handle navigation (Previous/Next)
+
+// Chuyên cấu tiếp câu sau
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
     if ($current_index < count($_SESSION['questions']) - 1) {
         $current_index++;
@@ -188,7 +188,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
     exit;
 }
 
-// Handle reset
+// Xử lý thiết lập lại
 if (isset($_POST['reset'])) {
     $attempts++;
     $_SESSION['attempts'] = $attempts;
@@ -348,24 +348,38 @@ $conn->close();
                 </div>
             </form>
         <?php else: ?>
+            <!-- xử lý thay đổi đap án -->
             <?php
-            // Construct tt_bai_test as "Câu 1: A, Câu 2: B, ..."
             $tt_bai_test = '';
-            if (!empty($answers)) {
-                $answer_pairs = [];
-                foreach ($answers as $index => $answer) {
-                    $answer_pairs[] = "Câu " . ($index + 1) . ": " . $answer['selected'];
-                }
-                $tt_bai_test = implode(", ", $answer_pairs);
-                // Check length to avoid exceeding VARCHAR(1000)
-                if (strlen($tt_bai_test) > 1000) {
-                    $tt_bai_test = substr($tt_bai_test, 0, 997) . '...';
-                }
-            } else {
-                $tt_bai_test = 'Không có câu trả lời';
-            }
+                if (!empty($answers)) {
+                    $answer_pairs = [];
+                    $total_length = 0;
+                    foreach ($answers as $index => $answer) {
+                        $text = "Câu " . ($index + 1) . ": " . $answer['selected'];
+                        $text_length = strlen($text);
 
-            // Save results to ket_qua table
+                        // +2 để tính dấu phẩy và khoảng trắng nếu không phải câu đầu
+                        $additional_length = ($index > 0 ? 2 : 0) + $text_length;
+
+                        // Dừng nếu thêm câu này sẽ vượt quá 255
+                        if ($total_length + $additional_length > 255 - 3) { // -3 để dành cho "..."
+                            break;
+                        }
+
+                        $answer_pairs[] = $text;
+                        $total_length += $additional_length;
+                    }
+
+                    $tt_bai_test = implode(', ', $answer_pairs);
+
+                    // Nếu không đủ toàn bộ câu, thêm dấu ...
+                    if (count($answer_pairs) < count($answers)) {
+                        $tt_bai_test .= '...';
+                    }
+                } else {
+                    $tt_bai_test = 'Không có câu trả lời';
+                }
+
             $conn = new mysqli("localhost", "root", "", "student");
             if ($conn->connect_error) {
                 die("Kết nối thất bại: " . $conn->connect_error);
@@ -401,7 +415,7 @@ $conn->close();
             <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
-            <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <!-- <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p> -->
             <!-- <p><strong>Chi tiết câu trả lời:</strong> <?php echo htmlspecialchars($tt_bai_test); ?></p> -->
             <hr>
             <?php if (empty($answers)): ?>
