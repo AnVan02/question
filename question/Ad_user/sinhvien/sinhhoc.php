@@ -147,6 +147,8 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $stmt2->close();
 
+
+
 // xử lý việc gửi câu trả lời 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $user_answer = $_POST['answer'];
@@ -200,7 +202,7 @@ if (isset($_POST['reset'])) {
     $answers = [];
 }
 
-// Get max attempts
+// Số lần thử tối đa
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
 ?>
@@ -390,13 +392,10 @@ $conn->close();
             $result = $stmt->get_result();
             if ($result->num_rows > 0) {
                 $row = $result->fetch_assoc();
-                if ($highest_score > $row['kq_cao_nhat']) {
+                if ($score >= $row['kq_cao_nhat']) {
+                    // Cập nhật nếu điểm >= điểm cao nhất
                     $stmt = $conn->prepare("UPDATE ket_qua SET kq_cao_nhat = ?, tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-                    $stmt->bind_param("issis", $highest_score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
-                    $stmt->execute();
-                } else {
-                    $stmt = $conn->prepare("UPDATE ket_qua SET tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-                    $stmt->bind_param("siss", $tt_bai_test, $student_id, $ma_khoa, $id_test);
+                    $stmt->bind_param("issis", $score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
                     $stmt->execute();
                 }
             } else {

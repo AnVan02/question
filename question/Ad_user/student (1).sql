@@ -39,9 +39,19 @@ CREATE TABLE `ket_qua` (
 --
 
 INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_bai_test`) VALUES
-(1, 4, '23', 1, 'Câu 1: C, Câu 2: D, Câu 3: D'),
-(1, 10, '12', 1, 'Câu 1: C, Câu 2: D, Câu 3: D');
+(1, 4, '8', 1, 'Câu 1: C, Câu 2: D, Câu 3: D'),
+(1, 10, '10', 1, 'Câu 1: C, Câu 2: D, Câu 3: D');
 
+
+INSERT INTO ket_qua (student_id, khoa_id, test_id, kq_cao_nhat, tt_bai_test)
+SELECT 
+    student_id,
+    khoa_id,
+    test_id,
+    MAX(score) AS kq_cao_nhat,
+    MAX(test_details) AS tt_bai_test
+FROM test_results
+GROUP BY student_id, khoa_id, test_id;
 -- --------------------------------------------------------
 
 --

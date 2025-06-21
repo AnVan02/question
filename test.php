@@ -1,84 +1,197 @@
 <?php
-$conn = new mysqli("localhost", "root", "", "student");
-if ($conn->connect_error) {
-    die("<div class='error'>Kết nối thất bại: " . $conn->connect_error . "</div>");
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+require "header.php";
+
+function dbconnect(){
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "123";
+
+    $conn = new mysqli($servername, $username, $password, $dbname);
+    if ($conn->connect_error) {
+        die("Kết nối thất bại: " . $conn->connect_error);
+    }
+    return $conn;
 }
 
-// B1: Hiển thị các khóa học
-if (isset($_GET['student_id']) && !empty($_GET['student_id'])) {
-    $student_id = htmlspecialchars(trim($_GET['student_id']));
+function checkAndRemoveExpired($SOSERI_SP, $currentDate){
+    $conn = dbconnect();
+    $deleteSql = "DELETE FROM baohanh WHERE SOSERI_SP = ? AND DATE_ADD(NGAYXUAT, INTERVAL THOIHANBH MONTH) < ?";
+    $stmt = $conn->prepare($deleteSql);
+    $stmt->bind_param("ss", $SOSERI_SP, $currentDate);
+    $stmt->execute();
+    $stmt->close();
 
-    $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
-    $stmt->bind_param("s", $student_id);
+    $checkSql = "SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, MASP, NGAYXUAT, THOIHANBH 
+                FROM baohanh WHERE SOSERI_SP = ?";
+    $stmt = $conn->prepare($checkSql);
+    $stmt->bind_param("s", $SOSERI_SP);
     $stmt->execute();
     $result = $stmt->get_result();
-
-    if ($row = $result->fetch_assoc()) {
-        $khoahoc_ids = explode(',', $row['Khoahoc']);
-        $placeholders = implode(',', array_fill(0, count($khoahoc_ids), '?'));
-        $types = str_repeat('i', count($khoahoc_ids));
-
-        $sql2 = "SELECT id, khoa_hoc FROM khoa_hoc WHERE id IN ($placeholders)";
-        $stmt2 = $conn->prepare($sql2);
-        $stmt2->bind_param($types, ...array_map('intval', $khoahoc_ids));
-        $stmt2->execute();
-        $result2 = $stmt2->get_result();
-
-        echo "<h3>Các khóa học của sinh viên ID <strong>$student_id</strong>:</h3><ul>";
-        while ($row2 = $result2->fetch_assoc()) {
-            echo "<li>
-                {$row2['khoa_hoc']} - 
-                <a href='?student_id=$student_id&khoa_hoc_id={$row2['id']}'>Xem thêm</a>
-            </li>";
-        }
-        echo "</ul>";
-    } else {
-        echo "<div class='error'>Không tìm thấy sinh viên với ID: $student_id</div>";
-    }
+    return $result;
 }
-
-// B2: Hiển thị danh sách bài test
-if (isset($_GET['khoa_hoc_id'])) {
-    $khoa_hoc_id = intval($_GET['khoa_hoc_id']);
-
-    $stmt3 = $conn->prepare("SELECT id, ten_test FROM test WHERE id_khoa = ?");
-    $stmt3->bind_param("i", $khoa_hoc_id);
-    $stmt3->execute();
-    $result3 = $stmt3->get_result();
-
-    echo "<h3>Bài test thuộc khóa học ID <strong>$khoa_hoc_id</strong>:</h3><ul>";
-    if ($result3->num_rows > 0) {
-        while ($test = $result3->fetch_assoc()) {
-            echo "<li>
-                {$test['ten_test']} - 
-                <a href='?student_id={$_GET['student_id']}&khoa_hoc_id=$khoa_hoc_id&test_id={$test['id']}'>Xem câu hỏi</a>
-            </li>";
-        }
-    } else {
-        echo "<li>Không có bài test nào.</li>";
-    }
-    echo "</ul>";
-}
-
-// B3: Hiển thị câu hỏi của bài test
-if (isset($_GET['test_id'])) {
-    $test_id = intval($_GET['test_id']);
-
-    $stmt4 = $conn->prepare("SELECT question_text FROM questions WHERE test_id = ?");
-    $stmt4->bind_param("i", $test_id);
-    $stmt4->execute();
-    $result4 = $stmt4->get_result();
-
-    echo "<h3>Câu hỏi trong bài test ID <strong>$test_id</strong>:</h3><ul>";
-    if ($result4->num_rows > 0) {
-        while ($q = $result4->fetch_assoc()) {
-            echo "<li>{$q['question_text']}</li>";
-        }
-    } else {
-        echo "<li>Không có câu hỏi nào.</li>";
-    }
-    echo "</ul>";
-}
-
-$conn->close();
 ?>
+
+<div class="main-content fl-right">
+    <div class="section" id="detail-blog-wp">
+        <div class="section-head clearfix">
+            <h3 class="section-title">Tra cứu bảo hành</h3>
+        </div>
+        <div class="section-detail">
+            <div class="search-container">
+                <form name="warranty-search" action="#" method="POST" onsubmit="return validateForm()">
+                    <input name="search" type="text" placeholder="Nhập mã serial sản phẩm" class="search-input" required />
+                    <button type="submit" class="search-button">Tra cứu</button>
+                </form>
+            </div>
+
+            <?php
+            if (isset($_POST['search']) && !empty(trim($_POST['search']))) {
+                $serial_sp = trim($_POST['search']);
+
+                $conn = dbconnect();
+
+                $checkStmt = $conn->prepare("SELECT SOSERI_SP, SOSERI_PC, TENSP FROM baohanh WHERE SOSERI_SP = ?");
+                $checkStmt->bind_param("s", $serial_sp);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+
+                if ($checkResult->num_rows > 0) {
+                    $products = [];
+                    while ($row = $checkResult->fetch_assoc()) {
+                        $products[] = $row;
+                    }
+                    $checkStmt->close();
+
+                    if (count($products) > 1) {
+                        $uniqueTENSP = array_unique(array_column($products, 'TENSP'));
+                        if (count($uniqueTENSP) > 1) {
+                            echo '<p class="error-message">Mã ' . htmlspecialchars($serial_sp) . ' có nhiều sản phẩm với tên khác nhau. Vui lòng kiểm tra lại.</p>';
+                        } else {
+                            displayProductInfoBySerial($conn, $serial_sp);
+                        }
+                    } else {
+                        $soseri_pc = $products[0]['SOSERI_PC'];
+                        $tensp = $products[0]['TENSP'];
+
+                        if (empty($tensp)) {
+                            echo '<p class="error-message">Sản phẩm với mã ' . htmlspecialchars($serial_sp) . ' không có tên sản phẩm.</p>';
+                        } else {
+                            displayProductInfo($conn, $soseri_pc);
+                        }
+                    }
+                } else {
+                    echo '<p class="error-message">Không tìm thấy thông tin bảo hành cho mã ' . htmlspecialchars($serial_sp) . '.</p>';
+                }
+                $conn->close();
+            }
+
+            function displayProductInfoBySerial($conn, $serial_sp) {
+                $stmt = $conn->prepare("
+                    SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, MASP, NGAYXUAT, THOIHANBH
+                    FROM baohanh
+                    WHERE SOSERI_SP = ?
+                    ORDER BY 
+                        CASE 
+                            WHEN LOWER(LOAI) LIKE '%pc%' THEN 0
+                            ELSE 1
+                        END, NGAYXUAT ASC
+                ");
+                $stmt->bind_param("s", $serial_sp);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    echo '<div class="result-container">';
+                    echo '<h3>Thông Tin Bảo Hành</h3>';
+                    echo '<div class="table-responsive">';
+                    echo '<table class="warranty-table">';
+                    echo '<thead><tr>
+                            <th>Số Serial SP</th>
+                            <th>Loại</th>
+                            <th>Tên Sản Phẩm</th>
+                            <th>Mã Hàng</th>
+                            <th>Ngày Xuất</th>
+                            <th>Thời Hạn BH</th>
+                          </tr></thead><tbody>';
+                    $firstRow = true;
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>';
+                        echo '<td class="serial">' . htmlspecialchars($row["SOSERI_SP"]) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["LOAI"]) . '</td>';
+                        echo $firstRow ? '<td>' . htmlspecialchars($row["TENSP"]) . '</td>' : '<td></td>';
+                        echo '<td>' . htmlspecialchars($row["MASP"]) . '</td>';
+                        echo '<td>' . date("d-m-Y", strtotime($row["NGAYXUAT"])) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["THOIHANBH"]) . ' tháng</td>';
+                        echo '</tr>';
+                        $firstRow = false;
+                    }
+                    echo '</tbody></table></div></div>';
+                }
+                $stmt->close();
+            }
+
+            function displayProductInfo($conn, $soseri_pc) {
+                $stmt = $conn->prepare("
+                    SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, MASP, NGAYXUAT, THOIHANBH
+                    FROM baohanh
+                    WHERE SOSERI_PC = ?
+                    ORDER BY 
+                        CASE 
+                            WHEN LOWER(LOAI) LIKE '%pc%' THEN 0
+                            ELSE 1
+                        END, NGAYXUAT ASC
+                ");
+                $stmt->bind_param("s", $soseri_pc);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    echo '<div class="result-container">';
+                    echo '<h3>Thông Tin Bảo Hành</h3>';
+                    echo '<div class="table-responsive">';
+                    echo '<table class="warranty-table">';
+                    echo '<thead><tr>
+                            <th>Số Serial SP</th>
+                            <th>Loại</th>
+                            <th>Tên Sản Phẩm</th>
+                            <th>Mã Hàng</th>
+                            <th>Ngày Xuất</th>
+                            <th>Thời Hạn BH</th>
+                          </tr></thead><tbody>';
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>';
+                        echo '<td class="serial">' . htmlspecialchars($row["SOSERI_SP"]) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["LOAI"]) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["TENSP"]) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["MASP"]) . '</td>';
+                        echo '<td>' . date("d-m-Y", strtotime($row["NGAYXUAT"])) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["THOIHANBH"]) . ' tháng</td>';
+                        echo '</tr>';
+                    }
+                    echo '</tbody></table></div></div>';
+                }
+                $stmt->close();
+            }
+            
+            ?>
+        </div>
+    </div>
+</div>
+
+<script>
+function validateForm() {
+    const input = document.forms["warranty-search"]["search"].value.trim();
+    if (input === "") {
+        alert("Vui lòng nhập mã serial sản phẩm!");
+        return false;
+    }
+    return true;
+}
+</script>
+
+<?php require 'footer.php'; ?>

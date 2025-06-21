@@ -1,69 +1,75 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-require "header.php";
-
 function dbconnect(){
     $servername = "localhost";
     $username = "root";
     $password = "";
-    $dbname = "database";
-
+    $dbname = "123";
+    
+    
+    // Create connection
     $conn = new mysqli($servername, $username, $password, $dbname);
+    
+    // Check connection
     if ($conn->connect_error) {
-        die("Kết nối thất bại: " . $conn->connect_error);
+      die("Connection failed: " . $conn->connect_error);
     }
+    
     return $conn;
 }
 
-function checkAndRemoveExpired($SOSERI_SP, $currentDate){
+function checkAndRemoveExpired($serial, $currentDate){
     $conn = dbconnect();
-    $deleteSql = "DELETE FROM baohanh WHERE SOSERI_SP = ? AND DATE_ADD(NGAYXUAT, INTERVAL THOIHANBH MONTH) < ?";
+    
+    // Xóa sản phẩm hết hạn
+    $deleteSql = "DELETE FROM sanpham WHERE SoSerial = ? AND NgayXuat + INTERVAL ThoiHanBH MONTH < ?";
     $stmt = $conn->prepare($deleteSql);
-    $stmt->bind_param("ss", $SOSERI_SP, $currentDate);
+    $stmt->bind_param("ss", $serial, $currentDate);
     $stmt->execute();
-    $stmt->close();
 
-    $checkSql = "SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, MASP, NGAYXUAT, THOIHANBH 
-                FROM baohanh WHERE SOSERI_SP = ?";
+    // nêu sản phẩm hết hạn sẽ xoá khỏi sql
+    $sql = "DELETE FROM sanpham WHERE MaHang,TenHang,SoSerial,NgayXuat,ThoiHanBh = ?";
+    
+    // Kiểm tra nếu sản phẩm tồn tại
+    $checkSql = "SELECT MaHang, TenHang, SoSerial, NgayXuat, ThoiHanBH FROM sanpham WHERE SoSerial = ?";
     $stmt = $conn->prepare($checkSql);
-    $stmt->bind_param("s", $SOSERI_SP);
+    $stmt->bind_param("s", $serial);
     $stmt->execute();
     $result = $stmt->get_result();
+    $stmt->close();
+    $conn->close();
+
     return $result;
-    $result = $stmt->get_result();
-
-
 }
 ?>
-
 <div class="main-content fl-right">
     <div class="section" id="detail-blog-wp">
         <div class="section-head clearfix">
-            <h3 class="section-title">Tra cứu bảo hành</h3>
+            <h3 class="section-title">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center">
+                        <p><h3 style="color:dodgerblue;">Tra cứu thông tin sản phẩm </h3></p>
+                    </div>
+                </div>
+            </h3>
         </div>
         <div class="section-detail">
-            <div class="search-container">
-                <form name="warranty-search" action="#" method="POST" onsubmit="return validateForm()">
-                    <input name="search" type="text" placeholder="Nhập mã serial sản phẩm" 
-                           class="search-input" required/>
-                    <button type="submit" class="search-button">Tra cứu</button>
-                </form>
-            </div>
-
+            <span class="create-date">
+                <div class="border border-zinc-300 p-4 rounded mb-4">
+                    <form name="test" action="#" method="POST">
+                        <input name="search" type="text" placeholder="NHẬP MÃ SERIAL CẦN TÌM" class="border border-zinc-300 p-2 rounded w-full" style="width: 80%"/>
+                        <button type="submit" class="bg-blue-500 text-red p-2 rounded" style="background-color:#FF3333; border: none; color:#FFFFFF;width: 15%">Tra cứu</button>
+                    </form>
+                </div>
+            </span>
+        </div>
             <?php
-
             if (isset($_POST['search']) && !empty(trim($_POST['search']))) {
                 $serial_sp = trim($_POST['search']);
                 $conn = dbconnect();
-
                 $checkStmt = $conn->prepare("SELECT SOSERI_SP, SOSERI_PC, TENSP FROM baohanh WHERE SOSERI_SP = ?");
                 $checkStmt->bind_param("s", $serial_sp);
                 $checkStmt->execute();
                 $checkResult = $checkStmt->get_result();
-
                 if ($checkResult->num_rows > 0) {
                     $products = [];
                     while ($row = $checkResult->fetch_assoc()) {
@@ -74,8 +80,7 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                     if (count($products) > 1) {
                         $uniqueTENSP = array_unique(array_column($products, 'TENSP'));
                         if (count($uniqueTENSP) > 1) {
-                            echo '<p class="error-message">Mã ' . htmlspecialchars($serial_sp) . 
-                                 ' có nhiều sản phẩm với tên khác nhau. Vui lòng kiểm tra lại.</p>';
+                            echo '<p class="error-message">Mã ' . htmlspecialchars($serial_sp) . ' có nhiều sản phẩm với tên khác nhau. Vui lòng kiểm tra lại.</p>';
                         } else {
                             displayProductInfoBySerial($conn, $serial_sp);
                         }
@@ -84,24 +89,20 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                         $tensp = $products[0]['TENSP'];
 
                         if (empty($tensp)) {
-                            echo '<p class="error-message">Sản phẩm với mã ' . htmlspecialchars($serial_sp) . 
-                                 ' không có tên sản phẩm.</p>';
+                            echo '<p class="error-message">Sản phẩm với mã ' . htmlspecialchars($serial_sp) . ' không có tên sản phẩm.</p>';
                         } else {
                             displayProductInfo($conn, $soseri_pc);
                         }
                     }
                 } else {
-                    echo '<p class="error-message">Không tìm thấy thông tin bảo hành cho mã ' . 
-                         htmlspecialchars($serial_sp) . '.</p>';
+                    echo '<p class="error-message">Không tìm thấy thông tin bảo hành cho mã ' . htmlspecialchars($serial_sp) . '.</p>';
                 }
                 $conn->close();
-
             }
-            
-            
+
             function displayProductInfoBySerial($conn, $serial_sp) {
                 $stmt = $conn->prepare("
-                    SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, NGAYXUAT, THOIHANBH
+                    SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, MASP, NGAYXUAT, THOIHANBH
                     FROM baohanh
                     WHERE SOSERI_SP = ?
                     ORDER BY 
@@ -123,6 +124,7 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                             <th>Số Serial SP</th>
                             <th>Loại</th>
                             <th>Tên Sản Phẩm</th>
+                            <th>Mã Hàng</th>
                             <th>Ngày Xuất</th>
                             <th>Thời Hạn BH</th>
                           </tr></thead><tbody>';
@@ -132,6 +134,7 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                         echo '<td class="serial">' . htmlspecialchars($row["SOSERI_SP"]) . '</td>';
                         echo '<td>' . htmlspecialchars($row["LOAI"]) . '</td>';
                         echo $firstRow ? '<td>' . htmlspecialchars($row["TENSP"]) . '</td>' : '<td></td>';
+                        echo '<td>' . htmlspecialchars($row["MASP"]) . '</td>';
                         echo '<td>' . date("d-m-Y", strtotime($row["NGAYXUAT"])) . '</td>';
                         echo '<td>' . htmlspecialchars($row["THOIHANBH"]) . ' tháng</td>';
                         echo '</tr>';
@@ -141,9 +144,10 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                 }
                 $stmt->close();
             }
+
             function displayProductInfo($conn, $soseri_pc) {
                 $stmt = $conn->prepare("
-                    SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, NGAYXUAT, THOIHANBH
+                    SELECT SOSERI_SP, SOSERI_PC, LOAI, TENSP, MASP, NGAYXUAT, THOIHANBH
                     FROM baohanh
                     WHERE SOSERI_PC = ?
                     ORDER BY 
@@ -165,15 +169,16 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                             <th>Số Serial SP</th>
                             <th>Loại</th>
                             <th>Tên Sản Phẩm</th>
+                            <th>Mã Hàng</th>
                             <th>Ngày Xuất</th>
                             <th>Thời Hạn BH</th>
                           </tr></thead><tbody>';
-
                     while ($row = $result->fetch_assoc()) {
                         echo '<tr>';
                         echo '<td class="serial">' . htmlspecialchars($row["SOSERI_SP"]) . '</td>';
                         echo '<td>' . htmlspecialchars($row["LOAI"]) . '</td>';
                         echo '<td>' . htmlspecialchars($row["TENSP"]) . '</td>';
+                        echo '<td>' . htmlspecialchars($row["MASP"]) . '</td>';
                         echo '<td>' . date("d-m-Y", strtotime($row["NGAYXUAT"])) . '</td>';
                         echo '<td>' . htmlspecialchars($row["THOIHANBH"]) . ' tháng</td>';
                         echo '</tr>';
@@ -182,228 +187,130 @@ function checkAndRemoveExpired($SOSERI_SP, $currentDate){
                 }
                 $stmt->close();
             }
+            
             ?>
         </div>
-    </div>
-</div>
-
-<style>
-* {
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    margin: 0;
-}
-
-.main-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.section-title {
-    color: #1e90ff;
-    font-size: 24px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.search-container {
-    background: #f9f9f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
+    <style>
+     /* CSS cho toàn bộ form */
 form {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+form input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 80%;
+    font-size: 16px;
+}
+
+form button {
+    padding: 10px;
+    background-color: #FF3333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    width: 15%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #e60000;
+}
+
+/* CSS cho phần thông tin sản phẩm */
+.section-detail {
+    margin-top: 20px;
+}
+
+.section-title h3 {
+    font-size: 24px;
+    color: dodgerblue;
+    margin-bottom: 10px;
+}
+
+.section-detail .create-date {
+    margin-bottom: 20px;
+}
+
+.border {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.border input {
+    font-size: 16px;
+}
+
+.result-box {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #F9F9F9;
+}
+
+.result-box p {
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+.result-box p strong {
+    color: dodgerblue;
+}
+
+.result-box p span {
+    font-weight: bold;
+    color: #FF0000;
+}
+
+.no-result {
+    color: #FF0000;
+    font-weight: bold;
+}
+
+/* CSS cho khối chứa form */
+.flex {
+    display: flex;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.items-center {
     align-items: center;
 }
 
-.search-input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.3s;
-}
-
-.search-input:focus {
-    border-color: #1e90ff;
-}
-
-.search-button {
-    padding: 12px 24px;
-    background: #ff3333;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.search-button:hover {
-    background: #cc0000;
-}
-
-.result-container {
-    margin: 20px 0;
-}
-
-.result-container h3 {
-    text-align: center;
-    color: #333;
+.mb-4 {
     margin-bottom: 20px;
 }
 
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.warranty-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.warranty-table th,
-.warranty-table td {
-    padding: 12px;
-    text-align: center;
-    border-bottom: 1px solid #eee;
-}
-
-.warranty-table th {
-    background: #ff3333;
-    color: white;
-    text-transform: uppercase;
-    font-size: 14px;
-}
-
-.warranty-table td.serial {
-    font-weight: bold;
-    color: #ff3333;
-}
-
-.warranty-table tr:nth-child(even) {
-    background: #f9f9f9;
-}
-
-.warranty-table tr:hover {
-    background: #f1f1f1;
-}
-
-.error-message {
-    color: #ff3333;
-    text-align: center;
-    font-weight: bold;
-    margin: 20px 0;
-    padding: 10px;
-    background: #ffe6e6;
-    border-radius: 4px;
-}
-
-/* Mobile Styles */
+/* Điều chỉnh khi màn hình nhỏ */
 @media screen and (max-width: 768px) {
-    .main-content {
-        padding: 15px;
-    }
-
-    .section-title {
-        font-size: 20px;
-    }
-
     form {
         flex-direction: column;
-        gap: 15px;
     }
 
-    .search-input,
-    .search-button {
+    form input,
+    form button {
         width: 100%;
-        font-size: 14px;
+        margin-bottom: 10px;
     }
 
-    .search-container {
-        padding: 15px;
-    }
-
-    .warranty-table {
-        font-size: 14px;
-    }
-
-    .warranty-table th,
-    .warranty-table td {
-        padding: 8px;
-        font-size: 12px;
-    }
-
-    .result-container h3 {
-        font-size: 18px;
+    form button {
+        width: 100%;
     }
 }
+         
 
-@media screen and (max-width: 480px) {
-    .warranty-table {
-        display: block;
-    }
-
-    .warranty-table thead {
-        display: none;
-    }
-
-    .warranty-table tr {
-        display: block;
-        margin-bottom: 15px;
-        border: 1px solid #eee;
-        border-radius: 4px;
-        padding: 10px;
-    }
-
-    .warranty-table td {
-        display: block;
-        text-align: left;
-        border: none;
-        position: relative;
-        padding-left: 50%;
-    }
-
-    .warranty-table td:before {
-        content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        width: 45%;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .warranty-table td.serial {
-        color: #ff3333;
-    }
-}
-</style>
-
-<script>
-function validateForm() {
-    const input = document.forms["warranty-search"]["search"].value.trim();
-    if (input === "") {
-        alert("Vui lòng nhập mã serial sản phẩm!");
-        return false;
-    }
-    return true;
-}
-</script>
-
-<?php require 'footer.php'; ?>
+    </style>
+   
+  
