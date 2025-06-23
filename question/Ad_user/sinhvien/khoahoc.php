@@ -26,7 +26,6 @@ $id_khoa = isset($_GET['id_khoa']) ? (int)$_GET['id_khoa'] : 0;
 
 
 
-
 // Xử lý xóa bài kiểm tra
 if (isset($_GET['delete_test']) && $id_khoa > 0) {
     $id_test = (int)$_GET['delete_test'];
@@ -45,7 +44,6 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
         $stmt->close();
     }
 }
-
 
 
 // Xử lý sửa bài kiểm tra
@@ -148,7 +146,6 @@ if ($id_khoa > 0) {
 }
 
 
-
 // Xử lý thêm bài kiểm tra
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
     $ten_test = trim($_POST['ten_test']);
@@ -170,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                       INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc))
                       WHERE k.id = ? AND q.id_baitest = ?";
         $stmt_count = $conn->prepare($sql_count);
-        $so_cau = 1;
+        $so_cau = 0;
         if ($stmt_count) {
             $stmt_count->bind_param("is", $id_khoa, $test_type);
             $stmt_count->execute();
@@ -203,6 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
     }
 }
 
+
 // Lấy danh sách bản ghi từ bảng test, lọc theo id_khoa
     $result = null;
     if ($id_khoa > 0 && $khoa_hoc) {
@@ -220,7 +218,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
             $stmt->close();
         }
     }
-    
 
     
 ?>
@@ -256,11 +253,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                 <label for="pass">Pass %:</label>
                 <input type="text" id="pass" name="pass" value="<?php echo $editing ? htmlspecialchars($edit_test['pass']) : ''; ?>" required>
             </div>
-
+<!-- 
             <div class="form-group">
                 <label for="so_cau_hien_thi">Số câu hiển thị:</label>
-                <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : ''; ?>" min="1" required>
-            </div>
+                <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : '5'; ?>" min="1" required>
+            </div> -->
 
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">
@@ -281,7 +278,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                     <th>Lần thứ</th>
                     <th>Pass</th>
                     <th>Câu hỏi</th>
-                    <th>Tổng số câu hỏi</th>
+                    <!-- <th>Tổng số câu hỏi</th> -->
                     <th>Hành động</th>
                 </tr>
                 
@@ -291,7 +288,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                     $test_type = (stripos($row['ten_test'], 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
                     
                     // Đếm số câu hỏi có sẵn trong quiz
-                    $so_cau =0;
+                    $so_cau = 0;
                     $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau
                                   FROM quiz q
                                   INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc))
@@ -322,7 +319,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                             <?php if ($so_cau == 0) echo ' <span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
                             
                         </td>
-                            <td><?php echo htmlspecialchars($so_cau); ?></td>
+                            <!-- <td><?php echo htmlspecialchars($so_cau); ?></td> -->
                         <td>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
                             <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>

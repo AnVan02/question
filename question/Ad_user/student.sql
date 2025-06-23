@@ -24,6 +24,28 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng 'login'
+--
+
+CREATE TABLE `account` (
+  `account_id` int(11) NOT NULL,
+  `account_name` varchar(255) NOT NULL,
+  `account_password` varchar(100) NOT NULL,
+  `account_email` varchar(255) NOT NULL,
+  `account_type` int(11) NOT NULL
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+--
+-- Đang đổ dữ liệu cho bảng `account`
+--
+
+INSERT INTO `account` (`account_id`, `account_name`, `account_password`, `account_email`,`account_type`) VALUES
+(1, 'Admin', '123456', 'admin@gmail.com',2);
+
+
+
+--
 -- Cấu trúc bảng cho bảng `ket_qua`
 --
 
@@ -49,9 +71,11 @@ INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_ba
 -- Cấu trúc bảng cho bảng `khoa_hoc`
 --
 
+
 CREATE TABLE `khoa_hoc` (
-  `id` int(11) NOT NULL,
-  `khoa_hoc` varchar(255) NOT NULL
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `khoa_hoc` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

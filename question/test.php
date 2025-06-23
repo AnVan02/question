@@ -1,111 +1,102 @@
-<?php
-date_default_timezone_set('Asia/Ho_Chi_Minh');
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-session_start();
+// Trong phần xử lý hiển thị danh sách bài test
+if (isset($_GET['khoa_hoc_id'])) {
+    // ... [phần code trước giữ nguyên] ...
 
-// Cấu hình database
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'student');
+    echo "<h3>Các bài test thuộc khóa học: <strong>$khoa_name</strong>:</h3><ul>";
+    if ($result3->num_rows > 0) {
+        while ($test = $result3->fetch_assoc()) {
+            $test_id = $test['id_test'];
+            $pass_score = $test['diem_dat']; // Điểm đạt yêu cầu
 
-// Kiểm tra đăng nhập
-if (!isset($_SESSION['student_id'])) {
-    die("<script>alert('Vui lòng đăng nhập!'); window.location.href='login.php';</script>");
-}
+            // Lấy kết quả cao nhất
+            $stmt_ketqua = $conn->prepare("SELECT kq_cao_nhat FROM ket_qua 
+                                        WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+            $stmt_ketqua->bind_param("iis", $student_id, $khoa_hoc_id, $test_id);
+            $stmt_ketqua->execute();
+            $ketqua_result = $stmt_ketqua->get_result();
+            $ketqua_data = $ketqua_result->fetch_assoc();
+            
+            $score = $ketqua_data['kq_cao_nhat'] ?? null;
+            $score_display = $score ?? 'Chưa làm';
+            
+            // Xác định trạng thái
+            $pass_status = '';
+            if (is_numeric($score)) {
+                $pass_status = ($score >= $pass_score) 
+                    ? '<span class="test-status passed">ĐẬU <i class="fas fa-check-circle"></i></span>' 
+                    : '<span class="test-status failed">RỚT <i class="fas fa-times-circle"></i></span>';
+            }
 
-// Kiểm tra khóa học được gán
-if (!isset($_SESSION['Khoahoc']) || empty($_SESSION['Khoahoc'])) {
-    showNoCourseTemplate();
-    exit();
-}
-
-// Lấy danh sách khóa học được phép
-$allowed_courses = array_filter(explode(',', $_SESSION['Khoahoc']), function($value) {
-    return is_numeric($value) && (int)$value > 0;
-});
-
-if (empty($allowed_courses)) {
-    die("<script>alert('Danh sách khóa học không hợp lệ!'); window.location.href='logout.php';</script>");
-}
-
-// Kết nối database
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($conn->connect_error) {
-    die("Kết nối database thất bại: " . $conn->connect_error);
-}
-
-// Kiểm tra nếu có yêu cầu truy cập bài test cụ thể
-if (isset($_GET['test_id'])) {
-    $id_test = (int)$_GET['test_id'];
-    
-    // Kiểm tra bài test có thuộc khóa học được phép không
-    $stmt_check = $conn->prepare("SELECT t.id_test FROM test t 
-                                JOIN khoa_hoc kh ON t.id_khoa = kh.id 
-                                WHERE t.id_test = ? AND t.id_khoa IN (".implode(',', array_fill(0, count($allowed_courses), '?')).")");
-    
-    $params = array_merge([$id_test], $allowed_courses);
-    $types = str_repeat('i', count($params));
-    $stmt_check->bind_param($types, ...$params);
-    $stmt_check->execute();
-    $check_result = $stmt_check->get_result();
-    
-    if ($check_result->num_rows === 0) {
-        die("<script>alert('Bạn không có quyền truy cập bài test này!'); window.location.href='select_test.php';</script>");
+            echo "<li>
+                <div class='test-header'>
+                    <div><strong>{$test['ten_test']}</strong></div>
+                    $pass_status
+                </div>
+                <div class='test-info'>
+                    <span>Điểm: $score_display</span>
+                    <span>Điểm đạt: $pass_score</span>
+                </div>
+                <div class='test-actions'>
+                    <a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>
+                        Xem chi tiết
+                    </a>
+                </div>
+            </li>";
+        }
+    } else {
+        echo "<li>Không có bài test nào.</li>";
     }
-    $stmt_check->close();
+    echo "</ul>";
 }
 
-// Xác định khóa học hiện tại
-$current_course = isset($_GET['course_id']) && in_array($_GET['course_id'], $allowed_courses) 
-                ? $_GET['course_id'] 
-                : $allowed_courses[0];
+echo "<h3>Các bài test thuộc khóa học: <strong>$khoa_name</strong>:</h3><ul>";
+    if ($result3->num_rows > 0) {
+        while ($test = $result3->fetch_assoc()) {
+            $test_id = $test['id_test'];
+            // $pass_score = $test['diem_dat']; // Điểm đạt yêu cầu
 
-// Lấy thông tin khóa học hiện tại
-$stmt_khoa = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
-$stmt_khoa->bind_param('i', $current_course);
-$stmt_khoa->execute();
-$khoa_result = $stmt_khoa->get_result();
-$current_theme = [
-    'name' => 'Khóa học ' . $current_course,
-    'color' => '#607D8B',
-    'class' => 'theme-default'
-];
+            
+            // Lấy thông tin từ bảng ket_qua
+            $stmt_ketqua = $conn->prepare("SELECT kq_cao_nhat, tt_bai_test FROM ket_qua 
+                                          WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+            $stmt_ketqua->bind_param("iis", $student_id, $khoa_hoc_id, $test_id);
+            $stmt_ketqua->execute();
+            $ketqua_result = $stmt_ketqua->get_result();
+            $ketqua_data = $ketqua_result->fetch_assoc();
+            
+            $diem_cao_nhat = $ketqua_data['kq_cao_nhat'] ?? 'Chưa có';
+            
+            $tt_bai_test = $ketqua_data['tt_bai_test'] ?? '';
+            
+            // Đếm số lần thử từ tt_bai_test (mỗi câu hỏi là một lần thử)
+            $so_lan_thu = $ketqua_data ? substr_count($tt_bai_test, 'Câu') : 0;
+            
+            // Xác định trang thái đậu hay rớt 
+            $status ='';
+            if (is_numeric ($diem_cao_nhat)) {
+                    '<span class="test-status passed">ĐẬU</span>' ;
+                    '<span class="test-status failed">RỚT</span>';
+                    
+            }
+            // Xác định trạng thái
+            
+            
+            echo "<li>
+                <div><strong>{$test['ten_test']}</strong></div>
+                <div class='test-info'>
+                    <span>Điểm cao nhất: $diem_cao_nhat</span>
+                    <span>Số lần thử: $so_lan_thu </span>
+                    
+                </div>
 
-if ($khoa_result->num_rows > 0) {
-    $khoa_data = $khoa_result->fetch_assoc();
-    $current_theme['name'] = $khoa_data['khoa_hoc'];
+                <div class='test-actions'>
+                    <a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>Kết qủa sinh viên </a>
+                </div>
+            </li>";
+        }
+    } else {
+        echo "<li>Không có bài test nào.</li>";
+    }
+    echo "</ul>";
 }
-$stmt_khoa->close();
 
-// Lấy danh sách bài test cho khóa học được phép
-$stmt = $conn->prepare("SELECT t.id_test, t.ten_test, t.lan_thu, t.Pass, t.so_cau_hien_thi 
-                       FROM test t WHERE t.id_khoa = ?");
-$stmt->bind_param('i', $current_course);
-$stmt->execute();
-$tests_result = $stmt->get_result();
-?>
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <!-- Phần head giữ nguyên -->
-</head>
-<body>
-    <div class="container">
-        <!-- Phần giao diện giữ nguyên -->
-    </div>
-</body>
-</html>
-
-<?php
-// Đóng kết nối
-$stmt->close();
-$conn->close();
-
-function showNoCourseTemplate() {
-    // Giữ nguyên như trước
-}
-?>

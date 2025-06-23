@@ -90,14 +90,16 @@
       
         .test-info {
             display: flex;
+            flex-direction: column; 
             justify-content: space-between;
+            align-items: flex-start; /* tránh bị dồn về phải */
             margin-bottom: 5px;
             font-size: 0.9em;
             color: #555;
             margin-top: 10px;
             gap: 10px;
         }
-        
+
         .test-actions {
             margin-top: 10px;
             display: flex;
@@ -167,6 +169,30 @@
             color: #ef5350; /* Màu đỏ nhạt cho biểu tượng ✘ */
             font-weight: bold;
         }
+
+
+    .test-status {
+        margin-left: auto; /* Đẩy sang phải */
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px
+        font-weight: bold;
+    }
+    .passed {
+        background-color: #e8f5e9;
+        color:rgb(15, 113, 240);
+    }
+    .failed {
+        background-color: #ffebee;
+        color: #b71c1c;
+    }
+    .test-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
     </style>
 </head>
 <body>
@@ -200,6 +226,7 @@ if (isset($_GET['student_id']) && !empty($_GET['student_id'])) {
         $placeholders = implode(',', array_fill(0, count($khoahoc_ids), '?'));
         $types = str_repeat('i', count($khoahoc_ids));
 
+        
         $sql2 = "SELECT id, khoa_hoc FROM khoa_hoc WHERE id IN ($placeholders)";
         $stmt2 = $conn->prepare($sql2);
         $stmt2->bind_param($types, ...array_map('intval', $khoahoc_ids));
@@ -213,7 +240,9 @@ if (isset($_GET['student_id']) && !empty($_GET['student_id'])) {
                 {$row2['khoa_hoc']} 
                 - <a href='?student_id=$student_id&khoa_hoc_id={$row2['id']}'>Xem bài test</a>
             </li>";
+
         }
+
         echo "</ul>";
     } else {
         echo "<div class='error'>Không tìm thấy sinh viên với ID: $student_id</div>";
@@ -224,6 +253,7 @@ if (isset($_GET['student_id']) && !empty($_GET['student_id'])) {
 if (isset($_GET['khoa_hoc_id'])) {
     $khoa_hoc_id = intval($_GET['khoa_hoc_id']);
     $student_id = isset($_GET['student_id']) ? $_GET['student_id'] : '';
+
 
     // Lấy tên khóa học
     $stmt_khoa = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
@@ -238,34 +268,47 @@ if (isset($_GET['khoa_hoc_id'])) {
     $stmt3->execute();
     $result3 = $stmt3->get_result();
 
-    echo "<h3>Các bài test thuộc khóa học: <strong>$khoa_name</strong>:</h3><ul>";
+        echo "<h3>Các bài test thuộc khóa học: <strong>$khoa_name</strong>:</h3><ul>";
     if ($result3->num_rows > 0) {
         while ($test = $result3->fetch_assoc()) {
             $test_id = $test['id_test'];
+            $pass_score = $test['pass_status']; // Điểm đạt yêu cầu
+            $pass_status = ($score >= $pass_score) ? 'hoàn tất ' : 'Không hoàn tất ';
 
-            
-            // Lấy thông tin từ bảng ket_qua
-            $stmt_ketqua = $conn->prepare("SELECT kq_cao_nhat, tt_bai_test FROM ket_qua 
-                                          WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+            // Lấy kết quả cao nhất
+            $stmt_ketqua = $conn->prepare("SELECT kq_cao_nhat FROM ket_qua 
+                                        WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
             $stmt_ketqua->bind_param("iis", $student_id, $khoa_hoc_id, $test_id);
             $stmt_ketqua->execute();
             $ketqua_result = $stmt_ketqua->get_result();
             $ketqua_data = $ketqua_result->fetch_assoc();
             
-            $diem_cao_nhat = $ketqua_data['kq_cao_nhat'] ?? 'Chưa có';
-            $tt_bai_test = $ketqua_data['tt_bai_test'] ?? '';
+            $score = $ketqua_data['kq_cao_nhat'] ?? null;
+            $score_display = $score ?? 'Chưa làm';
+           
+
+            // Xác định trạng thái
+            $pass_status = '';
+            if (is_numeric($score)) {
+                $pass_status = ($score >= $pass_score)
+                    ? '<span class="test-status passed">ĐẬU <i class="fas fa-check-circle"></i></span>' 
+                    : '<span class="test-status failed">RỚT <i class="fas fa-times-circle"></i></span>';
+            }
             
-            // Đếm số lần thử từ tt_bai_test (mỗi câu hỏi là một lần thử)
-            $so_lan_thu = $ketqua_data ? substr_count($tt_bai_test, 'Câu') : 0;
-            
+
             echo "<li>
-                <div><strong>{$test['ten_test']}</strong></div>
+                <div class='test-header'>
+                    <div><strong>{$test['ten_test']}</strong></div>
+                    $pass_status
+                </div>
                 <div class='test-info'>
-                    <span>Điểm cao nhất: $diem_cao_nhat</span>
+                    <span>Điểm cao nhất: $diem_cao_nhat </span>
                     <span>Số lần thử: $so_lan_thu </span>
                 </div>
                 <div class='test-actions'>
-                    <a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>Kết qủa sinh viên </a>
+                    <a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>
+                        Xem chi tiết
+                    </a>
                 </div>
             </li>";
         }
@@ -288,7 +331,6 @@ if (isset($_GET['xem_cau_hoi'])) {
     $test_result = $stmt_test->get_result();
     $test_name = $test_result->fetch_assoc()['ten_test'];
 
-    
     // Lấy thông tin khóa học
     $stmt_khoa = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
     $stmt_khoa->bind_param("i", $khoa_hoc_id);
