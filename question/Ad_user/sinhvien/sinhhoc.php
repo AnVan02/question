@@ -18,7 +18,7 @@ if ($conn->connect_error) {
 }
 
 $ma_khoa = '8'; // id mã khoa hoc
-$id_test = '1'; // id mã bài kiểm tra
+$id_test = '13'; // id mã bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Lấy mã khóa học từ bảng students và kiểm tra

@@ -283,7 +283,7 @@ CREATE TABLE `test` (
 --
 
 INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau_hien_thi`) VALUES
-(1, 8, 'Giữa kỳ', 2, '80', 0),
+(2, 8, 'Giữa kỳ', 2, '80', 0),
 (12, 10, 'Giữa kỳ', 2, '80', 3),
 (16, 3, 'Giữa kỳ', 2, '80', 0),
 (19, 1, 'Cuối kỳ', 3, '80', 0),

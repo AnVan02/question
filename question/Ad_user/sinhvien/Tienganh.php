@@ -147,7 +147,9 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $stmt2->close();
 
-// Handle answer submission
+
+
+// xử lý việc gửi câu trả lời 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_SESSION['questions'])) {
     $user_answer = $_POST['answer'];
     $current_question = $_SESSION['questions'][$current_index];
@@ -167,6 +169,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_
     $current_index++;
     $_SESSION['current_index'] = $current_index;
 }
+
 
 // Chuyên cấu tiếp câu sau
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
@@ -199,7 +202,7 @@ if (isset($_POST['reset'])) {
     $answers = [];
 }
 
-// Get max attempts
+// Số lần thử tối đa
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
 $conn->close();
 ?>
@@ -347,34 +350,38 @@ $conn->close();
                 </div>
             </form>
         <?php else: ?>
+            <!-- xử lý thay đổi đap án -->
             <?php
-            // xư lý thay đổi đáp án
-            $tt_bai_test ='';
-                if (!empty ($answers)){
-                    $answers_pairs = [];
+            $tt_bai_test = '';
+                if (!empty($answers)) {
+                    $answer_pairs = [];
                     $total_length = 0;
-                    foreach ($answers as $index => $answers) {
-                        $text ="Câu" . ($index + 1). ":" .$answers ['selected'];
-                        $text_length = strlen($test);
+                    foreach ($answers as $index => $answer) {
+                        $text = "Câu " . ($index + 1) . ": " . $answer['selected'];
+                        $text_length = strlen($text);
 
-                        $additional_length =($index >0 ? 2:0 ) +$text_length;
+                        // +2 để tính dấu phẩy và khoảng trắng nếu không phải câu đầu
+                        $additional_length = ($index > 0 ? 2 : 0) + $text_length;
 
-                        if($total_length + $additional_length > 255 -3 ){
+                        // Dừng nếu thêm câu này sẽ vượt quá 255
+                        if ($total_length + $additional_length > 255 - 3) { // -3 để dành cho "..."
                             break;
                         }
-                        $answers_pairs[]= $text;
+
+                        $answer_pairs[] = $text;
                         $total_length += $additional_length;
                     }
-                    // nếu không đủ toàn bộ câu thêm dấu..
-                    if (count($answers_pairs) < count($answers)) {
-                        $tt_bai_test .='..';
 
+                    $tt_bai_test = implode(', ', $answer_pairs);
+
+                    // Nếu không đủ toàn bộ câu, thêm dấu ...
+                    if (count($answer_pairs) < count($answers)) {
+                        $tt_bai_test .= '...';
                     }
-                }else {
-                    $tt_bai_test ='không có câu trả lời';
-                    
+                } else {
+                    $tt_bai_test = 'Không có câu trả lời';
                 }
-            // Save results to ket_qua table
+
             $conn = new mysqli("localhost", "root", "", "student");
             if ($conn->connect_error) {
                 die("Kết nối thất bại: " . $conn->connect_error);
@@ -385,13 +392,10 @@ $conn->close();
             $result = $stmt->get_result();
             if ($result->num_rows > 0) {
                 $row = $result->fetch_assoc();
-                if ($highest_score > $row['kq_cao_nhat']) {
+                if ($score >= $row['kq_cao_nhat']) {
+                    // Cập nhật nếu điểm >= điểm cao nhất
                     $stmt = $conn->prepare("UPDATE ket_qua SET kq_cao_nhat = ?, tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-                    $stmt->bind_param("issis", $highest_score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
-                    $stmt->execute();
-                } else {
-                    $stmt = $conn->prepare("UPDATE ket_qua SET tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-                    $stmt->bind_param("siss", $tt_bai_test, $student_id, $ma_khoa, $id_test);
+                    $stmt->bind_param("issis", $score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
                     $stmt->execute();
                 }
             } else {
@@ -410,7 +414,7 @@ $conn->close();
             <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
-            <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <!-- <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p> -->
             <!-- <p><strong>Chi tiết câu trả lời:</strong> <?php echo htmlspecialchars($tt_bai_test); ?></p> -->
             <hr>
             <?php if (empty($answers)): ?>
