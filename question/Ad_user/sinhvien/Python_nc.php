@@ -46,6 +46,20 @@ if ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
+// lấy số câu hiện thị lấy từ bảng test
+$stmt = $conn->prepare("SELECT ten_test, so_cau_hien_thi FROM test WHERE id_test = ?");
+$stmt->bind_param("i", $id_test);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($result->num_rows == 0) {
+    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
+    exit();
+}
+$row = $result->fetch_assoc();
+$id_baitest = $row['ten_test'];
+$so_cau_hien_thi = $row['so_cau_hien_thi']; // Lấy số câu hỏi cần hiển thị
+$stmt->close();
+
 // Kiểm tra quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
@@ -107,8 +121,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     $ten_khoa = $row['khoa_hoc'];
-    $stmt2 = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
-    $stmt2->bind_param("ss", $ten_khoa, $id_baitest);
+    // Sửa đổi truy vấn để lấy câu hỏi ngẫu nhiên giới hạn bởi so_cau_hien_thi
+    $stmt2 = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ? ORDER BY RAND() LIMIT ?");
+    $stmt2->bind_param("ssi", $ten_khoa, $id_baitest, $so_cau_hien_thi);
     $stmt2->execute();
     $result2 = $stmt2->get_result();
     $questions = [];

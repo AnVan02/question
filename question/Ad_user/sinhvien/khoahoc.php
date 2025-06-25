@@ -253,11 +253,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
                 <label for="pass">Pass %:</label>
                 <input type="text" id="pass" name="pass" value="<?php echo $editing ? htmlspecialchars($edit_test['pass']) : ''; ?>" required>
             </div>
-<!-- 
+
             <div class="form-group">
                 <label for="so_cau_hien_thi">Số câu hiển thị:</label>
                 <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : '5'; ?>" min="1" required>
-            </div> -->
+            </div>
 
             <?php if ($editing): ?>
                 <input type="hidden" name="id_test" value="<?php echo htmlspecialchars($edit_test['id_test']); ?>">

@@ -261,6 +261,8 @@ CREATE TABLE `test` (
   `lan_thu` int(11) DEFAULT 1,
   `Pass` varchar(255) NOT NULL,
   `so_cau_hien_thi` int(11) NOT NULL
+  PRIMARY KEY (`id_test`, `id_khoa`)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -275,6 +277,7 @@ INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau
 (21, 6, 'Cuối kỳ', 3, '80', 0),
 (22, 5, 'Giữa kỳ', 2, '100', 0),
 (23, 4, 'Giữa kỳ', 3, '80', 0),
+(40, 19,'Giua ky', 2, '80', 0),
 (29, 2, 'Giữa kỳ', 2, '100', 0);
 
 --

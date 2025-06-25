@@ -17,9 +17,10 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$ma_khoa = '10'; // id mã khoa hoc
-$id_test = '12'; // id mã bài kiểm tra
+$ma_khoa = '19'; // id mã khoa hoc
+$id_test = '40'; // id mã bài kiểm tra
 $student_id = $_SESSION['student_id'];
+
 
 // Lấy mã khóa học từ bảng students và kiểm tra
 $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
@@ -97,7 +98,8 @@ $current_index = isset($_SESSION['current_index']) ? intval($_SESSION['current_i
 $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
 $highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
-$attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
+$attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 1;
+$submitted = isset($quiz_data ['submitted']) ? $quiz_data ['submitted'] : false ;
 $pass_score = 4; // Passing score
 
 // Lấy tên khóa học và câu hỏi 
@@ -295,6 +297,7 @@ $conn->close();
             margin: 10px 0;
             border: 1px solid #eee;
             display: block;
+
         }
         .explanation-block {
             margin-top: 10px;
@@ -341,12 +344,20 @@ $conn->close();
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                    <div class="btn-area">
-                        <button type="submit" name="goBack" <?php echo $current_index == 0 ? 'disabled' : ''; ?>>Câu trước</button>
-                        <button type="submit" name="skip" <?php echo $current_index == count($_SESSION['questions']) - 1 ? 'disabled' : ''; ?>>Câu tiếp</button>
-                    </div>
-                    <input type="hidden" name="current_index" value="<?php echo $current_index; ?>">
-                    <button type="submit">Trả lời »</button>
+                    <div class ="btn-group">
+                        <button type="submit"name="prev-question" <?php echo $current_index === 0 ? 'disablad':'';?>>
+                            Câu trước
+                        </button>
+                        
+                    <?php if ($is_last_question) :?>
+                        <button type ="submit" name = "submit_quiz" class= "submit-btn">
+                            Nộp bài 
+                        </button>
+                    <?php else: ?>
+                        <button type="submit" name ="submit-btn">
+                            Câu tiếp
+                        </button>
+                        <?php endif;?>
                 </div>
             </form>
         <?php else: ?>

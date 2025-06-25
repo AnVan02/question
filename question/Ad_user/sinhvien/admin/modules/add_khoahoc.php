@@ -1,6 +1,4 @@
-<?php require 'config/config.php' ?>
 <?php
-
 
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "student");

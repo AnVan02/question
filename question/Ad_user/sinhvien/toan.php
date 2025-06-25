@@ -91,6 +91,8 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
     return 1;
 }
 
+
+
 // Khởi tạo biến
 $ten_khoa = '';
 $current_index = isset($_SESSION['current_index']) ? intval($_SESSION['current_index']) : 0;
@@ -168,12 +170,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer']) && isset($_
     $_SESSION['current_index'] = $current_index;
 }
 
+// chuyển cấu tiếp theo 
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["skip"])) {
-    $_SESSION["current"]++;
-    $_SESSION["feedback"] = "";
-    header("Location: toan.php");
+    if ($current_index < count ($_SESSION ['quesrions ']) - 1) {
+        $current_index ++;
+        $S_SESSION ['current_index ']= $current_index;
+    }
+    header("Locatin: ".$_SERVER ['PHP_SELF']);
     exit;
-}
+
+}  
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["goBack"])) {
     if ($_SESSION["current"] > 0) {

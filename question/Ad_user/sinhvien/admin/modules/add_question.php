@@ -29,7 +29,6 @@ if ($question_id) {
     $conn->close();
 }
 
-
 if (isset($_GET['success']) && $_GET['success'] == 1) {
     $message = "<div style='color:green;'>Câu hỏi đã được lưu vào cơ sở dữ liệu!</div>";
 }

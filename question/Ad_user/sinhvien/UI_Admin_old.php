@@ -1,428 +1,511 @@
-<?php
-session_start();
-
-// Hiển thị lỗi để debug
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
-ini_set('error_log', '/var/log/php_errors.log');
-
-// Hàm kết nối CSDL
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "student");
-    if ($conn->connect_error) {
-        error_log("Database connection failed: " . $conn->connect_error);
-        die("Lỗi kết nối CSDL: " . $conn->connect_error);
-    }
-    $conn->set_charset("utf8mb4");
-    return $conn;
-}
-
-// Khởi tạo biến
-$student_data = [];
-$questions = [];
-$answers = [];
-$message = "";
-$ten_khoa = "";
-$ten_baitest = "";
-$highest_score = 0;
-$status = "";
-
-// Lấy biến từ URL
-$ma_khoa = $_GET['ma_khoa'] ?? '';
-$id_baitest = $_GET['id_baitest'] ?? '';
-$mode = $_GET['mode'] ?? '';
-$student_id = $_GET['student_id'] ?? '';
-
-if ($mode == 'edit' && !empty($ma_khoa) && !empty($id_baitest) && !empty($student_id)) {
-    // Kết nối CSDL chỉ khi có đủ tham số
-    $conn = dbconnect();
-
-    // Lấy thông tin sinh viên từ DB
-    $stmt = $conn->prepare("SELECT Student_ID, Khoahoc FROM students WHERE Student_ID = ?");
-    $stmt->bind_param("s", $student_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($row = $result->fetch_assoc()) {
-        $student_data = $row;
-        // Kiểm tra quyền truy cập khóa học
-        $khoahoc_list = array_map('intval', explode(',', $row['Khoahoc']));
-        if (!in_array(intval($ma_khoa), $khoahoc_list)) {
-            $message = "Lỗi: Sinh viên không được đăng ký khóa học này (mã khóa: $ma_khoa).";
-        }
-    } else {
-        $message = "Lỗi: Không tìm thấy thông tin sinh viên với ID: $student_id.";
-    }
-    $stmt->close();
-
-    if (empty($message)) {
-        // Lấy tên khóa học
-        $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
-        $stmt->bind_param("s", $ma_khoa);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($row = $result->fetch_assoc()) {
-            $ten_khoa = $row['khoa_hoc'];
-        } else {
-            $message = "Lỗi: Không tìm thấy khóa học với mã '$ma_khoa'";
-        }
-        $stmt->close();
-    }
-
-    if (empty($message)) {
-        // Lấy tên bài test
-        $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
-        $stmt->bind_param("s", $id_baitest);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows == 0) {
-            $message = "ID bài test ($id_baitest) không tồn tại trong hệ thống.";
-        } else {
-            $row = $result->fetch_assoc();
-            $ten_baitest = $row['ten_test'];
-        }
-        $stmt->close();
-    }
-
-    if (empty($message)) {
-        // Lấy thông tin kết quả từ ket_qua
-        $stmt = $conn->prepare("SELECT kq_cao_nhat, tt_bai_test FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-        $stmt->bind_param("sis", $student_id, $ma_khoa, $id_baitest);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($row = $result->fetch_assoc()) {
-            $highest_score = $row['kq_cao_nhat'];
-            $status = $row['tt_bai_test'];
-        } else {
-            $message = "Chưa có kết quả cho bài test này.";
-        }
-        $stmt->close();
-    }
-
-    if (empty($message)) {
-        // Lấy câu hỏi từ quiz
-        $stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
-        $stmt->bind_param("ss", $ten_khoa, $ten_baitest);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        while ($row = $result->fetch_assoc()) {
-            $questions[] = [
-                'id' => $row['Id_cauhoi'],
-                'question' => $row['cauhoi'],
-                'choices' => [
-                    'A' => $row['cau_a'],
-                    'B' => $row['cau_b'],
-                    'C' => $row['cau_c'],
-                    'D' => $row['cau_d']
-                ],
-                'explanations' => [
-                    'A' => $row['giaithich_a'],
-                    'B' => $row['giaithich_b'],
-                    'C' => $row['giaithich_c'],
-                    'D' => $row['giaithich_d']
-                ],
-                'correct' => $row['dap_an'],
-                'image' => $row['hinhanh']
-            ];
-        }
-        
-        if (count($questions) < 1) {
-            $message = "Lỗi: Không đủ câu hỏi cho '$ten_khoa' và '$ten_baitest'.";
-        }
-        $stmt->close();
-
-        // Lấy câu trả lời của sinh viên từ trường tt_bai_test
-        if (!empty($status)) {
-            $answer_parts = explode(', ', $status);
-            foreach ($answer_parts as $part) {
-                if (preg_match('/Câu (\d+):\s*([A-D])/', $part, $matches)) {
-                    $question_num = (int)$matches[1];
-                    $answers[$question_num] = $matches[2];
-                }
-            }
-        }
-    }
-
-    $conn->close();
-}
-?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Tra cứu kết quả bài test</title>
+    <title>Tra cứu khóa học theo Student ID</title>
     <style>
-            body {
-                font-family: 'Segoe UI', Arial, sans-serif;
-                background: linear-gradient(135deg, #e0f7fa, #b2ebf2 80%);
-                margin: 0;
-                padding: 0;
-                font-size: 17px;
-                color: #222;
-                max-width: 1100px;
-                margin: 40px auto;
-                padding: 30px;
-                border-radius: 15px;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2 80%);
+            margin: 0;
+            padding: 0;
+            font-size: 17px;
+            color: #222;
+            max-width: 1350px;
+            margin: 45px auto;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
 
-            .form-container {
-                background: #fff;
-                padding: 24px 30px;
-                border-radius: 10px;
-                margin-bottom: 30px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-                border: 1px solid #b2ebf2;
-            }
+        h2, h3 {
+            text-align: center;
+            color: #00796b;
+        }
 
-            .form-student {
-                display: grid;
-                grid-template-columns: 120px 1fr;
-                gap: 18px 24px;
-                margin-bottom: 15px;
-                align-items: center;
-            }
+        form {
+            background: #fff;
+            padding: 24px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-bottom: 20px;
+        }
 
-            h1 {
-                text-align: center;
-                font-size: 2.3rem;
-                margin-bottom: 32px;
-                color: #00796b;
-                letter-spacing: 1px;
-                text-shadow: 0 2px 8px #b2ebf2;
-            }
+        label, input, button {
+            font-size: 1rem;
+        }
 
-            h3 {
-                text-align: center;
-                font-size: 1.3rem;
-                color: #0097a7;
-                margin-bottom: 18px;
-            }
+        input[type="text"] {
+            padding: 10px;
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
 
-            input[type="text"] {
-                padding: 10px 12px;
-                border: 1.5px solid #b2ebf2;
-                border-radius: 5px;
-                font-size: 1rem;
-                width: 100%;
-                box-sizing: border-box;
-                background: #f7fafd;
-                transition: border-color 0.2s;
-            }
+        button {
+            padding: 10px 20px;
+            background-color: #009688;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
 
-            input[type="text"]:focus {
-                border-color: #0097a7;
-                outline: none;
-                background: #e0f7fa;
-            }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
 
-            button {
-                background: linear-gradient(90deg, #009688, #4dd0e1);
-                color: white;
-                border: none;
-                padding: 12px 0;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 1.1rem;
-                font-weight: bold;
-                transition: background 0.2s;
-                width: 100%;
-                margin-top: 10px;
-                box-shadow: 0 2px 8px #b2ebf2;
-            }
+        li {
+            background: #f3f3f3;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+        }
 
-            button:hover {
-                background: linear-gradient(90deg, #00796b, #00bcd4);
-            }
+        .course-header, .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
 
-            .message, .error {
-                padding: 12px 18px;
-                margin-bottom: 18px;
-                border-radius: 5px;
-                font-weight: bold;
-                font-size: 1.1rem;
-                box-shadow: 0 1px 4px #b2ebf2;
-            }
+        .error {
+            color: #b71c1c;
+            background: #ffebee;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
 
-            .message {
-                color: #256029;
-                background: #e8f5e9;
-                border: 1px solid #a5d6a7;
-            }
+        .success {
+            color: #256029;
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
 
-            .error {
-                color: #b71c1c;
-                background: #ffebee;
-                border: 1px solid #ef9a9a;
-            }
+        a {
+            color: #00796b;
+            text-decoration: none;
+            font-weight: bold;
+        }
 
-            .question-block {
-                margin-bottom: 32px;
-                border-bottom: 1.5px solid #b2ebf2;
-                padding-bottom: 22px;
-                background: #fafcff;
-                border-radius: 8px;
-                box-shadow: 0 1px 6px #b2ebf2;
-                padding-left: 18px;
-                padding-right: 18px;
-                Padding: 15px;
-            }
+        .test-info {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 5px;
+            font-size: 1.0em;
+            color: #555;
+            margin-top: 10px;
+            gap: 10px;
 
-            .question-block img {
-                max-width: 320px;
-                display: block;
-                margin: 12px 0 0 0;
-                border-radius: 6px;
-                box-shadow: 0 2px 8px #b2ebf2;
-            }
-
-            ul {
-                padding-left: 0;
-                margin-top: 10px;
-            }
-
-            li {
-                margin-bottom: 10px;
-                padding: 12px 18px;
-                border-radius: 7px;
-                font-size: 1.08rem;
-                background: #f3f3f3;
-                color: #222;
-                list-style: none;
-                font-weight: normal;
-                border: none;
-                transition: background 0.2s, color 0.2s;
-            }
-            /* câu đúng */
-            .correct {
-                background: #d4edda !important;
-                color: #218838 !important;
-                font-weight: bold;
-            }
-            /* câu sai */
-            .incorrect {
-                background: #ef9a9a !important;   /* màu đỏ */
-                color: #d35400 !important;        /* Cam đậm */
-                font-weight: bold;
-            }
-
-            li:hover {
-                background: #e0e0e0;
-            }
-
-            .score-info {
-                background: #e7f3fe;
-                padding: 15px 20px;
-                border-radius: 7px;
-                margin-bottom: 24px;
-                max-width: 1100px;
-                margin:  40px auto;
-                box-sizing: border-box;
-                border: 1px solid #b2ebf2;
-            }
-
-            /* Responsive */
-            @media (max-width: 700px) {
-                body, .score-info, .form-container {
-                    max-width: 98vw;
-                    padding: 10px;
-                }
-                .form-student {
-                    grid-template-columns: 1fr;
-                    gap: 10px;
-                }
-                .question-block img {
-                    max-width: 98vw;
-                }
-            }
-
-            .icon-tick {
-                color: #1976d2; /* Xanh dương */
-                font-weight: bold;
-                margin-left: 10px;
-                font-size: 1.2em;
-            }
-            .icon-cross {
-                color: #e53935; /* Đỏ */
-                font-weight: bold;
-                margin-left: 10px;
-                font-size: 1.2em;
-            }
+        }
         
+        .test-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .test-actions a {
+            padding: 5px 10px;
+            background-color: #e0f2f1;
+            border-radius: 4px;
+        }
+        
+        .question-container {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .options {
+            margin-top: 10px;
+        }
+        
+        .option {
+            margin-bottom: 5px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .correct {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .incorrect {
+            background-color: #ffebee;
+            border-left: 4px solid #b71c1c;
+        }
+        
+        .explanation {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .test-result {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .user-answer {
+            color: #b71c1c;
+            font-weight: bold;
+        }
+        .icon-tick {
+            color: #1976d2;
+            font-weight: bold;
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+        .icon-cross {
+            color:rgb(255, 19, 19);
+            font-weight: bold;
+            font-size: 1.2em;
+
+        }
+        
+        .completed {
+            color:rgb(17, 128, 23);
+            font-weight: bold;
+            font-size: 1.2em;
+
+        }
+        
+        .passed {
+            color:rgb(17, 128, 23);
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+        
+        .not-completed {
+            color:rgb(255, 19, 19);
+            font-size: 1.2em;
+
+        }
+        
+        .score-detail {
+            margin-top: 5px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h1>Tra cứu kết quả bài test</h1>
-    
-    <form method="GET" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-        <div class="form-container">
-            <h3>Nhập thông tin tra cứu</h3>
-            <div class="form-student">
-                <label><strong>Student_ID:</strong></label>
-                <input type="text" name="student_id" value="<?php echo htmlspecialchars($student_id ?? ''); ?>" required>
 
-                <label><strong>Khoa_ID:</strong></label>
-                <input type="text" name="ma_khoa" value="<?php echo htmlspecialchars($ma_khoa ?? ''); ?>" required>
-                
-                <label><strong>Test_ID:</strong></label>
-                <input type="text" name="id_baitest" value="<?php echo htmlspecialchars($id_baitest ?? ''); ?>" required>
-            </div>
-            <input type="hidden" name="mode" value="edit">
-            <button type="submit">Check</button>
-        </div>
+    <h2>Tra cứu khóa học của sinh viên</h2>
+
+    <form method="GET">
+        <label for="student_id">Nhập Student ID:</label>
+        <input type="text" id="student_id" name="student_id" required>
+        <button type="submit">Tra cứu</button>
     </form>
 
-    <?php if (!empty($message)): ?>
-        <div class="<?php echo strpos($message, 'Lỗi') === false ? 'message' : 'error'; ?>">
-            <?php echo htmlspecialchars($message); ?>
-        </div>
-    <?php endif; ?>
-            <p><strong>Kết quả :</strong> <?php echo $highest_score; ?>/<?php echo count($questions); ?></p>
-            
-    <?php if ($mode == 'edit' && empty($message) && !empty($student_data)): ?>
-        <h3 >Chi tiết bài làm</h3>
-        <?php foreach ($questions as $index => $question): ?>
-            <div class="question-block">
-                <p><strong>Câu <?php echo $index + 1; ?>:</strong> <?php echo htmlspecialchars($question['question']); ?></p>
-                <?php if (!empty($question['image'])): ?>
-                    <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi" style="max-width: 300px;">
-                <?php endif; ?>
-                
-                <ul>
-                    <?php foreach ($question['choices'] as $key => $value): ?>
-                        <?php
-                        $question_num = $index + 1;
-                        $is_selected = isset($answers[$question_num]) && $key === $answers[$question_num];
-                        $is_correct = $key === $question['correct'];
-                        $class = '';
+<?php
+// Kết nối CSDL
+$conn = new mysqli("localhost", "root", "", "student");
+if ($conn->connect_error) {
+    die("<div class='error'>Kết nối thất bại: " . $conn->connect_error . "</div>");
+}
 
+// Xử lý tra cứu khóa học theo Student ID
+if (isset($_GET['student_id']) && !empty(trim($_GET['student_id']))) {
+    $student_id = $conn->real_escape_string(trim($_GET['student_id']));
+
+    // Lấy thông tin khóa học của sinh viên
+    $sql = "SELECT Khoahoc FROM students WHERE Student_ID = '$student_id'";
+    $result = $conn->query($sql);
+
+    if ($result && $result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $khoahoc_ids = array_filter(explode(',', $row['Khoahoc']));
+        
+        if (empty($khoahoc_ids)) {
+            echo "<div class='error'>Sinh viên không có khóa học nào.</div>";
+        } else {
+            $ids_str = implode(",", array_map('intval', $khoahoc_ids));
+            $sql2 = "SELECT id, khoa_hoc FROM khoa_hoc WHERE id IN ($ids_str)";
+            $result2 = $conn->query($sql2);
+
+            echo "<h3>Các khóa học của sinh viên ID: <strong>$student_id</strong></h3><ul>";
+            
+            while ($row2 = $result2->fetch_assoc()) {
+                $khoa_id = $row2['id'];
+                
+                // Truy vấn tối ưu hóa để lấy thông tin hoàn thành khóa học
+                $sql_completed = "
+                    SELECT 
+                        COUNT(DISTINCT kt.Test_ID) as total_tests,
+                        SUM(CASE 
+                            WHEN kq.kq_cao_nhat IS NOT NULL 
+                            AND kq.kq_cao_nhat = (
+                                SELECT COUNT(*) 
+                                FROM quiz q 
+                                INNER JOIN test t ON q.id_baitest = t.ten_test 
+                                WHERE t.id_test = kt.Test_ID AND q.ten_khoa = '{$row2['khoa_hoc']}'
+                            )
+                            THEN 1 
+                            ELSE 0 
+                        END) as perfect_tests,
+                        COUNT(DISTINCT CASE WHEN kq.kq_cao_nhat IS NOT NULL THEN kq.test_id END) as attempted_tests
+                    FROM kiem_tra kt
+                    LEFT JOIN ket_qua kq ON kt.Student_ID = kq.student_id 
+                        AND kt.Khoa_ID = kq.khoa_id 
+                        AND kt.Test_ID = kq.test_id
+                    WHERE kt.Student_ID = '$student_id' AND kt.Khoa_ID = $khoa_id
+                ";
+
+                $completed_result = $conn->query($sql_completed);
+                $completed_data = $completed_result->fetch_assoc();
+
+                $total_tests = $completed_data['total_tests'] ?? 0;
+                $perfect_tests = $completed_data['perfect_tests'] ?? 0;
+                $attempted_tests = $completed_data['attempted_tests'] ?? 0;
+
+                $is_completed = ($total_tests > 0 && $perfect_tests == $total_tests);
+
+                $status = $is_completed 
+                    ? "<span class='completed'>Hoàn thành</span>" 
+                    : "<span class='not-completed'>Chưa hoàn thành</span>";
+                    
+                echo "<li>
+                    <div class='course-header'>
+                        <span><strong>{$row2['khoa_hoc']}</strong></span>
+                        <span>$status</span>
+                    </div>
+                    <div class='test-info'>
+                        <span>Đã hoàn thành: $attempted_tests / $total_tests bài test</span>
+                    </div>
+                    <div class='test-actions'>
+                        <a href='?student_id=$student_id&khoa_hoc_id={$row2['id']}'>Xem bài test</a>
+                    </div>
+                </li>";
+            }
+            echo "</ul>";
+        }
+    } else {
+        echo "<div class='error'>Không tìm thấy sinh viên với ID: $student_id</div>";
+    }
+}
+
+// Xử lý khi nhấn "Xem bài test" để hiển thị danh sách bài test 
+if (isset($_GET['khoa_hoc_id'])) {
+    $khoa_hoc_id = intval($_GET['khoa_hoc_id']);
+    $student_id = $conn->real_escape_string($_GET['student_id'] ?? '');
+
+    // Lấy thông tin khóa học
+    $khoa_result = $conn->query("SELECT khoa_hoc FROM khoa_hoc WHERE id = $khoa_hoc_id");
+    if ($khoa_result && $khoa_result->num_rows > 0) {
+        $khoa_name = $khoa_result->fetch_assoc()['khoa_hoc'];
+        
+        // Lấy danh sách bài test với thông tin kết quả và phần trăm đạt từ bảng test
+        $sql_tests = "
+            SELECT t.id_test, t.ten_test, t.Pass as required_pass_percent, 
+                   kq.kq_cao_nhat, kq.tt_bai_test,
+                   (SELECT COUNT(*) FROM quiz q WHERE q.id_baitest = t.ten_test AND q.ten_khoa = '$khoa_name') as total_questions
+            FROM test t
+            JOIN kiem_tra kt ON t.id_test = kt.Test_ID AND t.id_khoa = kt.Khoa_ID
+            LEFT JOIN ket_qua kq ON kq.student_id = '$student_id' AND kq.khoa_id = $khoa_hoc_id AND kq.test_id = t.id_test
+            WHERE t.id_khoa = $khoa_hoc_id AND kt.Student_ID = '$student_id'
+        ";
+        
+        $result_tests = $conn->query($sql_tests);
+        
+        echo "<h3>Các bài test thuộc khóa học: <strong>$khoa_name</strong></h3><ul>";
+        
+        if ($result_tests && $result_tests->num_rows > 0) {
+            while ($test = $result_tests->fetch_assoc()) {
+                $test_id = $test['id_test'];
+                $diem_cao_nhat = $test['kq_cao_nhat'] ?? 'Chưa có';
+                $tt_bai_test = $test['tt_bai_test'] ?? '';
+                $total_questions = $test['total_questions'] ?? 0;
+                $required_pass_percent = $test['required_pass_percent'] ?? '80'; // Mặc định 80% nếu không có
+                $so_lan_thu = $tt_bai_test ? substr_count($tt_bai_test, 'Câu') : 0;
+
+                // tinh toán dựa theo so_cau_hỉn_thi  thay vì tong số câu hỏi
+
+
+                // Tính điểm cần để đạt dựa trên % yêu cầu từ bảng test
+                $required_score = ceil($total_questions * $required_pass_percent / 100);
+                
+                $is_passed = is_numeric($diem_cao_nhat) && $total_questions > 0 && ($diem_cao_nhat >= $required_score);
+                $passed_status = $is_passed ? "<span class='passed'>Đạt </span>" : "<span class='not-completed'>Chưa đạt</span>";
+                
+                $percentage = is_numeric($diem_cao_nhat) && $total_questions > 0 ? 
+                             round(($diem_cao_nhat / $total_questions) * 100, 1) : 0;
+                             
+                echo "<li>
+                    <div class='test-header'>
+                        <span><strong>{$test['ten_test']}</strong></span>
+                        <span>$passed_status</span>
+                    </div>
+                    <div class='test-info'>
+                        <span>Điểm cao nhất: $diem_cao_nhat/$total_questions($percentage%)</span>
+                        <span>Yêu cầu đậu: $required_pass_percent%  </span>
+                        <span>Số lần thử: $so_lan_thu/$total_questions</span>
+                    </div>
+                    <div class='test-actions'>
+                        <a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>Xem kết quả chi tiết</a>
+                    </div>
+                </li>";
+            }
+        } else {
+            echo "<li>Không có bài test nào.</li>";
+        }
+        echo "</ul>";
+    } else {
+        echo "<div class='error'>Không tìm thấy khóa học.</div>";
+    }
+}
+
+// Trong phần xử lý khi nhấn "Xem kết quả chi tiết" (xem_ket_qua)
+if (isset($_GET['xem_ket_qua'])) {
+    $test_id = $conn->real_escape_string($_GET['xem_ket_qua']);
+    $student_id = $conn->real_escape_string($_GET['student_id'] ?? '');
+    $khoa_hoc_id = intval($_GET['khoa_hoc_id'] ?? 0);
+    
+    // Lấy thông tin bài test và khóa học, bao gồm cả % Pass từ bảng test
+    $test_info = $conn->query("
+        SELECT t.ten_test, t.Pass as required_pass_percent 
+        FROM test t 
+        WHERE t.id_test = '$test_id'
+    ");
+    $khoa_info = $conn->query("SELECT khoa_hoc FROM khoa_hoc WHERE id = $khoa_hoc_id");
+    
+    if ($test_info && $test_info->num_rows > 0 && $khoa_info && $khoa_info->num_rows > 0) {
+        $test_data = $test_info->fetch_assoc();
+        $test_name = $test_data['ten_test'];
+        $required_pass_percent = $test_data['required_pass_percent'] ?? '80';
+        $khoa_name = $khoa_info->fetch_assoc()['khoa_hoc'];
+        
+        // Lấy kết quả chi tiết
+        $ketqua = $conn->query("
+            SELECT kq_cao_nhat, tt_bai_test 
+            FROM ket_qua 
+            WHERE student_id = '$student_id' AND khoa_id = $khoa_hoc_id AND test_id = '$test_id'
+        ");
+        
+        if ($ketqua && $ketqua->num_rows > 0) {
+            $ketqua_data = $ketqua->fetch_assoc();
+            $tt_bai_test = $ketqua_data['tt_bai_test'];
+            $kq_cao_nhat = $ketqua_data['kq_cao_nhat'];
+            
+            // Lấy tổng số câu hỏi
+            $total_result = $conn->query("
+                SELECT COUNT(*) as total_questions 
+                FROM quiz 
+                WHERE id_baitest = '$test_name' AND ten_khoa = '$khoa_name'
+            ");
+            $total_questions = $total_result->fetch_assoc()['total_questions'];
+            
+            $percentage = is_numeric($kq_cao_nhat) && $total_questions > 0 ? 
+                         round(($kq_cao_nhat / $total_questions) * 100, 1) : 0;
+            
+            // Tính điểm cần để đạt
+            $required_score = ceil($total_questions * $required_pass_percent / 100);
+
+            $is_passed = is_numeric($kq_cao_nhat) && ($kq_cao_nhat >= $required_score);
+            
+            echo "<h3>Kết quả bài test: <strong>$test_name</strong> (Môn: $khoa_name)</h3>";
+            echo "<div class='test-result'>";
+            // echo "<p><strong>Điểm cao nhất:</strong> $kq_cao_nhat/$total_questions ($required_pass_percent% )</p>";
+            
+            if ($is_passed) {
+                echo "<p style='color: green; font-weight: bold;'>✅ Đạt yêu cầu! Bạn đã vượt qua bài test này.</p>";
+            } else {
+                echo "<p style='color: red; font-weight: bold;'>⚠️ Chưa đạt! Cần đúng ít nhất $required_score câu để vượt qua bài test.</p>";
+            }
+                        // Phân tích tt_bai_test với xử lý lỗi tốt hơn
+            $user_answers = [];
+            if (!empty($tt_bai_test)) {
+                // Xử lý nhiều định dạng có thể có
+                if (preg_match_all('/(Câu\s*(\d+)\s*:\s*([A-Da-d]))/i', $tt_bai_test, $matches, PREG_SET_ORDER)) {
+                    foreach ($matches as $match) {
+                        $question_num = trim($match[2]);
+                        $answer = strtoupper(trim($match[3]));
+                        $user_answers[$question_num] = $answer;
+                    }
+                }
+            }
+            
+            // Lấy danh sách câu hỏi và hiển thị
+            $quiz_result = $conn->query("
+                SELECT Id_cauhoi, cauhoi, cau_a, cau_b, cau_c, cau_d, dap_an 
+                FROM quiz 
+                WHERE id_baitest = '$test_name' AND ten_khoa = '$khoa_name' 
+                ORDER BY Id_cauhoi
+            ");
+            
+            if ($quiz_result && $quiz_result->num_rows > 0) {
+                $question_number = 1;
+                while ($q = $quiz_result->fetch_assoc()) {
+                    $user_answer = $user_answers[$question_number] ?? null;
+                    $dap_an_dung = strtoupper($q['dap_an']);
+                    
+                    echo "<div class='question-container'>";
+                    echo "<p><strong>Câu $question_number (ID: {$q['Id_cauhoi']}):</strong> " . htmlspecialchars($q['cauhoi']) . "</p>";
+                    
+                    echo "<div class='options'>";
+                    $choices = ['A' => $q['cau_a'], 'B' => $q['cau_b'], 'C' => $q['cau_c'], 'D' => $q['cau_d']];
+                    
+                    foreach ($choices as $key => $value) {
+                        $is_selected = ($user_answer === $key);
+                        $is_correct = ($key === $dap_an_dung);
+                        $class = '';
+                        
                         if ($is_selected) {
                             $class = $is_correct ? 'correct' : 'incorrect';
                         } elseif ($is_correct) {
                             $class = 'correct';
                         }
+                        
+                        $icon = $is_selected ? 
+                               ($is_correct ? '<span class="icon-tick">✔</span>' : '<span class="icon-cross">✘</span>') : '';
+                        
+                        echo "<div class='option $class'>";
+                        echo $key . ". " . htmlspecialchars($value) . " $icon";
+                        echo "</div>";
+                    }
+                    echo "</div>";
+                    
+                    // if ($user_answer !== null) {
+                    //     echo "<div class='explanation'>";
+                    //     echo "Bạn chọn: <span class='user-answer'>$user_answer</span>";
+                    //     if ($user_answer !== $dap_an_dung) {
+                    //         echo " | Đáp án đúng: $dap_an_dung";
+                    //     }
+                    //     echo "</div>";
+                    // } else {
+                    //     echo "<div class='explanation'>Bạn chưa trả lời câu này</div>";
+                    // }
+                    
+                    echo "</div>";
+                    $question_number++;
+                }
+            } else {
+                echo "<div class='error'>Không tìm thấy câu hỏi nào cho bài test này.</div>";
+            }
+            echo "</div>";
+        } else {
+            echo "<div class='error'>Sinh viên chưa làm bài test này.</div>";
+        }
+    } else {
+        echo "<div class='error'>Không tìm thấy thông tin bài test hoặc khóa học.</div>";
+    }
+}
 
-                        // Icon cho đáp án được chọn
-                        $icon = '';
-                        if ($is_selected && $is_correct) {
-                            $icon = '<span class="icon-tick">✔</span>';
-                        } elseif ($is_selected && !$is_correct) {
-                            $icon = '<span class="icon-cross">✘</span>';
-                        }
-                        ?>
-                        <li class="<?php echo $class; ?>">
-                            <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
-                            <?php echo $icon; ?>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-
+$conn->close();
+?>
 </body>
 </html>

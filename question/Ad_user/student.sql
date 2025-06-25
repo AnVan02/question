@@ -167,7 +167,8 @@ CREATE TABLE `quiz` (
   `giaithich_c` varchar(255) NOT NULL,
   `cau_d` varchar(255) NOT NULL,
   `giaithich_d` varchar(255) NOT NULL,
-  `dap_an` varchar(255) NOT NULL
+  `dap_an` varchar(255) NOT NULL,
+  PRIMARY_KEY (Id_cauhoi)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
