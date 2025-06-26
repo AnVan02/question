@@ -1,17 +1,17 @@
-<?php 
-    if (isset($_GET['action'])) {
-        $action = $_GET['action'];
+<?php    
+    if (isset ($_GET['action'])) {
+        $action = $_GET ['action'];
     }
     else {
         $action = "-1";
     }
-
-    if (isset($_GET['query'])) {
-        $query = $_GET['query'];
+    if(isset ($_GET ['query'])) {
+        $ques = $_GET ['query'];
     }
     else {
         $query = "-1";
     }
+
 ?>
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
     <ul class="nav">
@@ -25,15 +25,15 @@
         <li class="nav-item <?php if ($action === 'product' or $action === 'category') { echo "active"; } ?>">
             <a class="nav-link" data-bs-toggle="collapse" href="#products" aria-expanded="<?php if ($action === 'product' or $action === 'category') { echo "true"; } else { echo "false"; } ?>" aria-controls="products">
                 <i class="menu-icon mdi mdi-flask"></i>
-                <span class="menu-title">Sản phẩm </span>
+                <span class="menu-title">Khoá học</span>
                 <i class="menu-arrow"></i>
             </a>
             <div class="collapse <?php if ($action === 'product' or $action === 'category' or $action === 'collection' or $action === 'brand') { echo "show"; } ?>" id="products">
                 <ul class="nav flex-column sub-menu">
-                    <li class="nav-item <?php if ($query === 'product_list') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=product&query=product_list">Danh sách sản phẩm</a></li>
-                    <li class="nav-item <?php if ($query === 'category_list') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=category&query=category_list">Danh sách nhãn hàng</a></li>
-                    <li class="nav-item <?php if ($query === 'brand_list') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=brand&query=brand_list">Nhãn hàng</a></li>
-                    <li class="nav-item <?php if ($query === 'product_inventory') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=product&query=product_inventory">Hàng tồn kho</a></li>
+                    <li class="nav-item <?php if ($query === 'product_list') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=product&query=product_list">Thêm khoá học</a></li>
+                    <li class="nav-item <?php if ($query === 'category_list') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=category&query=category_list">Danh sách khoá hoc</a></li>
+                    <li class="nav-item <?php if ($query === 'brand_list') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=brand&query=brand_list">Khoa hoc</a></li>
+                    <li class="nav-item <?php if ($query === 'product_inventory') { echo "active"; } ?>"> <a class="nav-link" href="index.php?action=product&query=product_inventory">Thêm câu hỏi </a></li>
                 </ul>
             </div>
         </li>
@@ -41,51 +41,18 @@
         <li class="nav-item <?php if ($action === 'article') { echo "active"; } ?>">
             <a class="nav-link" href="index.php?action=article&query=article_list">
                 <i class="mdi mdi mdi-code-not-equal menu-icon"></i>
-                <span class="menu-title">Bài viết</span>
+                <span class="menu-title">Bài học</span>
             </a>
         </li>
         
         <li class="nav-item <?php if ($action === 'banner') { echo "active"; } ?>">
         <a class="nav-link" href="index.php?action=banner&query=banner">
                 <i class="mdi mdi-image menu-icon"></i>
-                <span class="menu-title">Banner</span>
+                <span class="menu-title"></span>
             </a>
         </li>
 
-        <li class="nav-item <?php if ($action === 'baohanh') { echo "active"; } ?>">
-            <a class="nav-link" href="index.php?action=baohanh&query=baohanh">
-                <i class="mdi mdi-import menu-icon"></i>
-                <span class="menu-title">Upload bảo hành</span>
-            </a>
-        </li>
-
-         <li class="nav-item <?php if ($action === 'check') { echo "active"; } ?>">
-            <a class="nav-link" href="index.php?action=check&query=check">
-                <i class="mdi mdi-file-excel menu-icon"></i>
-                <span class="menu-title">Xuất file excel</span>
-            </a>
-        </li>
-                
-        <li class="nav-item <?php if ($action === 'user') { echo "active"; } ?>">
-        <a class="nav-link" href="index.php?action=user&query=user">
-                <i class="mdi mdi-account-box-outline menu-icon"></i>
-                <span class="menu-title">User</span>
-            </a>
-        </li>
-        <!-- <li class="nav-item <?php if ($action === 'quanly') { echo "active"; } ?>">
-        <a class="nav-link" href="index.php?action=quanly&query=quanly">
-                <i class="mdi mdi-account-box-outline menu-icon"></i>
-                <span class="menu-title">Quản lý user</span>
-            </a>
-        </li> -->
-        <!-- <li class="nav-item <?php if ($action === 'customer') { echo "active"; } ?>">
-            <a class="nav-link" href="index.php?action=customer&query=customer_list">
-                <i class="mdi mdi-account-box-outline menu-icon"></i>
-                <span class="menu-title">Khách hàng</span>
-            </a>
-        </li> -->
-        
-
+       
         <?php if($_SESSION['account_type'] == 2): ?>
             <li class="nav-item <?php if ($action === 'account') { echo "active"; } ?>">
                 <a class="nav-link" href="index.php?action=account&query=account_list">

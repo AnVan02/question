@@ -24,9 +24,16 @@ if ($conn->connect_error) {
 }
 
 // Cấu hình khóa học và bài kiểm tra
-$ma_khoa = '6'; // ID khóa học 
-$id_test = '21'; // ID bài kiểm tra
+$ma_khoa = '2'; // ID khóa học 
+$id_test = '29'; // ID bài kiểm tra
 $student_id = $_SESSION['student_id'];
+
+$stmt = $conn -> prepare ("SELECT khoa_hoc FROM students WHERE student_id= ?");
+$stmt -> bind_param ("s", $student_id);
+$stmt -> execute ();
+$count = $stmt-> get_result ()->fetch_row()[0];
+
+if($for= 0)
 
 // Xác minh quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT s.Student_ID, s.Ten, s.Khoahoc, kh.khoa_hoc 
@@ -657,7 +664,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
 
                         <?php if ($current_index < count($questions) - 1): ?>
                             <button type="submit" name="navigate" value="next" class="btn btn-secondary">
-                                Câu tiếp →
+                                Câu sau →
                             </button>
                         <?php endif; ?>
 

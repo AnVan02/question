@@ -42,6 +42,7 @@ INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
 (4, 'Toán'),
 (5, 'Văn'),
 (6, 'Tiếng anh'),
+(8, 'Sinh hoc'),
 (10, 'Hoá học');
 
 -- --------------------------------------------------------
@@ -145,6 +146,72 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 (28, 'Cuối kỳ', 'Toán', 'Diện tích hình tròn có bán kính r = 3 là bao nhiêu? (π ≈ 3.14)', NULL, '28.26', 'Diện tích = π * r^2 = 3.14 * 3^2 = 28.26', '18.84', 'Sai: nhầm lẫn chu vi (2πr) với diện tích', '9', 'Sai: tính sai bình phương bán kính', '12.56', 'Sai: nhầm lẫn công thức', 'A');
 
 -- --------------------------------------------------------
+
+INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
+-- Python cơ bản
+(1, 'giua_ky', 'Python cơ bản', 'Câu lệnh in ra "Hello World" trong Python là?', NULL, 'print("Hello World")', 'Đúng', 'echo "Hello World"', 'Sai, dùng trong PHP', 'console.log("Hello World")', 'Sai, JS dùng', 'System.out.println("Hello World")', 'Sai, Java dùng', 'A'),
+(2, 'giua_ky', 'Python cơ bản', 'Kiểu dữ liệu nào lưu trữ chuỗi?', NULL, 'int', 'Số nguyên', 'str', 'Đúng, là kiểu chuỗi', 'bool', 'Boolean', 'float', 'Số thực', 'B'),
+(3, 'giua_ky', 'Python cơ bản', 'Vòng lặp nào lặp qua dãy số?', NULL, 'for', 'Đúng, dùng for range', 'if', 'Không phải vòng lặp', 'try', 'Khối xử lý lỗi', 'print', 'In ra', 'A'),
+(4, 'cuoi_ky', 'Python cơ bản', 'Cách khai báo danh sách?', NULL, '[1,2,3]', 'Đúng, là list', '(1,2,3)', 'Tuple', '{1,2,3}', 'Set', '<1,2,3>', 'Không hợp lệ', 'A'),
+(5, 'cuoi_ky', 'Python cơ bản', 'Toán tử so sánh bằng là?', NULL, '=', 'Gán giá trị', '==', 'Đúng', '!=', 'So sánh khác', '===', 'Không dùng trong Python', 'B'),
+(6, 'cuoi_ky', 'Python cơ bản', 'Hàm tính độ dài list?', NULL, 'length()', 'Sai', 'len()', 'Đúng', 'count()', 'Sai', 'size()', 'Sai', 'B'),
+
+-- Python nâng cao
+(7, 'giua_ky', 'Python nâng cao', 'Lambda dùng để làm gì?', NULL, 'Định nghĩa hàm nhanh', 'Đúng', 'Tạo biến', 'Sai', 'Tạo class', 'Sai', 'Tạo loop', 'Sai', 'A'),
+(8, 'giua_ky', 'Python nâng cao', 'Decorator được dùng để?', NULL, 'Trang trí UI', 'Sai', 'Chạy chương trình', 'Sai', 'Thêm chức năng cho hàm', 'Đúng', 'Gỡ lỗi', 'Sai', 'C'),
+(9, 'giua_ky', 'Python nâng cao', 'Gói chuẩn để xử lý JSON?', NULL, 'os', 'Sai', 'sys', 'Sai', 'json', 'Đúng', 'math', 'Sai', 'C'),
+(10, 'cuoi_ky', 'Python nâng cao', 'Generator là gì?', NULL, 'Hàm trả iterator', 'Đúng', 'List', 'Sai', 'Loop', 'Sai', 'Dict', 'Sai', 'A'),
+(11, 'cuoi_ky', 'Python nâng cao', 'Từ khóa yield dùng trong?', NULL, 'Class', 'Sai', 'Loop', 'Sai', 'Generator', 'Đúng', 'Import', 'Sai', 'C'),
+(12, 'cuoi_ky', 'Python nâng cao', 'Module nào làm việc với file hệ thống?', NULL, 'os', 'Đúng', 'json', 'Không đúng', 'sys', 'Sai', 'math', 'Sai', 'A'),
+
+-- YOLO
+(13, 'giua_ky', 'YOLO', 'YOLO là viết tắt của?', NULL, 'You Only Learn Once', 'Sai', 'You Only Look Once', 'Đúng', 'Your Only Logic Option', 'Sai', 'None of the above', 'Sai', 'B'),
+(14, 'giua_ky', 'YOLO', 'YOLO dùng để?', NULL, 'Dịch ngôn ngữ', 'Sai', 'Xử lý ảnh', 'Đúng', 'Phân tích âm thanh', 'Sai', 'Tạo ảnh', 'Sai', 'B'),
+(15, 'giua_ky', 'YOLO', 'YOLO thuộc nhóm?', NULL, 'Phân loại ảnh', 'Sai', 'Phát hiện vật thể', 'Đúng', 'Tăng cường học', 'Sai', 'LSTM', 'Sai', 'B'),
+(16, 'cuoi_ky', 'YOLO', 'YOLO dựa vào?', NULL, 'CNN', 'Đúng', 'RNN', 'Sai', 'GAN', 'Sai', 'Transformer', 'Sai', 'A'),
+(17, 'cuoi_ky', 'YOLO', 'YOLOv4 khác gì YOLOv3?', NULL, 'Nhanh hơn', 'Đúng', 'Chậm hơn', 'Sai', 'Không khác gì', 'Sai', 'Cũ hơn', 'Sai', 'A'),
+(18, 'cuoi_ky', 'YOLO', 'Đầu ra của YOLO là?', NULL, 'Văn bản', 'Sai', 'Ảnh', 'Sai', 'Hộp giới hạn & nhãn', 'Đúng', 'Âm thanh', 'Sai', 'C'),
+
+-- Toán
+(19, 'giua_ky', 'Toán', 'Giá trị của π là?', NULL, '3.14', 'Gần đúng', '2.71', 'Sai', '1.61', 'Sai', '1.41', 'Sai', 'A'),
+(20, 'giua_ky', 'Toán', 'Đạo hàm của x^2 là?', NULL, 'x', 'Sai', '2x', 'Đúng', 'x^2', 'Sai', '1', 'Sai', 'B'),
+(21, 'giua_ky', 'Toán', 'Hàm số y = mx + b là dạng?', NULL, 'Bậc hai', 'Sai', 'Tuyến tính', 'Đúng', 'Hằng số', 'Sai', 'Lôgarit', 'Sai', 'B'),
+(22, 'cuoi_ky', 'Toán', 'sin(90°) bằng?', NULL, '0', 'Sai', '1', 'Đúng', '0.5', 'Sai', '√2/2', 'Sai', 'B'),
+(23, 'cuoi_ky', 'Toán', 'Căn bậc hai của 49?', NULL, '5', 'Sai', '6', 'Sai', '7', 'Đúng', '8', 'Sai', 'C'),
+(24, 'cuoi_ky', 'Toán', 'log(100) cơ số 10?', NULL, '1', 'Sai', '2', 'Đúng', '10', 'Sai', '0', 'Sai', 'B'),
+
+-- Văn
+(25, 'giua_ky', 'Văn', 'Tác giả Truyện Kiều?', NULL, 'Nguyễn Du', 'Đúng', 'Nguyễn Trãi', 'Sai', 'Hồ Xuân Hương', 'Sai', 'Tố Hữu', 'Sai', 'A'),
+(26, 'giua_ky', 'Văn', 'Phong cách thơ Xuân Quỳnh?', NULL, 'Lãng mạn', 'Đúng', 'Hiện thực', 'Sai', 'Trào phúng', 'Sai', 'Chính luận', 'Sai', 'A'),
+(27, 'giua_ky', 'Văn', 'Truyện ngắn "Lão Hạc" của?', NULL, 'Nam Cao', 'Đúng', 'Kim Lân', 'Sai', 'Ngô Tất Tố', 'Sai', 'Nguyễn Huy Tưởng', 'Sai', 'A'),
+(28, 'cuoi_ky', 'Văn', '"Bình Ngô đại cáo" do ai viết?', NULL, 'Nguyễn Du', 'Sai', 'Nguyễn Trãi', 'Đúng', 'Lê Lợi', 'Sai', 'Trần Quốc Tuấn', 'Sai', 'B'),
+(29, 'cuoi_ky', 'Văn', 'Thể thơ lục bát là?', NULL, '6-8 chữ', 'Đúng', '5 chữ', 'Sai', '7 chữ', 'Sai', '4 chữ', 'Sai', 'A'),
+(30, 'cuoi_ky', 'Văn', 'Tác phẩm "Tắt đèn" của?', NULL, 'Ngô Tất Tố', 'Đúng', 'Nam Cao', 'Sai', 'Tô Hoài', 'Sai', 'Vũ Trọng Phụng', 'Sai', 'A'),
+
+-- Tiếng anh
+(31, 'giua_ky', 'Tiếng anh', 'Từ "beautiful" là loại từ gì?', NULL, 'Động từ', 'Sai', 'Tính từ', 'Đúng', 'Danh từ', 'Sai', 'Trạng từ', 'Sai', 'B'),
+(32, 'giua_ky', 'Tiếng anh', 'Quá khứ của "go"?', NULL, 'goed', 'Sai', 'gone', 'Sai', 'went', 'Đúng', 'goes', 'Sai', 'C'),
+(33, 'giua_ky', 'Tiếng anh', 'Số nhiều của "child"?', NULL, 'childs', 'Sai', 'children', 'Đúng', 'childes', 'Sai', 'childer', 'Sai', 'B'),
+(34, 'cuoi_ky', 'Tiếng anh', 'Which word is a noun?', NULL, 'run', 'Sai', 'quick', 'Sai', 'happiness', 'Đúng', 'sad', 'Sai', 'C'),
+(35, 'cuoi_ky', 'Tiếng anh', 'Tense of "had eaten"?', NULL, 'Present', 'Sai', 'Past Simple', 'Sai', 'Past Perfect', 'Đúng', 'Future', 'Sai', 'C'),
+(36, 'cuoi_ky', 'Tiếng anh', 'Antonym of "happy"?', NULL, 'joyful', 'Sai', 'sad', 'Đúng', 'glad', 'Sai', 'cheerful', 'Sai', 'B'),
+
+-- Sinh học
+(37, 'giua_ky', 'Sinh hoc', 'Đơn vị cấu tạo cơ thể?', NULL, 'Tế bào', 'Đúng', 'Cơ quan', 'Sai', 'Hệ cơ quan', 'Sai', 'Tổ chức', 'Sai', 'A'),
+(38, 'giua_ky', 'Sinh hoc', 'DNA mang thông tin?', NULL, 'Di truyền', 'Đúng', 'Thức ăn', 'Sai', 'Hô hấp', 'Sai', 'Thị giác', 'Sai', 'A'),
+(39, 'giua_ky', 'Sinh hoc', 'Thực vật quang hợp nhờ?', NULL, 'Ti thể', 'Sai', 'Lục lạp', 'Đúng', 'Nhân', 'Sai', 'Không bào', 'Sai', 'B'),
+(40, 'cuoi_ky', 'Sinh hoc', 'Hệ tuần hoàn gồm?', NULL, 'Tim và mạch máu', 'Đúng', 'Não và tủy', 'Sai', 'Gan và thận', 'Sai', 'Xương và cơ', 'Sai', 'A'),
+(41, 'cuoi_ky', 'Sinh hoc', 'Máu vận chuyển gì?', NULL, 'Oxy và chất dinh dưỡng', 'Đúng', 'Điện', 'Sai', 'Khí CO2', 'Chỉ 1 phần', 'Sóng', 'Sai', 'A'),
+(42, 'cuoi_ky', 'Sinh hoc', 'Bộ gen người có?', NULL, '23 cặp NST', 'Đúng', '46 NST đơn lẻ', 'Cũng đúng', '24 cặp NST', 'Sai', '22 NST', 'Sai', 'A'),
+
+-- Hóa học
+(43, 'giua_ky', 'Hoá học', 'H2O là công thức của?', NULL, 'Oxy', 'Sai', 'Nước', 'Đúng', 'Hydro', 'Sai', 'Không khí', 'Sai', 'B'),
+(44, 'giua_ky', 'Hoá học', 'pH < 7 là?', NULL, 'Trung tính', 'Sai', 'Axit', 'Đúng', 'Bazơ', 'Sai', 'Muối', 'Sai', 'B'),
+(45, 'giua_ky', 'Hoá học', 'NaCl là?', NULL, 'Axit', 'Sai', 'Muối', 'Đúng', 'Bazơ', 'Sai', 'Kim loại', 'Sai', 'B'),
+(46, 'cuoi_ky', 'Hoá học', 'Khi đốt Mg trong O2 tạo?', NULL, 'CO2', 'Sai', 'MgO', 'Đúng', 'H2O', 'Sai', 'NaCl', 'Sai', 'B'),
+(47, 'cuoi_ky', 'Hoá học', 'Nguyên tử có?', NULL, 'Proton, neutron, electron', 'Đúng', 'Chỉ electron', 'Sai', 'Chỉ proton', 'Sai', 'Chỉ neutron', 'Sai', 'A'),
+(48, 'cuoi_ky', 'Hoá học', 'Số hiệu nguyên tử H là?', NULL, '1', 'Đúng', '2', 'Sai', '0', 'Sai', '8', 'Sai', 'A');
+
 
 --
 -- Cấu trúc bảng cho bảng `students`

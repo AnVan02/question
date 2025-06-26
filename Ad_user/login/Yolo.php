@@ -24,8 +24,8 @@ if ($conn->connect_error) {
 }
 
 // Cấu hình khóa học và bài kiểm tra
-$ma_khoa = '6'; // ID khóa học 
-$id_test = '21'; // ID bài kiểm tra
+$ma_khoa = '3'; // ID khóa học
+$id_test = '16'; // ID bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Xác minh quyền truy cập khóa học
@@ -657,7 +657,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
 
                         <?php if ($current_index < count($questions) - 1): ?>
                             <button type="submit" name="navigate" value="next" class="btn btn-secondary">
-                                Câu tiếp →
+                                Câu sau →
                             </button>
                         <?php endif; ?>
 

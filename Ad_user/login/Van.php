@@ -24,8 +24,8 @@ if ($conn->connect_error) {
 }
 
 // Cấu hình khóa học và bài kiểm tra
-$ma_khoa = '6'; // ID khóa học 
-$id_test = '21'; // ID bài kiểm tra
+$ma_khoa = '5'; // ID khóa học 
+$id_test = '22'; // ID bài kiểm tra
 $student_id = $_SESSION['student_id'];
 
 // Xác minh quyền truy cập khóa học
@@ -553,55 +553,48 @@ $is_passed = $_SESSION['score'] >= $pass_score;
             text-align: left; /* Đảm bảo các đoạn văn trong result-details căn trái */
         }
     </style>
-    <script>
-        function confirmSubmit() {
-            return confirm('Bạn có chắc chắn muốn nộp bài?');
-        }
-
-        function validateForm() {
-            const radios = document.getElementsByName('answer');
-            let isChecked = false;
-            for (let radio of radios) {
-                if (radio.checked) {
-                    isChecked = true;
-                    break;
-                }
-            }
-            if (!isChecked) {
-                alert('Vui lòng chọn một đáp án trước khi lưu!');
-                return false;
-            }
-            return true;
-        }
-
-        // Cảnh báo người dùng nếu điều hướng mà chưa lưu câu trả lời
-        let formModified = false;
-        document.addEventListener('DOMContentLoaded', function() {
-            const radios = document.getElementsByName('answer');
-            for (let radio of radios) {
-                radio.addEventListener('change', function() {
-                    formModified = true; // Đặt true khi người dùng thay đổi lựa chọn
-                });
+        <script>
+            function confirmSubmit() {
+                return confirm('Bạn có chắc chắn muốn nộp bài?');
             }
 
-            const navButtons = document.querySelectorAll('.btn-secondary, .question-number');
-            navButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    // Kiểm tra xem có bất kỳ đáp án nào đang được chọn không
-                    let isAnyRadioChecked = Array.from(radios).some(radio => radio.checked);
-
-                    // Nếu form đã được chỉnh sửa (người dùng đã tương tác) VÀ hiện tại có một đáp án đang được chọn
-                    if (formModified && isAnyRadioChecked) {
-                        if (!confirm('Bạn chưa lưu câu trả lời. Bạn có muốn tiếp tục?')) {
-                            e.preventDefault(); // Ngăn chặn chuyển trang nếu người dùng chọn "Hủy"
-                        }
+            function validateForm() {
+                const radios = document.getElementsByName('answer');
+                let isChecked = false;
+                for (let radio of radios) {
+                    if (radio.checked) {
+                        isChecked = true;
+                        break;
                     }
-                    // Nếu formModified là false (chưa tương tác) HOẶC không có đáp án nào được chọn,
-                    // thì cứ để form submit. Hàm validateForm() sẽ xử lý thông báo nếu chưa chọn đáp án.
+                }
+                if (!isChecked) {
+                    alert('Vui lòng chọn một đáp án trước khi lưu!');
+                    return false;
+                }
+                return true;
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const navButtons = document.querySelectorAll('.btn-secondary, .question-number');
+                const answerForm = document.getElementById('answer-form');
+                
+                navButtons.forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        // Kiểm tra xem có bất kỳ đáp án nào đang được chọn không
+                        const radios = document.getElementsByName('answer');
+                        let isAnyRadioChecked = Array.from(radios).some(radio => radio.checked);
+                        
+                        // Nếu không có đáp án nào được chọn
+                        if (!isAnyRadioChecked) {
+                            if (!confirm('Bạn chưa chọn đáp án nào. Bạn có muốn tiếp tục sang câu khác?')) {
+                                e.preventDefault(); // Ngăn chặn chuyển trang nếu người dùng chọn "Hủy"
+                            }
+                        }
+                        // Nếu có đáp án được chọn, cứ để form submit bình thường
+                    });
                 });
             });
-        });
-    </script>
+        </script>
 </head>
 <body>
     <div class="container">
@@ -657,7 +650,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
 
                         <?php if ($current_index < count($questions) - 1): ?>
                             <button type="submit" name="navigate" value="next" class="btn btn-secondary">
-                                Câu tiếp →
+                                Câu sau →
                             </button>
                         <?php endif; ?>
 

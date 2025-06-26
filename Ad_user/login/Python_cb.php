@@ -23,10 +23,59 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-// Cấu hình khóa học và bài kiểm tra
-$ma_khoa = '6'; // ID khóa học 
-$id_test = '21'; // ID bài kiểm tra
+// Dữ liệu đầu vào
+$ma_khoa = '1';
+$id_test = '19';
 $student_id = $_SESSION['student_id'];
+
+// Danh sách các khóa học được phép
+$allowed_khoa = [1, 6];
+$allowed_khoa_string = implode(',', $allowed_khoa);
+
+// Kiểm tra khóa học của sinh viên bằng MySQLi
+$sql = "SELECT Khoahoc FROM students WHERE Student_ID = ? AND Khoahoc IN ($allowed_khoa_string)";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+
+
+if ($row) {
+    $khoa_hoc = $row['Khoahoc'];
+    // Sinh viên được phép truy cập khóa học
+    $message = "Sinh viên $student_id thuộc khóa học được phép ($khoa_hoc).";
+} else {
+
+    // Lấy khóa học hiện tại của sinh viên
+    $sql_khoa = "SELECT Khoahoc FROM students WHERE Student_ID = ?";
+    $stmt_khoa = $conn->prepare($sql_khoa);
+    $stmt_khoa->bind_param("s", $student_id);
+    $stmt_khoa->execute();
+    $result_khoa = $stmt_khoa->get_result();
+    $row_khoa = $result_khoa->fetch_assoc();
+    $khoa_hoc = $row_khoa['Khoahoc'] ?? 'không xác định';
+
+    $message = "Sinh viên $student_id KHÔNG thuộc khóa học được phép! Khóa học hiện tại: $khoa_hoc.";
+    // Hiển thị thông báo lỗi và dừng
+    echo "<!DOCTYPE html>
+    <html lang='vi'>
+    <head>
+        <meta charset='UTF-8'>
+        <title>Lỗi truy cập</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .error { color: #dc3545; font-size: 18px; }
+        </style>
+    </head>
+    <body>
+        <div class='error'>$message</div>
+        <p><a href='theme_list.php'>Quay lại danh sách khóa học</a></p>
+    </body>
+    </html>";
+    exit();
+}
+
 
 // Xác minh quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT s.Student_ID, s.Ten, s.Khoahoc, kh.khoa_hoc 
@@ -202,7 +251,6 @@ $current_index = $_SESSION['current_index'];
 $is_completed = $current_index >= count($questions);
 $pass_score = $test_info['Pass'];
 $is_passed = $_SESSION['score'] >= $pass_score;
-
 ?>
 
 <!DOCTYPE html>
@@ -657,7 +705,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
 
                         <?php if ($current_index < count($questions) - 1): ?>
                             <button type="submit" name="navigate" value="next" class="btn btn-secondary">
-                                Câu tiếp →
+                                Câu sau →
                             </button>
                         <?php endif; ?>
 
@@ -707,6 +755,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
                                 <?php endforeach; ?>
                             </ul>
                             <?php if (isset($_SESSION['answers'][$index]['selected'])): ?>
+                                
                                 <div class="explanation-block" style="border-color: <?php echo $_SESSION['answers'][$index]['is_correct'] ? 'orange' : 'red'; ?>;">
                                     <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$question['correct']]); ?></p>
                                 </div>
@@ -717,6 +766,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
                             <?php endif; ?>
                             <hr>
                         </div>
+
                     <?php endforeach; ?>
                 <?php endif; ?>
                 

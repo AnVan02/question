@@ -1,18 +1,27 @@
 <?php
 session_start();
+
+// Kiểm tra đăng nhập
 if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
     exit();
 }
 
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "student");
-    if ($conn->connect_error) {
-        die("Kết nối thất bại: " . $conn->connect_error);
-    }
-    return $conn;
+// Hàm chuyển đổi tên khóa học thành tên file
+function getCourseFileName($course_name) {
+    $course_files = [
+        'Python cơ bản' => 'Python_cb.php',
+        'Python nâng cao' => 'Python_nc.php',
+        'YOLO' => 'Yolo.php',
+        'Toán' => 'Toan.php',
+        'Văn' => 'Van.php',
+        'Tiếng anh' => 'Tienganh.php',
+        'Hoá học' => 'Hoahoc.php'
+    ];
+    return $course_files[$course_name] ?? '';
 }
 
+// Kết nối CSDL
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -21,130 +30,148 @@ $dbname = "student";
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $sql = "SELECT khoa_hoc FROM khoa_hoc WHERE id = 2"; // PYTHON NÂNG CAO
-    $stmt = $conn->query($sql);
-    $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    die("Kết nối thất bại: " . $e->getMessage());
 }
 
-
-// lấy danh sách bài kiêm tra cua sinh viên
-
-
-$conn = dbconnect ();
-$student_id =$_SESSION['khoa_hoc'];
-$student_id = $_SESSION ['courses'] ?? [];
-$tests = [];
-$message ="";
-
-
-$student_id = intval($_SESSION['student_id']);
-$enrolled_courses = $_SESSION ['courses'] ?? [];
-$tests = [];
-$message = "";
-
-
-
-// Kiểm tra quyền truy cập
-if ($student_id == 1 || $student_id == 3) {
-    // Cho phép truy cập
-} else {
-    echo "Bạn không có quyền truy cập khoá học này";
-    exit();
-}
-
-if(isset ($_GET ['khoahoc']) && !in_array($_GET['khoahoc'], $enrolled_courses)){
-    $message = "<div style='color:red;'>Bạn không có quyền truy cập vào khoá hoc này!</div>";
-} else {
-       // Lấy danh sách bài kiểm tra cho các khóa học sinh viên đã đăng ký
-    $course_ids = implode(',', array_map('intval', $enrolled_courses));
-    if (!empty($course_ids)) {
-
-    $sql = "SELECT kt.Student_ID, kt.Khoa_ID, kt.Test_ID, kt.Best_Scone, kt.Max_Scone, kt.Pass, kt.Tral, kt.Max_tral, kh.khoa_hoc
-                FROM kiem_tra kt
-                JOIN khoa_hoc kh ON kt.Khoa_ID = kh.id
-                WHERE kt.Student_ID = ? AND kt.Khoa_ID IN ($course_ids)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $student_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $tests[] = $row;
-            }
-        }
-        $stmt->close();
-    }
-}
-$conn->close();
-
-
-
-
+// Danh sách khóa học
+$allowed_courses = explode(',', $_SESSION['khoahoc']);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 2</title>
+    <title>Danh sách khóa học</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom right, #e6f3fa, #f4f4f9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
             margin: 0;
+            padding: 20px;
         }
-        .content-container {
-            background-color: white;
-            padding: 50px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 400px;
-            text-align: center;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
-        h2 {
-            color: #007bff;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
         }
-        p {
-            font-size: 18px;
+        .welcome {
+            font-size: 24px;
             color: #333;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .course-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .course-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .course-info p {
+            margin: 8px 0;
+            color: #666;
+        }
+        .course-info strong {
+            color: #333;
+        }
+        .start-btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background 0.3s ease;
+        }
+        .no-courses {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
-    <div class="content-container">
-        <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
-        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
+<div class="container">
+    <div class="header">
+        <div class="welcome">
+            Xin chào, <?php echo htmlspecialchars($_SESSION['student_name']); ?>
+        </div>
+        <a href="logout.php" class="logout-btn">Đăng xuất</a>
     </div>
-    <tbody> 
-        <?php if (empty($questions) && empty($message)): ?>
-            <p>Không có câu hỏi nào cho bài kiểm tra này.</p>
-            <?php elseif (empty($message)): ?>
-            <form method="POST" action="submit_quiz.php?test_id=<?= urlencode($test_id) ?>&khoa_id=<?= urlencode($khoa_id) ?>">
-                <?php foreach ($questions as $index => $question): ?>
-                    <div class="question">
-                        <h3>Câu hỏi <?= $index + 1 ?>: <?= htmlspecialchars($question['cauhoi']) ?></h3>
-                        <?php if (!empty($question['hinhanh'])): ?>
-                            <img src="<?= htmlspecialchars($question['hinhanh']) ?>" alt="Hình ảnh câu hỏi" style="max-width: 300px;">
-                        <?php endif; ?>
-                        <div class="options">
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="A" required> A. <?= htmlspecialchars($question['cau_a']) ?></label><br>
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="B"> B. <?= htmlspecialchars($question['cau_b']) ?></label><br>
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="C"> C. <?= htmlspecialchars($question['cau_c']) ?></label><br>
-                            <label><input type="radio" name="answer[<?= $question['Id_cauhoi'] ?>]" value="D"> D. <?= htmlspecialchars($question['cau_d']) ?></label>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-                <button type="submit" class="btn-submit">Nộp bài</button>
-            </form>
-        <?php endif; ?>
-    </tbody>    
+
+    <div class="course-grid">
+        <?php
+        if (!empty($allowed_courses)) {
+            foreach ($allowed_courses as $course_id) {
+                // Lấy thông tin khóa học
+                $stmt = $conn->prepare("SELECT kh.khoa_hoc, t.ten_test, t.lan_thu, t.Pass, t.so_cau_hien_thi 
+                                        FROM khoa_hoc kh 
+                                        LEFT JOIN test t ON kh.id = t.id_khoa 
+                                        WHERE kh.id = ?");
+                $stmt->execute([$course_id]);
+                $course = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($course) {
+                    echo "<div class='course-card'>";
+                    echo "<div class='course-title'>" . htmlspecialchars($course['khoa_hoc']) . "</div>";
+                    echo "<div class='course-info'>";
+
+                    if (!empty($course['ten_test'])) {
+                        echo "<p><strong>Tên bài kiểm tra:</strong> " . htmlspecialchars($course['ten_test']) . "</p>";
+                        echo "<p><strong>Số lần thử:</strong> " . (!is_null($course['lan_thu']) ? $course['lan_thu'] : "Không có") . "</p>";
+                        echo "<p><strong>Điểm đạt:</strong> " . (!is_null($course['Pass']) ? $course['Pass'] . "%" : "Không có") . "</p>";
+                        echo "<p><strong>Số câu hỏi:</strong> " . (!is_null($course['so_cau_hien_thi']) ? $course['so_cau_hien_thi'] : "Không có") . "</p>";
+
+                        $course_file = getCourseFileName($course['khoa_hoc']);
+                        if ($course_file) {
+                            echo "<a href='../login/$course_file' class='start-btn'>Bắt đầu làm bài</a>";
+                        } else {
+                            echo "<p><em>Không tìm thấy file bài kiểm tra</em></p>";
+                        }
+                    } else {
+                        echo "<p><em>Chưa có bài kiểm tra cho khóa học này.</em></p>";
+                    }
+
+                    echo "</div></div>";
+                }
+            }
+        } else {
+            echo "<div class='no-courses'>Bạn chưa được đăng ký khóa học nào</div>";
+        }
+        ?>
+    </div>
+</div>
 </body>
 </html>

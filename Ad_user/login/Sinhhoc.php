@@ -24,9 +24,23 @@ if ($conn->connect_error) {
 }
 
 // Cấu hình khóa học và bài kiểm tra
-$ma_khoa = '6'; // ID khóa học 
-$id_test = '21'; // ID bài kiểm tra
+$ma_khoa = '8'; // ID khóa học 
+$id_test = '1'; // ID bài kiểm tra
 $student_id = $_SESSION['student_id'];
+
+$stmt = $conn->prepare("SELECT COUNT(*) FROM khoa_hoc WHERE id = ?");
+$stmt->bind_param("s", $ma_khoa);
+$stmt->execute();
+$count = $stmt->get_result()->fetch_row()[0];
+if ($count == 0) {
+    echo "<script>
+        alert('Khóa học không tồn tại!');
+        window.location.href = 'login.php';
+    </script>";
+    exit();
+}
+$stmt->close();
+
 
 // Xác minh quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT s.Student_ID, s.Ten, s.Khoahoc, kh.khoa_hoc 
@@ -65,6 +79,7 @@ $result = $stmt->get_result();
 $course_info = $result->fetch_assoc();
 $ten_khoa = $course_info['khoa_hoc'];
 $stmt->close();
+
 
 // Lấy thông tin bài kiểm tra
 $stmt = $conn->prepare("SELECT * FROM test WHERE id_test = ? AND id_khoa = ?");
@@ -657,7 +672,7 @@ $is_passed = $_SESSION['score'] >= $pass_score;
 
                         <?php if ($current_index < count($questions) - 1): ?>
                             <button type="submit" name="navigate" value="next" class="btn btn-secondary">
-                                Câu tiếp →
+                                Câu sau →
                             </button>
                         <?php endif; ?>
 

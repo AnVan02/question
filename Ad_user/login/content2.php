@@ -8,12 +8,36 @@ if (!isset($_SESSION['student_id'])) {
 $student_id = intval($_SESSION['student_id']);
 
 // Kiểm tra quyền truy cập
-if ($student_id == 1 || $student_id == 3) {
-    // Cho phép truy cập
+$conn = new mysqli("localhost", "root", "", "student");
+if ($conn->connect_error) {
+    die("Kết nối thất bại: " . $conn->connect_error);
+}
+
+// Lấy thông tin sinh viên và khóa học
+$stmt = $conn->prepare("SELECT s.Student_ID, s.Ten, s.Khoahoc, kh.khoa_hoc 
+                       FROM students s 
+                       LEFT JOIN khoa_hoc kh ON FIND_IN_SET(kh.id, s.Khoahoc)
+                       WHERE s.Student_ID = ?");
+$stmt->bind_param("i", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $student_info = $result->fetch_assoc();
+    $allowed_courses = explode(',', $student_info['Khoahoc']);
+    
+    // Kiểm tra xem khóa học 2 có trong danh sách khóa học được phép không
+    if (in_array('2', $allowed_courses)) {
+        // Cho phép truy cập
+    } else {
+        echo "Xin lỗi " . htmlspecialchars($student_info['Ten']) . ", bạn không có quyền truy cập khóa học này";
+        exit();
+    }
 } else {
-    echo "Bạn không có quyền truy cập khoá học này";
+    echo "Không tìm thấy thông tin sinh viên";
     exit();
 }
+$stmt->close();
 
 $servername = "localhost";
 $username = "root";
@@ -27,7 +51,7 @@ try {
     $stmt = $conn->query($sql);
     $khoa_hoc = $stmt->fetchColumn();
 } catch(PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    die("Kết nối thất bại: " . $e->getMessage());
 }
 ?>
 
@@ -36,7 +60,7 @@ try {
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Content 2</title>
+    <title>Nội dung 2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -62,12 +86,30 @@ try {
             font-size: 18px;
             color: #333;
         }
+        .course-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="content-container">
-        <h2>Khoá học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
-        <p>Hello bạn user<?php echo htmlspecialchars($student_id); ?> - bạn học khoá <?php echo htmlspecialchars($khoa_hoc); ?></p>
+        <h2>Khóa học <?php echo htmlspecialchars($khoa_hoc); ?></h2>
+        <p>Xin chào <?php echo htmlspecialchars($student_info['Ten']); ?> - Bạn đang học khóa <?php echo htmlspecialchars($khoa_hoc); ?></p>
+        <div class="course-info">
+            <p>Danh sách khóa học của bạn:</p>
+            <?php
+            $course_list = explode(',', $student_info['Khoahoc']);
+            foreach($course_list as $course_id) {
+                $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
+                $stmt->execute([$course_id]);
+                $course_name = $stmt->fetchColumn();
+                echo "<p>- " . htmlspecialchars($course_name) . "</p>";
+            }
+            ?>
+        </div>
     </div>
 </body>
 </html>
