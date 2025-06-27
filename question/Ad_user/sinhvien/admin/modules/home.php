@@ -349,6 +349,7 @@ if (isset($_GET['khoa_hoc_id'])) {
         } else {
             echo "<li>Không có bài test nào.</li>";
         }
+        
         echo "</ul>";
     } else {
         echo "<div class='error'>Không tìm thấy khóa học.</div>";

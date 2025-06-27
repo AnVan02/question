@@ -1,5 +1,4 @@
 <?php
-
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
@@ -10,32 +9,87 @@ function dbconnect() {
 
 $message = "";
 
-// Xử lý xóa khóa học
+// Xử lý xóa khóa học va dữ liêu liên quan
 if (isset($_GET['delete'])) {
     $id = (int) $_GET['delete'];
     $conn = dbconnect();
-
-    // Kiểm tra xem có bài kiểm tra nào liên quan đến khóa học không
-    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM test WHERE id_khoa = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $count = $stmt->get_result()->fetch_assoc()['count'];
-    $stmt->close();
-
-    // kiểm tra khoá học xoá 
-    if ($count > 0) {
-        $message = "<div class='message error'>Không thể xóa khóa học vì có bài kiểm tra liên quan!</div>";
-    } else {
-        $stmt = $conn->prepare("DELETE FROM khoa_hoc WHERE id = ?");
+    
+    // Bắt đầu transaction để đảm bảo tính toàn vẹn dữ liệu
+    $conn->begin_transaction();
+    
+    try {
+        // 1. Lấy tên khóa học để xóa các câu hỏi quiz liên quan
+        $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
         $stmt->bind_param("i", $id);
-        if ($stmt->execute()) {
-            $message = "<div class='message success'>Đã xóa khóa học thành công!</div>";
-        } else {
-            $message = "<div class='message error'>Lỗi khi xóa: " . $stmt->error . "</div>";
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $khoa_hoc = $result->fetch_assoc()['khoa_hoc'];
+        $stmt->close();
+        
+        // 2. Xóa các bài kiểm tra (test) liên quan đến khóa học
+        // Trước tiên lấy danh sách test_id để xóa các kết quả liên quan
+        $test_ids = [];
+        $stmt = $conn->prepare("SELECT id_test FROM test WHERE id_khoa = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $test_ids[] = $row['id_test'];
         }
         $stmt->close();
+        
+        if (!empty($test_ids)) {
+            // Xóa các kết quả kiểm tra (ket_qua) liên quan đến các bài test
+            $test_ids_str = implode("','", $test_ids);
+            $conn->query("DELETE FROM ket_qua WHERE test_id IN ('$test_ids_str')");
+            
+            // Xóa các bản ghi kiểm tra (kiem_tra) liên quan
+            $conn->query("DELETE FROM kiem_tra WHERE Khoa_ID = $id");
+            
+            // Xóa các bài test
+            $conn->query("DELETE FROM test WHERE id_khoa = $id");
+        }
+        
+        // 3. Xóa các câu hỏi quiz liên quan đến khóa học
+        $conn->query("DELETE FROM quiz WHERE ten_khoa = '$khoa_hoc'");
+        
+        // 4. Cập nhật các sinh viên đang tham gia khóa học này
+        // Lấy danh sách sinh viên có khóa học này
+        $students = [];
+        $result = $conn->query("SELECT Student_ID, Khoahoc FROM students WHERE Khoahoc LIKE '%$id%'");
+        while ($row = $result->fetch_assoc()) {
+            $students[] = $row;
+        }
+        
+        // Cập nhật từng sinh viên
+        foreach ($students as $student) {
+            $courses = explode(',', $student['Khoahoc']);
+            $new_courses = array_filter($courses, function($course) use ($id) {
+                return $course != $id;
+            });
+            $new_courses_str = implode(',', $new_courses);
+            
+            $stmt = $conn->prepare("UPDATE students SET Khoahoc = ? WHERE Student_ID = ?");
+            $stmt->bind_param("ss", $new_courses_str, $student['Student_ID']);
+            $stmt->execute();
+            $stmt->close();
+        }
+        
+        // 5. Cuối cùng xóa khóa học
+        $stmt = $conn->prepare("DELETE FROM khoa_hoc WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Commit transaction nếu mọi thứ thành công
+        $conn->commit();
+        $message = "<div class='message success'>Đã xóa khóa học và tất cả dữ liệu liên quan thành công!</div>";
+    } catch (Exception $e) {
+        // Rollback nếu có lỗi xảy ra
+        $conn->rollback();
+        $message = "<div class='message error'>Lỗi khi xóa: " . $e->getMessage() . "</div>";
     }
-
+    
     $conn->close();
 }
 
@@ -58,7 +112,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_course"])) {
         $conn->close();
     }
 }
-
 
 // Xử lý thêm mới
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_course"])) {
@@ -118,7 +171,7 @@ if (isset($_GET['edit'])) {
     <meta charset="UTF-8">
     <title>Quản lý Khóa Học</title>
     <style>
-    
+       
 
         .container {
             background-color: #ffffff;
@@ -162,6 +215,8 @@ if (isset($_GET['edit'])) {
             border-color: #0288d1;
             box-shadow: 0 0 5px rgba(2, 136, 209, 0.2);
             outline: none;
+            width: 100px;
+            padding:20px;
         }
 
         button {
@@ -304,7 +359,8 @@ if (isset($_GET['edit'])) {
 
         <form method="POST">
             <label>Tên khóa học:</label>
-            <input type="text" name="ten_khoahoc" placeholder="Nhập tên khóa học" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
+            <input type="text" name="ten_khoahoc" placeholder ="khoahoc" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
+            <input type="text" name="khoahoc" placeholder="khoahoc" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
             <?php if ($editing): ?>
                 <input type="hidden" name="course_id" value="<?= $edit_id ?>">
                 <button type="submit" name="update_course">Cập nhật</button>
@@ -325,6 +381,7 @@ if (isset($_GET['edit'])) {
                         <a href="?edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
                         <a href="?delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
                         <a href="khoahoc.php?id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>
+                        
                     </li>
                 <?php endforeach; ?>
             </ul>

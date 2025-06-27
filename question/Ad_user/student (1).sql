@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 20, 2025 lúc 03:45 AM
+-- Thời gian đã tạo: Th6 26, 2025 lúc 07:44 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -26,32 +26,23 @@ SET time_zone = "+00:00";
 --
 -- Cấu trúc bảng cho bảng `ket_qua`
 --
+
 CREATE TABLE `ket_qua` (
   `student_id` int(11) NOT NULL,
   `khoa_id` int(11) NOT NULL,
   `test_id` varchar(255) NOT NULL,
-  `kq_cao_nhat` int NOT NULL,
-  `tt_bai_test` varchar(1000) NOT NULL,
-  PRIMARY KEY (`student_id`, `khoa_id`, `test_id`)
+  `kq_cao_nhat` int(11) NOT NULL,
+  `tt_bai_test` text DEFAULT NULL COMMENT 'Lưu dạng JSON hoặc format thống nhất'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Đang đổ dữ liệu cho bảng `ket_qua`
 --
 
 INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_bai_test`) VALUES
-(1, 4, '8', 1, 'Câu 1: C, Câu 2: D, Câu 3: D'),
-(1, 10, '10', 1, 'Câu 1: C, Câu 2: D, Câu 3: D');
+(1, 1, '19', 2, '5:B;6:B'),
+(1, 4, '23', 2, '20:B;21:B;22:B;23:B;24:B');
 
-
-INSERT INTO ket_qua (student_id, khoa_id, test_id, kq_cao_nhat, tt_bai_test)
-SELECT 
-    student_id,
-    khoa_id,
-    test_id,
-    MAX(score) AS kq_cao_nhat,
-    MAX(test_details) AS tt_bai_test
-FROM test_results
-GROUP BY student_id, khoa_id, test_id;
 -- --------------------------------------------------------
 
 --
@@ -75,7 +66,8 @@ INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
 (5, 'Văn'),
 (6, 'Tiếng anh'),
 (8, 'Sinh học'),
-(10, 'Hoá học');
+(10, 'Hoá học'),
+(11, 'Vật lý');
 
 -- --------------------------------------------------------
 
@@ -102,10 +94,9 @@ INSERT INTO `kiem_tra` (`Student_ID`, `Khoa_ID`, `Test_ID`, `Best_Score`, `Max_S
 (3, 1, '19', 0, 0, '80', 0, 3),
 (3, 6, '21', 0, 0, '80', 0, 3),
 (3, 5, '22', 0, 0, '100', 0, 2),
-(3, 3, '16', 0, 0, '80', 0, 2),
+(2, 3, '16', 0, 0, '80', 0, 2),
 (2, 10, '12', 0, 0, '80', 0, 2),
 (2, 4, '23', 0, 0, '80', 0, 3),
-(2, 3, '16', 0, 0, '80', 0, 2),
 (1, 10, '12', 0, 0, '80', 0, 2),
 (1, 2, '29', 0, 0, '100', 0, 2),
 (1, 4, '23', 0, 0, '80', 0, 3);
@@ -202,7 +193,7 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 (40, 'Cuối kỳ', 'Sinh hoc', 'Hệ tuần hoàn gồm?', NULL, 'Tim và mạch máu', 'Đúng', 'Não và tủy', 'Sai', 'Gan và thận', 'Sai', 'Xương và cơ', 'Sai', 'A'),
 (41, 'Cuối kỳ', 'Sinh hoc', 'Máu vận chuyển gì?', NULL, 'Oxy và chất dinh dưỡng', 'Đúng', 'Điện', 'Sai', 'Khí CO2', 'Chỉ 1 phần', 'Sóng', 'Sai', 'A'),
 (42, 'Cuối kỳ', 'Sinh hoc', 'Bộ gen người có?', NULL, '23 cặp NST', 'Đúng', '46 NST đơn lẻ', 'Cũng đúng', '24 cặp NST', 'Sai', '22 NST', 'Sai', 'A'),
-(43, 'Giữa kỳ', 'Hoá học', 'H2O là công thức của?', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSnbaZBFLlrmrkFa3xSE-0FAb-Qvo95kMcYWJIV00C_wL8CLqxP38CakaNnSk4KBzVKbiAx0NjuB68KCupXu2HH5Jyug-0u9-q2R_OaDY6L', 'Oxy', 'Sai', 'Nước', 'Đúng', 'Hydro', 'Sai', 'Không khí', 'Sai', 'B'),
+(43, 'Giữa kỳ', 'Hoá học', 'H2O là công thức của?', NULL, 'Oxy', 'Sai', 'Nước', 'Đúng', 'Hydro', 'Sai', 'Không khí', 'Sai', 'B'),
 (44, 'Giữa kỳ', 'Hoá học', 'pH < 7 là?', NULL, 'Trung tính', 'Sai', 'Axit', 'Đúng', 'Bazơ', 'Sai', 'Muối', 'Sai', 'B'),
 (45, 'Giữa kỳ', 'Hoá học', 'NaCl là?', NULL, 'Axit', 'Sai', 'Muối', 'Đúng', 'Bazơ', 'Sai', 'Kim loại', 'Sai', 'B'),
 (46, 'Cuối kỳ', 'Hoá học', 'Khi đốt Mg trong O2 tạo?', NULL, 'CO2', 'Sai', 'MgO', 'Đúng', 'H2O', 'Sai', 'NaCl', 'Sai', 'B'),
@@ -244,8 +235,8 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`IMEI`, `MB_ID`, `OS_ID`, `Student_ID`, `Password`, `Ten`, `Email`, `Khoahoc`) VALUES
-(1, 1, 1, '1', '1', 'A', 'an1@gmail.com', '10,4,8'),
-(2, 2, 2, '2', '2', 'B', 'an2@gmail.com', '10,3,1'),
+(1, 1, 1, '1', '1', 'A', 'an1@gmail.com', '1,4,10'),
+(2, 2, 2, '2', '2', 'B', 'an2@gmail.com', '10,3,4'),
 (3, 3, 3, '3', '3', 'C', 'An3@gmail.com', '1,6,5,3');
 
 -- --------------------------------------------------------
@@ -261,8 +252,6 @@ CREATE TABLE `test` (
   `lan_thu` int(11) DEFAULT 1,
   `Pass` varchar(255) NOT NULL,
   `so_cau_hien_thi` int(11) NOT NULL
-  PRIMARY KEY (`id_test`, `id_khoa`)
-
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -277,7 +266,6 @@ INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau
 (21, 6, 'Cuối kỳ', 3, '80', 0),
 (22, 5, 'Giữa kỳ', 2, '100', 0),
 (23, 4, 'Giữa kỳ', 3, '80', 0),
-(40, 19,'Giua ky', 2, '80', 0),
 (29, 2, 'Giữa kỳ', 2, '100', 0);
 
 --
@@ -288,7 +276,7 @@ INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau
 -- Chỉ mục cho bảng `ket_qua`
 --
 ALTER TABLE `ket_qua`
-  ADD PRIMARY KEY (`khoa_id`);
+  ADD PRIMARY KEY (`student_id`,`khoa_id`,`test_id`);
 
 --
 -- Chỉ mục cho bảng `khoa_hoc`
@@ -323,6 +311,12 @@ ALTER TABLE `test`
 --
 -- AUTO_INCREMENT cho các bảng đã đổ
 --
+
+--
+-- AUTO_INCREMENT cho bảng `khoa_hoc`
+--
+ALTER TABLE `khoa_hoc`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT cho bảng `test`
