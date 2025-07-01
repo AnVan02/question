@@ -8,16 +8,8 @@ if (isset($_POST['account_keyword'])) {
 }
 
 ?>
-<div class="row">
-    <div class="col">
-        <div class="header__list d-flex space-between align-center">
-            <h3 class="card-title" style="margin: 0;">Danh sách tài khoản</h3>
-            <div class="action_group">
-                
-            </div>
-        </div>
-    </div>
-</div>
+
+
 <div class="row">
     <div class="col-lg-12 grid-margin stretch-card">
         <div class="card">
@@ -25,7 +17,7 @@ if (isset($_POST['account_keyword'])) {
                 <div class="main-pane-top d-flex justify-center align-center">
                     <div class="input__search p-relative">
                         <form class="search-form" action="" method="POST">
-                            <i class="icon-search p-absolute"></i>
+                            <i class="icon-search p-absolute">Danh sách tài khoản</i>
                             <input type="search" class="form-control" name="account_keyword" placeholder="Search Here" title="Search here">
                         </form>
                     </div>

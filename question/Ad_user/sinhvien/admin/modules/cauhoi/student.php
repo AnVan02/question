@@ -22,6 +22,9 @@ $message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
 
 // Xử lý yêu cầu AJAX để lấy khóa học của sinh viên
 if (isset($_GET['action']) && $_GET['action'] == 'get_courses' && isset($_GET['student_id'])) {
+    // Xóa bộ đệm đầu ra để ngăn chặn nội dung không mong muốn
+    ob_clean();
+    
     $student_id = $_GET['student_id'];
     $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
     if (!$stmt) {
@@ -41,10 +44,14 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_courses' && isset($_GET['s
         error_log("No student found with Student_ID: $student_id");
     }
     $stmt->close();
-    header('Content-Type: application/json');
+    
+    // Đặt tiêu đề JSON và xuất
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($khoa_hoc_ids);
     exit;
 }
+
+// kiêm tra 
 
 // Xử lý yêu cầu AJAX để lưu khóa học
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'save_courses') {
@@ -58,6 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         echo json_encode(['status' => 'error', 'message' => 'Student_ID không hợp lệ']);
         exit;
     }
+
     
     // Chuyển danh sách khóa học thành chuỗi
     $khoa_hoc_string = !empty($khoa_hoc_ids) ? implode(',', $khoa_hoc_ids) : '';
@@ -83,6 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     }
     $stmt_check->close();
 
+    
     // Bắt đầu giao dịch
     $conn->begin_transaction();
     try {
@@ -179,6 +188,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $stmt_khoa_hoc->close();
         }
 
+
         // Commit giao dịch
         $conn->commit();
         $response = [
@@ -246,6 +256,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = $_POST['password'];
         $ten = $_POST['ten'];
         $email = $_POST['email'];
+        
 
         // Kiểm tra Student_ID đã tồn tại
         $stmt = $conn->prepare("SELECT Student_ID FROM students WHERE Student_ID = ?");
@@ -321,6 +332,7 @@ if ($mode == 'edit' && $student_id) {
                 <?php echo htmlspecialchars($message); ?>
             </p>
         <?php endif; ?>
+
 
         <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
             <input type="hidden" name="action" value="update">
@@ -473,6 +485,7 @@ if ($mode == 'edit' && $student_id) {
         }
         ?>
     <?php endif; ?>
+   
 
     <!-- Modal hiển thị và lưu khóa học -->
     <div id="courseModal" class="modal">
@@ -504,6 +517,7 @@ if ($mode == 'edit' && $student_id) {
                         $stmt->close();
                     }
                     ?>
+                    
                 </div>
                 <div id="selected-courses">
                     <p><strong>Khóa học đã chọn:</strong> <span id="selectedCoursesText">Chưa chọn khóa học nào.</span></p>
@@ -530,9 +544,12 @@ if ($mode == 'edit' && $student_id) {
                 headers: { 'Accept': 'application/json' }
             })
                 .then(response => {
-                    console.log('Fetch response status:', response.status);
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers.get('Content-Type'));
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.text().then(text => {
+                            throw new Error(`HTTP error! status: ${response.status}, response: ${text.substring(0, 100)}...`);
+                        });
                     }
                     return response.json();
                 })
@@ -613,6 +630,7 @@ if ($mode == 'edit' && $student_id) {
                 });
         }
 
+        
         function htmlspecialchars(str) {
             const div = document.createElement('div');
             div.innerText = str;
@@ -628,20 +646,7 @@ if ($mode == 'edit' && $student_id) {
     </script>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 20px auto;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            color: #333;
-            line-height: 1.6;
-            padding: 15px;
-        }
+      
         h2 {
             text-align: center;
             color: #2c3e50;

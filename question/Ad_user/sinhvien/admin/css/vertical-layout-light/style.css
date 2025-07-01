@@ -28381,7 +28381,7 @@ div.tagsinput span.tag a {
 }
 
 .content-wrapper {
-  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+  background: #F4F5F7;
   padding: 1.5rem 2.187rem 1.5rem 3.5rem;
   width: 100%;
   -webkit-flex-grow: 1;
@@ -28397,7 +28397,7 @@ div.tagsinput span.tag a {
 /* Sidebar */
 .sidebar {
   min-height: calc(300vh - 97px);
-  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+  background: #F4F5F7;
   font-size: 50%;
   font-family:  "Arial", sans-serif;
   font-weight: 500;

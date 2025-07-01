@@ -102,7 +102,6 @@
             color: #555;
             margin-top: 10px;
             gap: 10px;
-
         }
         
         .test-actions {
@@ -171,34 +170,53 @@
             font-size: 1.2em;
         }
         .icon-cross {
-            color:rgb(255, 19, 19);
+            color: rgb(255, 19, 19);
             font-weight: bold;
             font-size: 1.2em;
-
         }
         
         .completed {
-            color:rgb(17, 128, 23);
+            color: rgb(17, 128, 23);
             font-weight: bold;
             font-size: 1.2em;
-
         }
         
         .passed {
-            color:rgb(17, 128, 23);
+            color: rgb(17, 128, 23);
             font-weight: bold;
             font-size: 1.3em;
         }
         
         .not-completed {
-            color:rgb(255, 19, 19);
+            color: rgb(255, 19, 19);
             font-size: 1.2em;
-
         }
         
         .score-detail {
             margin-top: 5px;
             font-weight: bold;
+        }
+        
+        .explanation-detail {
+            margin-top: 5px;
+            padding: 8px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-style: normal;
+        }
+        
+        .question-id {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .json-format {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
         }
     </style>
 </head>
@@ -211,7 +229,6 @@
         <input type="text" id="student_id" name="student_id" required>
         <button type="submit">Tra cứu</button>
     </form>
-
 <?php
 // Kết nối CSDL
 $conn = new mysqli("localhost", "root", "", "student");
@@ -285,7 +302,7 @@ if (isset($_GET['student_id']) && !empty(trim($_GET['student_id']))) {
                         <span>$status</span>
                     </div>
                     <div class='test-info'>
-                        <span>Đã hoàn thành: $attempted_tests / $total_tests bài test</span>
+                        <span>Đã làm: $attempted_tests / $total_tests bài test</span>
                     </div>
                     <div class='test-actions'>
                         <a href='?student_id=$student_id&khoa_hoc_id={$row2['id']}'>Xem bài test</a>
@@ -299,7 +316,7 @@ if (isset($_GET['student_id']) && !empty(trim($_GET['student_id']))) {
     }
 }
 
-// Xử lý khi nhấn "Xem bài test" để hiển thị danh sách bài test 
+// Xử lý khi nhấn "Xem bài test"
 if (isset($_GET['khoa_hoc_id'])) {
     $khoa_hoc_id = intval($_GET['khoa_hoc_id']);
     $student_id = $conn->real_escape_string($_GET['student_id'] ?? '');
@@ -312,6 +329,7 @@ if (isset($_GET['khoa_hoc_id'])) {
         // Lấy danh sách bài test với thông tin kết quả và phần trăm đạt từ bảng test
         $sql_tests = "
             SELECT t.id_test, t.ten_test, t.Pass as required_pass_percent, 
+                   t.lan_thu as max_attempts,
                    kq.kq_cao_nhat, kq.tt_bai_test,
                    (SELECT COUNT(*) FROM quiz q WHERE q.id_baitest = t.ten_test AND q.ten_khoa = '$khoa_name') as total_questions
             FROM test t
@@ -330,17 +348,19 @@ if (isset($_GET['khoa_hoc_id'])) {
                 $diem_cao_nhat = $test['kq_cao_nhat'] ?? 'Chưa có';
                 $tt_bai_test = $test['tt_bai_test'] ?? '';
                 $total_questions = $test['total_questions'] ?? 0;
-                $required_pass_percent = $test['required_pass_percent'] ?? '80'; // Mặc định 80% nếu không có
-                $so_lan_thu = $tt_bai_test ? substr_count($tt_bai_test, 'Câu') : 0;
-
-                // tinh toán dựa theo so_cau_hỉn_thi  thay vì tong số câu hỏi
-
-
-                // Tính điểm cần để đạt dựa trên % yêu cầu từ bảng test
+                $required_pass_percent = $test['required_pass_percent'] ?? '80';
+                $max_attempts = $test['max_attempts'] ?? 1;
+                
+                // Tính số lần đã làm bài test này
+                $attempt_count_sql = "SELECT COUNT(*) as attempt_count FROM ket_qua 
+                                     WHERE student_id = '$student_id' AND khoa_id = $khoa_hoc_id AND test_id = '$test_id'";
+                $attempt_count_result = $conn->query($attempt_count_sql);
+                $attempt_count = $attempt_count_result ? $attempt_count_result->fetch_assoc()['attempt_count'] : 0;
+                
                 $required_score = ceil($total_questions * $required_pass_percent / 100);
                 
                 $is_passed = is_numeric($diem_cao_nhat) && $total_questions > 0 && ($diem_cao_nhat >= $required_score);
-                $passed_status = $is_passed ? "<span class='passed'>Đạt </span>" : "<span class='not-completed'>Chưa đạt</span>";
+                $passed_status = $is_passed ? "<span class='passed'>Đạt</span>" : "<span class='not-completed'>Chưa đạt</span>";
                 
                 $percentage = is_numeric($diem_cao_nhat) && $total_questions > 0 ? 
                              round(($diem_cao_nhat / $total_questions) * 100, 1) : 0;
@@ -351,12 +371,20 @@ if (isset($_GET['khoa_hoc_id'])) {
                         <span>$passed_status</span>
                     </div>
                     <div class='test-info'>
-                        <span>Điểm cao nhất: $diem_cao_nhat/$total_questions($percentage%)</span>
-                        <span>Yêu cầu đậu: $required_pass_percent%  </span>
-                        <span>Số lần thử: $so_lan_thu/$total_questions</span>
+                        <span>Điểm cao nhất: $diem_cao_nhat/$total_questions ($percentage%)</span>
+                        <span>Yêu cầu đậu: $required_pass_percent% </span>
+                        <span>Số lần làm: $attempt_count/$max_attempts</span>
                     </div>
-                    <div class='test-actions'>
-                        <a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>Xem kết quả chi tiết</a>
+                    <div class='test-actions'>";
+                
+                // Chỉ hiển thị nút "Làm bài" nếu còn lượt thử
+                if ($attempt_count < $max_attempts) {
+                    echo "<a href='quiz.php?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&test_id=$test_id'>Làm bài</a>";
+                } else {
+                    echo "<span class='not-completed'>Đã hết lượt làm bài</span>";
+                }
+                
+                echo "<a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>Xem kết quả chi tiết</a>
                     </div>
                 </li>";
             }
@@ -369,79 +397,65 @@ if (isset($_GET['khoa_hoc_id'])) {
     }
 }
 
-// Trong phần xử lý khi nhấn "Xem kết quả chi tiết" (xem_ket_qua)
+// Xử lý khi nhấn "Xem kết quả chi tiết"
 if (isset($_GET['xem_ket_qua'])) {
     $test_id = $conn->real_escape_string($_GET['xem_ket_qua']);
     $student_id = $conn->real_escape_string($_GET['student_id'] ?? '');
     $khoa_hoc_id = intval($_GET['khoa_hoc_id'] ?? 0);
     
-    // Lấy thông tin bài test và khóa học, bao gồm cả % Pass từ bảng test
-    $test_info = $conn->query("
-        SELECT t.ten_test, t.Pass as required_pass_percent 
-        FROM test t 
-        WHERE t.id_test = '$test_id'
-    ");
-    $khoa_info = $conn->query("SELECT khoa_hoc FROM khoa_hoc WHERE id = $khoa_hoc_id");
+    // Lấy thông tin khóa học và test
+    $khoa_result = $conn->query("SELECT khoa_hoc FROM khoa_hoc WHERE id = $khoa_hoc_id");
+    $test_result = $conn->query("SELECT ten_test, lan_thu FROM test WHERE id_test = '$test_id'");
     
-    if ($test_info && $test_info->num_rows > 0 && $khoa_info && $khoa_info->num_rows > 0) {
-        $test_data = $test_info->fetch_assoc();
+    if ($khoa_result && $khoa_result->num_rows > 0 && $test_result && $test_result->num_rows > 0) {
+        $khoa_name = $khoa_result->fetch_assoc()['khoa_hoc'];
+        $test_data = $test_result->fetch_assoc();
         $test_name = $test_data['ten_test'];
-        $required_pass_percent = $test_data['required_pass_percent'] ?? '80';
-        $khoa_name = $khoa_info->fetch_assoc()['khoa_hoc'];
+        $max_attempts = $test_data['lan_thu'];
         
-        // Lấy kết quả chi tiết
-        $ketqua = $conn->query("
-            SELECT kq_cao_nhat, tt_bai_test 
-            FROM ket_qua 
-            WHERE student_id = '$student_id' AND khoa_id = $khoa_hoc_id AND test_id = '$test_id'
-        ");
+        // Tính số lần đã làm bài test này
+        $attempt_count_sql = "SELECT COUNT(*) as attempt_count FROM ket_qua 
+                             WHERE student_id = '$student_id' AND khoa_id = $khoa_hoc_id AND test_id = '$test_id'";
+        $attempt_count_result = $conn->query($attempt_count_sql);
+        $attempt_count = $attempt_count_result ? $attempt_count_result->fetch_assoc()['attempt_count'] : 0;
+        
+        // Lấy kết quả của sinh viên cho bài test này
+        $ketqua_sql = "SELECT tt_bai_test, kq_cao_nhat FROM ket_qua 
+                       WHERE student_id = '$student_id' AND khoa_id = $khoa_hoc_id AND test_id = '$test_id'
+                       ORDER BY kq_cao_nhat DESC LIMIT 1";
+        $ketqua = $conn->query($ketqua_sql);
+        
+        echo "<h3>Kết quả chi tiết bài test: <strong>$test_name</strong></h3>";
+        echo "<div class='test-info'></div>";
+        echo "<div class='test-result'>";
         
         if ($ketqua && $ketqua->num_rows > 0) {
             $ketqua_data = $ketqua->fetch_assoc();
             $tt_bai_test = $ketqua_data['tt_bai_test'];
             $kq_cao_nhat = $ketqua_data['kq_cao_nhat'];
             
-            // Lấy tổng số câu hỏi
-            $total_result = $conn->query("
-                SELECT COUNT(*) as total_questions 
-                FROM quiz 
-                WHERE id_baitest = '$test_name' AND ten_khoa = '$khoa_name'
-            ");
-            $total_questions = $total_result->fetch_assoc()['total_questions'];
-            
-            $percentage = is_numeric($kq_cao_nhat) && $total_questions > 0 ? 
-                         round(($kq_cao_nhat / $total_questions) * 100, 1) : 0;
-            
-            // Tính điểm cần để đạt
-            $required_score = ceil($total_questions * $required_pass_percent / 100);
+            echo "<div class='score-detail'>Điểm cao nhất: $kq_cao_nhat</div>";
 
-            $is_passed = is_numeric($kq_cao_nhat) && ($kq_cao_nhat >= $required_score);
-            
-            echo "<h3>Kết quả bài test: <strong>$test_name</strong> (Môn: $khoa_name)</h3>";
-            echo "<div class='test-result'>";
-            // echo "<p><strong>Điểm cao nhất:</strong> $kq_cao_nhat/$total_questions ($required_pass_percent% )</p>";
-            
-            if ($is_passed) {
-                echo "<p style='color: green; font-weight: bold;'>✅ Đạt yêu cầu! Bạn đã vượt qua bài test này.</p>";
-            } else {
-                echo "<p style='color: red; font-weight: bold;'>⚠️ Chưa đạt! Cần đúng ít nhất $required_score câu để vượt qua bài test.</p>";
-            }
-                        // Phân tích tt_bai_test với xử lý lỗi tốt hơn
+            // Phân tích tt_bai_test dạng "5:B;6:B"
             $user_answers = [];
             if (!empty($tt_bai_test)) {
-                // Xử lý nhiều định dạng có thể có
-                if (preg_match_all('/(Câu\s*(\d+)\s*:\s*([A-Da-d]))/i', $tt_bai_test, $matches, PREG_SET_ORDER)) {
-                    foreach ($matches as $match) {
-                        $question_num = trim($match[2]);
-                        $answer = strtoupper(trim($match[3]));
-                        $user_answers[$question_num] = $answer;
+                $pairs = explode(';', $tt_bai_test);
+                foreach ($pairs as $pair) {
+                    if (!empty($pair) && strpos($pair, ':') !== false) {
+                        list($id, $answer) = explode(':', $pair, 2);
+                        $id = trim($id);
+                        $answer = strtoupper(trim($answer));
+                        if (!empty($id) && !empty($answer)) {
+                            $user_answers[$id] = $answer;
+                        }
                     }
                 }
             }
-            
+
             // Lấy danh sách câu hỏi và hiển thị
             $quiz_result = $conn->query("
-                SELECT Id_cauhoi, cauhoi, cau_a, cau_b, cau_c, cau_d, dap_an 
+                SELECT Id_cauhoi, cauhoi, cau_a, cau_b, cau_c, cau_d, dap_an, 
+                       giaithich_a, giaithich_b, giaithich_c, giaithich_d
                 FROM quiz 
                 WHERE id_baitest = '$test_name' AND ten_khoa = '$khoa_name' 
                 ORDER BY Id_cauhoi
@@ -450,11 +464,12 @@ if (isset($_GET['xem_ket_qua'])) {
             if ($quiz_result && $quiz_result->num_rows > 0) {
                 $question_number = 1;
                 while ($q = $quiz_result->fetch_assoc()) {
-                    $user_answer = $user_answers[$question_number] ?? null;
-                    $dap_an_dung = strtoupper($q['dap_an']);
+                    $question_id = $q['Id_cauhoi'];
+                    $user_answer = $user_answers[$question_id] ?? null;
+                    $dap_an_dung = strtoupper(trim($q['dap_an']));
                     
                     echo "<div class='question-container'>";
-                    echo "<p><strong>Câu $question_number (ID: {$q['Id_cauhoi']}):</strong> " . htmlspecialchars($q['cauhoi']) . "</p>";
+                    echo "<p><strong>Câu $question_number</strong> <span class='question-id'>(ID: $question_id)</span>: " . htmlspecialchars($q['cauhoi']) . "</p>";
                     
                     echo "<div class='options'>";
                     $choices = ['A' => $q['cau_a'], 'B' => $q['cau_b'], 'C' => $q['cau_c'], 'D' => $q['cau_d']];
@@ -479,16 +494,29 @@ if (isset($_GET['xem_ket_qua'])) {
                     }
                     echo "</div>";
                     
-                    // if ($user_answer !== null) {
-                    //     echo "<div class='explanation'>";
-                    //     echo "Bạn chọn: <span class='user-answer'>$user_answer</span>";
-                    //     if ($user_answer !== $dap_an_dung) {
-                    //         echo " | Đáp án đúng: $dap_an_dung";
-                    //     }
-                    //     echo "</div>";
-                    // } else {
-                    //     echo "<div class='explanation'>Bạn chưa trả lời câu này</div>";
-                    // }
+                    echo "<div class='explanation'>";
+                    if ($user_answer !== null) {
+                        echo "Bạn chọn: <span class='user-answer'>$user_answer</span>";
+                        if ($user_answer !== $dap_an_dung) {
+                            echo " | Đáp án đúng: $dap_an_dung";
+                            // Hiển thị giải thích cho đáp án đúng
+                            $explanation_field = 'giaithich_' . strtolower($dap_an_dung);
+                            $explanation = $q[$explanation_field];
+                            if (!empty($explanation)) {
+                                echo "<div class='explanation-detail'><strong>Giải thích:</strong> $explanation</div>";
+                            }
+                        } else {
+                            // Hiển thị giải thích khi trả lời đúng
+                            $explanation_field = 'giaithich_' . strtolower($dap_an_dung);
+                            $explanation = $q[$explanation_field];
+                            if (!empty($explanation)) {
+                                echo "<div class='explanation-detail'><strong>Giải thích:</strong> $explanation</div>";
+                            }
+                        }
+                    } else {
+                        echo "Bạn chưa trả lời câu này";
+                    }
+                    echo "</div>";
                     
                     echo "</div>";
                     $question_number++;
@@ -496,12 +524,12 @@ if (isset($_GET['xem_ket_qua'])) {
             } else {
                 echo "<div class='error'>Không tìm thấy câu hỏi nào cho bài test này.</div>";
             }
-            echo "</div>";
         } else {
             echo "<div class='error'>Sinh viên chưa làm bài test này.</div>";
         }
+        echo "</div>";
     } else {
-        echo "<div class='error'>Không tìm thấy thông tin bài test hoặc khóa học.</div>";
+        echo "<div class='error'>Không tìm thấy thông tin khóa học hoặc bài test.</div>";
     }
 }
 

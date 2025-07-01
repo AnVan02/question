@@ -173,6 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
     }
 }
 
+
 $result = null;
 if ($id_khoa > 0 && $khoa_hoc) {
     $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, t.pass, t.so_cau_hien_thi, k.khoa_hoc FROM test t LEFT JOIN khoa_hoc k ON t.id_khoa = k.id WHERE t.id_khoa = ?";
@@ -193,20 +194,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhập vàDiggs và hiển thị dữ liệu Test - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 20px auto;
-            max-width: 1300px;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            color: #333;
-            line-height: 1.6;
-        }
+    
 
         h2 {
             margin-bottom: 25px;

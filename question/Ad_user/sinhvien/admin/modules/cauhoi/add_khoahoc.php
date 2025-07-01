@@ -18,7 +18,7 @@ if (isset($_GET['delete'])) {
     $conn->begin_transaction();
     
     try {
-        // 1. Lấy tên khóa học để xóa các câu hỏi quiz liên quan
+        //  Lấy tên khóa học để xóa các câu hỏi quiz liên quan
         $stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -26,7 +26,6 @@ if (isset($_GET['delete'])) {
         $khoa_hoc = $result->fetch_assoc()['khoa_hoc'];
         $stmt->close();
         
-        // 2. Xóa các bài kiểm tra (test) liên quan đến khóa học
         // Trước tiên lấy danh sách test_id để xóa các kết quả liên quan
         $test_ids = [];
         $stmt = $conn->prepare("SELECT id_test FROM test WHERE id_khoa = ?");
@@ -37,7 +36,7 @@ if (isset($_GET['delete'])) {
             $test_ids[] = $row['id_test'];
         }
         $stmt->close();
-        
+         
         if (!empty($test_ids)) {
             // Xóa các kết quả kiểm tra (ket_qua) liên quan đến các bài test
             $test_ids_str = implode("','", $test_ids);
@@ -50,11 +49,10 @@ if (isset($_GET['delete'])) {
             $conn->query("DELETE FROM test WHERE id_khoa = $id");
         }
         
-        // 3. Xóa các câu hỏi quiz liên quan đến khóa học
+        //  Xóa các câu hỏi quiz liên quan đến khóa học
         $conn->query("DELETE FROM quiz WHERE ten_khoa = '$khoa_hoc'");
         
-        // 4. Cập nhật các sinh viên đang tham gia khóa học này
-        // Lấy danh sách sinh viên có khóa học này
+        // Cập nhật các sinh viên đang tham gia khóa học này
         $students = [];
         $result = $conn->query("SELECT Student_ID, Khoahoc FROM students WHERE Khoahoc LIKE '%$id%'");
         while ($row = $result->fetch_assoc()) {
@@ -171,11 +169,10 @@ if (isset($_GET['edit'])) {
     <meta charset="UTF-8">
     <title>Quản lý Khóa Học</title>
     <style>
-       
 
         .container {
             background-color: #ffffff;
-            max-width: 1000px;
+            max-width: 2500px;
             width: 100%;
             padding: 30px;
             border-radius: 15px;
@@ -196,9 +193,11 @@ if (isset($_GET['edit'])) {
         }
 
         form label {
-            font-weight: 500;
+            /* font-weight: 500; */
             display: block;
-            margin-bottom: 8px;
+            margin-top: 15px;
+            font-size:17px;
+            margin-bottom: 5px;
             color: #333;
         }
 
@@ -215,8 +214,6 @@ if (isset($_GET['edit'])) {
             border-color: #0288d1;
             box-shadow: 0 0 5px rgba(2, 136, 209, 0.2);
             outline: none;
-            width: 100px;
-            padding:20px;
         }
 
         button {
@@ -309,6 +306,7 @@ if (isset($_GET['edit'])) {
             text-overflow: ellipsis;
             white-space: nowrap;
             color: #333;
+            font-size:15px;
         }
 
         ul li a {
@@ -359,8 +357,7 @@ if (isset($_GET['edit'])) {
 
         <form method="POST">
             <label>Tên khóa học:</label>
-            <input type="text" name="ten_khoahoc" placeholder ="khoahoc" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
-            <input type="text" name="khoahoc" placeholder="khoahoc" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
+            <input type="text" name="ten_khoahoc" placeholder="Nhập tên khóa học" value="<?= htmlspecialchars($edit_khoa_hoc) ?>">
             <?php if ($editing): ?>
                 <input type="hidden" name="course_id" value="<?= $edit_id ?>">
                 <button type="submit" name="update_course">Cập nhật</button>
@@ -380,7 +377,7 @@ if (isset($_GET['edit'])) {
                         <span class="course-name"><?= htmlspecialchars($kh['khoa_hoc']) ?></span>
                         <a href="?edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
                         <a href="?delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
-                        <a href="khoahoc.php?id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>
+                        <a href="index.php?action=khoahoc.php?id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>
                         
                     </li>
                 <?php endforeach; ?>

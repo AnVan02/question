@@ -142,15 +142,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     <meta charset="UTF-8">
     <title>Cập nhập câu hỏi </title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            margin: 0;
-            padding: 20px;
-        }
+     
         .container {
             background-color: rgb(252, 251, 248);
-            max-width: 1000px;
+            max-width: 1250px;
             margin: 0 auto;
             padding: 30px;
             border-radius: 15px;
@@ -162,19 +157,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             margin-bottom: 25px;
         }
         form label {
-            font-weight: 600;
+            /* font-weight: 400; */
             display: block;
             margin-top: 15px;
+            font-size:15px;
             margin-bottom: 5px;
             color: #333;
+            
         }
         form input[type="text"], form textarea {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 16px;
             box-sizing: border-box;
+            
         }
         form input[type="file"] {
             margin-top: 8px;
@@ -198,7 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
         button {
             background-color: rgba(71, 151, 255, 0.81);
             color: white;
-            font-size: 18px;
+            font-size: 15px;
             padding: 12px;
             border: none;
             border-radius: 8px;

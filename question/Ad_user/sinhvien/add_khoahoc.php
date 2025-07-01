@@ -50,7 +50,7 @@ if (isset($_GET['delete'])) {
             $conn->query("DELETE FROM test WHERE id_khoa = $id");
         }
         
-        // 3. Xóa các câu hỏi quiz liên quan đến khóa học
+        //  Xóa các câu hỏi quiz liên quan đến khóa học
         $conn->query("DELETE FROM quiz WHERE ten_khoa = '$khoa_hoc'");
         
         // 4. Cập nhật các sinh viên đang tham gia khóa học này

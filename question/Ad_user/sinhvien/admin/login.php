@@ -64,7 +64,6 @@
                         </button>
                     </div>
 
-                    
                 </form>
             </div>
         </div>
@@ -85,6 +84,7 @@
     height: 100vh;
     margin: 0;
 }
+
 
 /* Title của form */
 .login100-form-title {

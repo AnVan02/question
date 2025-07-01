@@ -1,9 +1,6 @@
 <?php
-    // local
-    $mysqli = new mysqli ("localhost","root","","student");
-   
-    //newpost
-   //$mysqli = new mysqli("","","","");
+    // Kết nối cơ sở dữ liệu
+    $mysqli = new mysqli ("localhost","root","", "student");
 
     // Check connection
     if ($mysqli->connect_errno) {
@@ -13,4 +10,3 @@
 $mysqli->set_charset("utf8"); 
 
 ?>
-

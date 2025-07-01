@@ -16,20 +16,21 @@ function dbconnect() {
     return $conn;
 }
 
-// Kết nối cơ sở dữ liệu
-$conn = dbconnect();
-$message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
+// kết nối sql 
+$conn = dbconnect ();
+$message = isset ($_GET ['message'])? urldecode ($_get['message']):"";
 
-// Xử lý yêu cầu AJAX để lấy khóa học của sinh viên
-if (isset($_GET['action']) && $_GET['action'] == 'get_courses' && isset($_GET['student_id'])) {
-    $student_id = $_GET['student_id'];
-    $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
-    if (!$stmt) {
-        error_log("Prepare failed for get_courses: " . $conn->error);
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi truy vấn cơ sở dữ liệu']);
-        exit;
-    }
+// xử lý yêu câu lấy khoá học của sinh viên đó
+
+if(isset($_GET ['acction ']) && $_get['action'] == 'get_courses' && isset ($_GET ['student_id'])) 
+$student_id = $_GET [$student_id];
+$stmt = $conn -> prepare ("SELECT khoahoc FROM students WHERE student_id=?");
+if(!$stmt){
+    error_log ("file không thanh công get_courses: ".$conn -> error);
+    header ('Content-Type : application/json');
+    echo json_encode(['status' => 'error', 'message' => 'lỗi truy vấn cơ sở dữ liệu']);
+    exit ;
+}
     $stmt->bind_param("s", $student_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -44,7 +45,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_courses' && isset($_GET['s
     header('Content-Type: application/json');
     echo json_encode($khoa_hoc_ids);
     exit;
-}
 
 // Xử lý yêu cầu AJAX để lưu khóa học
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'save_courses') {
@@ -59,6 +59,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         exit;
     }
     
+
+    // Debug
+    error_log("Saving courses for student: $student_id");
+    error_log("Selected courses: " . print_r($khoa_hoc_ids, true));
+
+    
     // Chuyển danh sách khóa học thành chuỗi
     $khoa_hoc_string = !empty($khoa_hoc_ids) ? implode(',', $khoa_hoc_ids) : '';
 
@@ -70,6 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         echo json_encode(['status' => 'error', 'message' => 'Lỗi truy vấn cơ sở dữ liệu']);
         exit;
     }
+
     $stmt_check->bind_param("s", $student_id);
     $stmt_check->execute();
     $check_result = $stmt_check->get_result();
@@ -109,7 +116,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         }
         error_log("Deleted old kiem_tra records for student: $student_id");
         $stmt_delete->close();
-
+         
+        
         // Thêm bản ghi mới cho mỗi khóa học
         if (!empty($khoa_hoc_ids)) {
             foreach ($khoa_hoc_ids as $khoa_id) {
@@ -187,6 +195,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             'khoa_hoc_names' => $khoa_hoc_names,
             'student_id' => $student_id
         ];
+    
+    
     } catch (Exception $e) {
         $conn->rollback();
         error_log("Error saving courses for student $student_id: " . $e->getMessage());
@@ -246,6 +256,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = $_POST['password'];
         $ten = $_POST['ten'];
         $email = $_POST['email'];
+        
+        
 
         // Kiểm tra Student_ID đã tồn tại
         $stmt = $conn->prepare("SELECT Student_ID FROM students WHERE Student_ID = ?");
@@ -274,6 +286,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         error_log("Error adding student $student_id: " . $stmt->error);
                     }
                     $stmt->close();
+
                 }
             }
         }
@@ -300,8 +313,10 @@ if ($mode == 'edit' && $student_id) {
             error_log("Student not found: $student_id");
         }
         $stmt->close();
+
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -383,6 +398,8 @@ if ($mode == 'edit' && $student_id) {
             <input type="submit" value="Thêm Sinh Viên">
         </form>
 
+
+
         <!-- Hiển thị danh sách sinh viên -->
         <?php
         $stmt = $conn->prepare("SELECT * FROM students");
@@ -406,6 +423,7 @@ if ($mode == 'edit' && $student_id) {
                     <th>Khóa học</th>
                     <th>Hành Động</th>
                 </tr>";
+                
                 while ($row = $result->fetch_assoc()) {
                     echo "<tr data-student-id='" . htmlspecialchars($row['Student_ID']) . "'>";
                     echo "<td>" . htmlspecialchars($row['IMEI'] ?? '') . "</td>";
@@ -416,7 +434,6 @@ if ($mode == 'edit' && $student_id) {
                     echo "<td>" . htmlspecialchars($row['Ten'] ?? '') . "</td>";
                     echo "<td>" . htmlspecialchars($row['Email'] ?? '') . "</td>";
 
-                    
                     // Lấy danh sách khóa học
                     $khoa_hoc_ids = !empty($row['Khoahoc']) && $row['Khoahoc'] !== NULL ? explode(',', $row['Khoahoc']) : [];
                     $khoa_hoc_names = [];
@@ -625,23 +642,11 @@ if ($mode == 'edit' && $student_id) {
                 closeModal();
             }
         }
+
     </script>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 20px auto;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            color: #333;
-            line-height: 1.6;
-            padding: 15px;
-        }
+       
         h2 {
             text-align: center;
             color: #2c3e50;

@@ -1,7 +1,9 @@
 <?php
-$sql_account_edit = "SELECT * FROM account WHERE account_id = '$_GET[account_id]' LIMIT 1";
-$query_account_edit = mysqli_query($mysqli, $sql_account_edit);
+$sql_accound_edit ="SELECT * FROM account WHERE account_id ='$_GET[account_id]'LIMIT 1";
+$query_account_edit = mysql_query($mysql, $sql_accound_edit);
+
 ?>
+
 <div id="wp-content">
         <div id="content" class="container-fluid">
             <div class="card">
@@ -46,16 +48,15 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
 
                         <button type="submit" class="btn btn-primary" name="btn_add">Thêm mới tài khoản</button>
                         
+                        
                     </form>
                 </div>
             </div>
         </div>
     </div>
 <div>
-<div class="col-lg-4 gird-margin stretch - card">
-    <div class="card">
-        <div class ="card-body">
 <script>
+    
     function showErrorToast() {
         toast({
             title: "Success",
@@ -65,6 +66,7 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
         });
     }
 </script>
+
 
 <?php
 if (isset($_GET['message']) && $_GET['message'] == 'success') {

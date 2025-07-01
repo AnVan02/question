@@ -39,7 +39,7 @@ script('AIFilterCV', 'script');
             </form>
        
             <form method="POST" action="<?php p($_['export_url']); ?>" id="xuat">
-                <button type="submit" class="btn-train">cmm</button>
+                <button type="submit" class="btn-train">mm</button>
             </form>
 
         </div>

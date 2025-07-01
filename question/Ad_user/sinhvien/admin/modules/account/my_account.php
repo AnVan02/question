@@ -32,7 +32,11 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
                                 <input type="text" name="account_email" id="account_email" class="form-control" value="<?php echo $row['account_email'] ?>" readonly>
                             </div>
                            
-                         
+                            <div class="input-item form-group">
+                                <label for="account_password" class="d-block">Mật khấu </label>
+                                <input type="text" name="account_password" id="account_password" class="form-control" value="<?php echo $row['account_password']?>" readonlt>
+                            </div>
+                            
                             <button type="submit" name="account_edit" class="btn btn-primary btn-icon-text" style="margin-right: 10px">
                                 <i class="ti-file btn-icon-prepend"></i>
                                 Lưu
@@ -42,6 +46,7 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
                                 Đổi mật khẩu
                             </a>
 
+                            
                         </form>
                     <?php
                     }
@@ -61,6 +66,7 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
         });
     }
 </script>
+
 
 <?php
 if (isset($_GET['message']) && $_GET['message'] == 'success') {

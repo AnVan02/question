@@ -189,12 +189,7 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
         <?php endif; ?>
     </div>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-            margin: 0;
-        }
+       
         .container {
             max-width: 1250px;
             margin: auto;
@@ -242,12 +237,14 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            font-size:17px;
             
         }
         th {
             background-color:  #3182ce;
             color: white;
             font-weight: 600;
+            font-size:17px;
         }
         tr:hover {
             background-color: #f5f5f5;
