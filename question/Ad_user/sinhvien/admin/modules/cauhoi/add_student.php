@@ -480,7 +480,8 @@ if ($mode == 'edit' && $student_id) {
                     echo "<button onclick=\"openModal('" . htmlspecialchars($row['Student_ID']) . "')\">Xem Khóa Học</button>";
                     echo "</td>";
                     echo "</tr>";
-                    
+                    echo "<div>";
+                                        
                 }
                 echo "</table>";
             } else {
@@ -652,6 +653,20 @@ if ($mode == 'edit' && $student_id) {
             color: #2c3e50;
             margin-bottom: 30px;
         }
+        ul li {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 50px 1fr 60px 60px 100px;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            font-size:17px;
+        }
+        
         .form-container {
             display: flex;
             justify-content: center;

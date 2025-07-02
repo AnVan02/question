@@ -842,20 +842,16 @@ $conn->close();
         <?php endif; ?>
         
     </div>
+
+    <script>
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.replace("<?php echo $link_quay_lai; ?>");
+            }
+        });
+    </script> 
+
 </body>
 </html>
-
-<?php
-$link_quay_lai = "add_khoahoc.php"; // URL bạn muốn quay lại
-?>
-<script>
-// Ghi đè lịch sử trình duyệt và ngăn back
-history.pushState(null, null, location.href);
-window.onpopstate = function () {
-    location.href = "<?php echo $link_quay_lai; ?>";
-};
-</script>
-
-
 
 <?php ob_end_flush();  ?>

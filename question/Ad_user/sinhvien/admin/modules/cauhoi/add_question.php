@@ -156,6 +156,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             color: rgb(247, 18, 18);
             margin-bottom: 25px;
         }
+
+        ul li {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 50px 1fr 60px 60px 100px;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            font-size:17px;
+        }
+
         form label {
             /* font-weight: 400; */
             display: block;

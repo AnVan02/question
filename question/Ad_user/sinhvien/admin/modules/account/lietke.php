@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . '/../../../format/format.php'; // Đảm bảo các hàm format_* hoạt động
 if (isset($_POST['account_keyword'])) {
     $sql_account_list = "SELECT * FROM account WHERE account_email LIKE '%" . $_POST['account_keyword'] . "%' ORDER BY account_type DESC";
     $query_account_list = mysqli_query($mysqli, $sql_account_list);
@@ -39,15 +40,17 @@ if (isset($_POST['account_keyword'])) {
                         <tbody>
                             <?php
                             $i = 0;
+                            $has_account = false;
                             while ($row = mysqli_fetch_array($query_account_list)) {
                                 $i++;
+                                $has_account = true;
                             ?>
                                 <tr>
                                     <td>
                                         <?php
                                         if (isset($_SESSION['account_type']) && $_SESSION['account_type'] == 2) {
                                         ?>
-                                            <a href="?action=account&query=account_edit&account_id=<?php echo $row['account_id'] ?>">
+                                            <a href="index.php?action=account&query=account_edit&account_id=<?php echo $row['account_id'] ?>">
                                                 <div class="icon-edit">
                                                     <img class="w-100 h-100" src="images/icon-edit.png" alt="">
                                                 </div>
@@ -59,12 +62,15 @@ if (isset($_POST['account_keyword'])) {
                                     <td>
                                         <input type="checkbox" class="checkbox" onclick="testChecked(); getCheckedCheckboxes();" id="<?php echo $row['account_id'] ?>">
                                     </td>
-                                    <td><?php echo $row['account_name'] ?></td>
-                                    <td><?php echo $row['account_email'] ?></td>
-                                    <td><?php echo format_account_type($row['account_type']) ?></td>
-                                    <td><?php echo format_account_status($row['account_status']) ?></td>
+                                    <td><?php echo htmlspecialchars($row['account_name']) ?></td>
+                                    <td><?php echo htmlspecialchars($row['account_email']) ?></td>
+                                    <td><?php format_account_type($row['account_type']); ?></td>
+                                    <td><?php format_account_status($row['account_status']); ?></td>
                                 </tr>
                             <?php
+                            }
+                            if (!$has_account) {
+                                echo '<tr><td colspan="6" style="text-align:center;color:#888;">Không có tài khoản nào.</td></tr>';
                             }
                             ?>
                         </tbody>

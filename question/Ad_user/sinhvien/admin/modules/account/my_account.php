@@ -1,6 +1,7 @@
 <?php
-$sql_account_edit = "SELECT * FROM account JOIN customer ON account.account_id = customer.account_id WHERE account.account_id = '" . $_SESSION['account_id'] . "' LIMIT 1";
+$sql_account_edit = "SELECT * FROM account WHERE account_id = '" . $_SESSION['account_id'] . "' LIMIT 1";
 $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
+$row = mysqli_fetch_array($query_account_edit);
 ?>
 
 <div class="row" style="margin-bottom: 10px;">
@@ -19,24 +20,20 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
         <div class="card">
             <div class="card-body">
                 <div class="card-content">
-                    <?php
-                    while ($row = mysqli_fetch_array($query_account_edit)) {
-                    ?>
-                        <form method="POST" action="modules/account/xuly.php?account_id=<?php echo $_SESSION['account_id_admin'] ?>">
-                            <div class="input-item form-group">
-                                <label for="title" class="d-block">Tên người dùng</label>
-                                <input type="text" name="account_name" class="form-control" value="<?php echo $row['account_name'] ?>">
+                    <?php if ($row): ?>
+                        <!-- <form method="POST" action="modules/account/xuly.php?account_id=<?php echo $_SESSION['account_id_admin'] ?>"> -->
+                            <div class="form-group">
+                                <label for="account_name">Tên người dùng</label>
+                                <input type="text" name="account_name" class="form-control" value="<?php echo htmlspecialchars($row['account_name']); ?>">
                             </div>
-                            <div class="input-item form-group">
-                                <label for="account_email" class="d-block">Email đăng nhập</label>
-                                <input type="text" name="account_email" id="account_email" class="form-control" value="<?php echo $row['account_email'] ?>" readonly>
+                            <div class="form-group">
+                                <label for="account_email">Email đăng nhập</label>
+                                <input type="text" name="account_email" id="account_email" class="form-control" value="<?php echo htmlspecialchars($row['account_email']); ?>" readonly>
                             </div>
-                           
-                            <div class="input-item form-group">
-                                <label for="account_password" class="d-block">Mật khấu </label>
-                                <input type="text" name="account_password" id="account_password" class="form-control" value="<?php echo $row['account_password']?>" readonlt>
+                            <div class="form-group">
+                                <label for="account_password">Mật khẩu</label>
+                                <input type="password" name="account_password" id="account_password" class="form-control" value="<?php echo htmlspecialchars($row['account_password']); ?>" readonly>
                             </div>
-                            
                             <button type="submit" name="account_edit" class="btn btn-primary btn-icon-text" style="margin-right: 10px">
                                 <i class="ti-file btn-icon-prepend"></i>
                                 Lưu
@@ -45,35 +42,28 @@ $query_account_edit = mysqli_query($mysqli, $sql_account_edit);
                                 <i class="ti-file btn-icon-prepend"></i>
                                 Đổi mật khẩu
                             </a>
-
-                            
                         </form>
-                    <?php
-                    }
-                    ?>
+                    <?php else: ?>
+                        <div class="alert alert-danger">Không tìm thấy thông tin tài khoản!</div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
 <script>
-    function showErrorToast() {
+    function showSuccessToast() {
         toast({
             title: "Success",
             message: "Cập nhật thành công",
             type: "success",
-            duration: 0,
+            duration: 3000,
         });
     }
 </script>
 
-
 <?php
 if (isset($_GET['message']) && $_GET['message'] == 'success') {
-    $message = $_GET['message'];
-    echo '<script>';
-    echo '   showErrorToast();';
-    echo 'window.history.pushState(null, "", "index.php?action=account&query=my_account");';
-    echo '</script>';
+    echo '<script>showSuccessToast(); window.history.pushState(null, "", "index.php?action=account&query=my_account");</script>';
 }
 ?>

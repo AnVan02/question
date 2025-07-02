@@ -22,9 +22,6 @@ $message = isset($_GET['message']) ? urldecode($_GET['message']) : "";
 
 // Xử lý yêu cầu AJAX để lấy khóa học của sinh viên
 if (isset($_GET['action']) && $_GET['action'] == 'get_courses' && isset($_GET['student_id'])) {
-    // Xóa bộ đệm đầu ra để ngăn chặn nội dung không mong muốn
-    ob_clean();
-    
     $student_id = $_GET['student_id'];
     $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
     if (!$stmt) {
@@ -44,14 +41,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_courses' && isset($_GET['s
         error_log("No student found with Student_ID: $student_id");
     }
     $stmt->close();
-    
-    // Đặt tiêu đề JSON và xuất
-    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Type: application/json');
     echo json_encode($khoa_hoc_ids);
     exit;
 }
-
-// kiêm tra 
 
 // Xử lý yêu cầu AJAX để lưu khóa học
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'save_courses') {
@@ -65,7 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         echo json_encode(['status' => 'error', 'message' => 'Student_ID không hợp lệ']);
         exit;
     }
-
     
     // Chuyển danh sách khóa học thành chuỗi
     $khoa_hoc_string = !empty($khoa_hoc_ids) ? implode(',', $khoa_hoc_ids) : '';
@@ -91,7 +83,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     }
     $stmt_check->close();
 
-    
     // Bắt đầu giao dịch
     $conn->begin_transaction();
     try {
@@ -188,7 +179,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             $stmt_khoa_hoc->close();
         }
 
-
         // Commit giao dịch
         $conn->commit();
         $response = [
@@ -256,7 +246,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = $_POST['password'];
         $ten = $_POST['ten'];
         $email = $_POST['email'];
-        
 
         // Kiểm tra Student_ID đã tồn tại
         $stmt = $conn->prepare("SELECT Student_ID FROM students WHERE Student_ID = ?");
@@ -333,7 +322,7 @@ if ($mode == 'edit' && $student_id) {
             </p>
         <?php endif; ?>
 
-
+        
         <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="student_id" value="<?php echo htmlspecialchars($student_id); ?>">
@@ -448,6 +437,7 @@ if ($mode == 'edit' && $student_id) {
                         }
                     }
 
+                    
                     // Hiển thị khóa học
                     echo "<td class='course-cell'>";
                     if (!empty($khoa_hoc_names)) {
@@ -475,6 +465,10 @@ if ($mode == 'edit' && $student_id) {
                     echo "<button onclick=\"openModal('" . htmlspecialchars($row['Student_ID']) . "')\">Xem Khóa Học</button>";
                     echo "</td>";
                     echo "</tr>";
+
+                    echo "<a href='index.php?khoahoc&edit' name=mode' value='".htmlspecialchars($row['Student_ID'])."'>";
+                    echo "<input type='hidden' value='Sửa'>";
+                    echo "<a href='index.php?khoahoc&delete' name=mode' value='".htmlspecialchars($row['Student_ID'])."'>";
                     
                 }
                 echo "</table>";
@@ -485,7 +479,6 @@ if ($mode == 'edit' && $student_id) {
         }
         ?>
     <?php endif; ?>
-   
 
     <!-- Modal hiển thị và lưu khóa học -->
     <div id="courseModal" class="modal">
@@ -517,7 +510,6 @@ if ($mode == 'edit' && $student_id) {
                         $stmt->close();
                     }
                     ?>
-                    
                 </div>
                 <div id="selected-courses">
                     <p><strong>Khóa học đã chọn:</strong> <span id="selectedCoursesText">Chưa chọn khóa học nào.</span></p>
@@ -539,17 +531,15 @@ if ($mode == 'edit' && $student_id) {
             document.getElementById('modalStudentId').value = studentId;
             document.getElementById('courseModal').style.display = 'block';
 
+            
             fetch(`<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>?action=get_courses&student_id=${studentId}`, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             })
                 .then(response => {
-                    console.log('Response status:', response.status);
-                    console.log('Response headers:', response.headers.get('Content-Type'));
+                    console.log('Fetch response status:', response.status);
                     if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(`HTTP error! status: ${response.status}, response: ${text.substring(0, 100)}...`);
-                        });
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
@@ -630,7 +620,6 @@ if ($mode == 'edit' && $student_id) {
                 });
         }
 
-        
         function htmlspecialchars(str) {
             const div = document.createElement('div');
             div.innerText = str;

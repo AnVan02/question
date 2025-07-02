@@ -124,13 +124,13 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
             - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></h2>
         
         <?php if (!empty($message)) echo $message; ?>
-        <a href="add_khoahoc.php" class="btn-back">Danh sách khóa học</a>
+        <a href="index.php?action=add_khoahoc" class="btn-back">Danh sách khóa học</a>
         <?php if ($test_info): ?>
-            <a href="khoahoc.php?id_khoa=<?php echo htmlspecialchars($test_info['id_khoa']); ?>" class="btn-back">Quay lại danh sách bài test</a>
+            <a href="index.php?action=khoahoc&id_khoa=<?php echo htmlspecialchars($test_info['id_khoa']); ?>" class="btn-back">Quay lại danh sách bài test</a>
         <?php endif; ?>
 
         <?php if ($id_test > 0 && $test_info && $khoa_hoc): ?>
-            <a href="add_question.php?id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-add">Thêm câu hỏi mới</a>
+            <a href="index.php?action=add_question&id_test<?php echo htmlspecialchars($id_test); ?>" class="btn-add">Thêm câu hỏi mới</a>
 
             <?php if (empty($questions)): ?>
                 <p>Chưa có câu hỏi nào cho bài kiểm tra này của môn học.</p>
@@ -171,10 +171,9 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                                     </ul>
                                 </td>
 
-                                
                                 <td>
-                                    <a href="add_question.php?question_id=<?php echo htmlspecialchars($question['Id_cauhoi']); ?>&id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-edit">Sửa</a>
-                                    <a href="<?php echo htmlspecialchars('question.php?id_test=' . $id_test . '&delete_id=' . $question['Id_cauhoi']); ?>" 
+                                    <a href="index.php?action=add_question&question_id=<?php echo htmlspecialchars($question['Id_cauhoi']); ?>&id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-edit">Sửa</a>
+                                    <a href="<?php echo htmlspecialchars('index.php?action=question&id_test=' . $id_test . '&delete_id=' . $question['Id_cauhoi']); ?>" 
                                        class="btn-delete" 
                                        onclick="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">Xóa</a>
                                 </td>
@@ -234,7 +233,7 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
             overflow: hidden;
         }
         th, td {
-            padding: 12px 15px;
+            /* padding: 12px 15px; */
             text-align: left;
             border-bottom: 1px solid #ddd;
             font-size:17px;

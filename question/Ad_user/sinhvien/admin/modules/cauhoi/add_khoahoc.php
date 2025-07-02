@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
@@ -129,7 +132,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["add_course"])) {
         $conn->close();
     }
 }
-
 
 // Lấy danh sách khóa học
 $conn = dbconnect();
@@ -288,6 +290,8 @@ if (isset($_GET['edit'])) {
             align-items: center;
             gap: 10px;
             transition: background-color 0.3s, box-shadow 0.3s;
+            font-size:17px;
+            
         }
 
         ul li:hover {
@@ -375,10 +379,9 @@ if (isset($_GET['edit'])) {
                     <li>
                         <strong></strong>
                         <span class="course-name"><?= htmlspecialchars($kh['khoa_hoc']) ?></span>
-                        <a href="?edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
-                        <a href="?delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
-                        <a href="index.php?action=khoahoc.php?id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>
-                        
+                        <a href="index.php?action=add_khoahoc&edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
+                        <a href="index.php?action=add_khoahoc&delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
+                        <a href="index.php?action=khoahoc&id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>                        
                     </li>
                 <?php endforeach; ?>
             </ul>

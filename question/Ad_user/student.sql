@@ -172,6 +172,13 @@ CREATE TABLE `quiz` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- lấy dữ liên thêm cau hỏi tăng id_câuhoi
+
+ALTER TABLE quiz
+MODIFY COLUMN Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
+
+-----
+--
 -- Đang đổ dữ liệu cho bảng `quiz`
 --
 
