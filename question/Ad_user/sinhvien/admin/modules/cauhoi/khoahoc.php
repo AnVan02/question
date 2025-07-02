@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // Bật hiển thị lỗi để debug
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -87,9 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
             $stmt_count->close();
         }
 
-        if ($so_cau == 0 && $so_cau_hien_thi > 0) {
-            $error_message = "<p>Lỗi: Chưa có câu hỏi nào cho loại bài test này. Vui lòng đặt số câu hiển thị là 0 hoặc thêm câu hỏi trước.</p>";
-        } elseif ($so_cau_hien_thi > $so_cau) {
+        if ($so_cau_hien_thi > $so_cau) {
             $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
         } else {
             $stmt = $conn->prepare("UPDATE test SET ten_test = ?, lan_thu = ?, pass = ?, so_cau_hien_thi = ? WHERE id_test = ? AND id_khoa = ?");
@@ -152,9 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_kho
             $stmt_count->close();
         }
 
-        if ($so_cau == 0 && $so_cau_hien_thi > 0) {
-            $error_message = "<p>Lỗi: Chưa có câu hỏi nào cho loại bài test này. Vui lòng đặt số câu hiển thị là 0 hoặc thêm câu hỏi trước.</p>";
-        } elseif ($so_cau_hien_thi > $so_cau) {
+        if ($so_cau_hien_thi > $so_cau) {
             $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
         } else {
             $stmt = $conn->prepare("INSERT INTO test (id_khoa, ten_test, lan_thu, pass, so_cau_hien_thi) VALUES (?, ?, ?, ?, ?)");
@@ -185,6 +182,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
         $stmt->close();
     }
 }
+
+include 'header.php';
 ?>
 
 <!DOCTYPE html>
@@ -458,7 +457,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
     if ($error_message) echo "<p class='error'>$error_message</p>";
     ?>
     <?php if ($khoa_hoc && $id_khoa > 0): ?>
-        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
+        <form method="post" action="index.php?action=khoahoc&id_khoa=<?php echo $id_khoa; ?>">
             <div class="form-group">
                 <label for="ten_test">Tên Test:</label>
                 <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
@@ -539,10 +538,10 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         </td>
                         <td><?php echo htmlspecialchars($so_cau); ?></td>
                         <td>
-                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
-                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
-                            <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
-                        </td>
+                            <a href="index.php?action=khoahoc&id_khoa=<?php echo htmlspecialchars($id_khoa); ?>&edit_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="edit-button">Sửa</a>
+                            <a href="index.php?action=khoahoc&id_khoa=<?php echo htmlspecialchars($id_khoa); ?>&delete_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
+                            <a href="index.php?action=question&id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
+                        </td>                    
                     </tr>
                 <?php endwhile; ?>
             </table>
@@ -557,4 +556,5 @@ if ($id_khoa > 0 && $khoa_hoc) {
 
 <?php
 $conn->close();
+ob_end_flush();
 ?>

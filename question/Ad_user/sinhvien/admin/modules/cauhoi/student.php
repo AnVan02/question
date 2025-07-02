@@ -193,6 +193,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
             }
             $stmt_khoa_hoc->close();
         }
+        // SẮP XẾP TÊN KHÓA HỌC THEO A-Z
+        if (!empty($khoa_hoc_names)) {
+            sort($khoa_hoc_names, SORT_NATURAL | SORT_FLAG_CASE);
+        }
 
         // Commit giao dịch
         $conn->commit();
@@ -337,7 +341,7 @@ if ($mode == 'edit' && $student_id) {
             </p>
         <?php endif; ?>
 
-        <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+        <form method="POST" action="index.php?action=student">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="student_id" value="<?php echo htmlspecialchars($student_id); ?>">
             <div class="form-container">
@@ -373,7 +377,7 @@ if ($mode == 'edit' && $student_id) {
             </p>
         <?php endif; ?>
 
-        <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+        <form method="POST" action="index.php?action=student">
             <input type="hidden" name="action" value="add">
             <div class="form-container">
                 <div class="form-left">
@@ -397,8 +401,6 @@ if ($mode == 'edit' && $student_id) {
             </div>
             <input type="submit" value="Thêm Sinh Viên">
         </form>
-
-
 
         <!-- Hiển thị danh sách sinh viên -->
         <?php
@@ -452,13 +454,17 @@ if ($mode == 'edit' && $student_id) {
                             error_log("Prepare failed for select khoa_hoc: " . $conn->error);
                         }
                     }
+                    // SẮP XẾP TÊN KHÓA HỌC THEO A-Z
+                    if (!empty($khoa_hoc_names)) {
+                        sort($khoa_hoc_names, SORT_NATURAL | SORT_FLAG_CASE);
+                    }
 
                     // Hiển thị khóa học
                     echo "<td class='course-cell'>";
                     if (!empty($khoa_hoc_names)) {
                         echo "<ul>";
                         foreach ($khoa_hoc_names as $name) {
-                            echo "<li>" . htmlspecialchars($name) . "</li>";
+                            echo "<li>" . $name . "</li>";
                         }
                         echo "</ul>";
                     } else {
@@ -467,14 +473,15 @@ if ($mode == 'edit' && $student_id) {
                     echo "</td>";
 
                     echo "<td class='actions'>";
-                    echo "<form method='POST' action='" . htmlspecialchars($_SERVER["PHP_SELF"]) . "'>";
+                    echo "<form method='POST' action='index.php?action=student'>";
                     echo "<input type='hidden' name='action' value='delete'>";
                     echo "<input type='hidden' name='student_id' value='" . htmlspecialchars($row['Student_ID']) . "'>";
                     echo "<input type='submit' value='Xóa' onclick='return confirm(\"Bạn có chắc muốn xóa?\");'>";
                     echo "</form>";
-                    echo "<form method='GET' action='" . htmlspecialchars($_SERVER["PHP_SELF"]) . "'>";
-                    echo "<input type='hidden' name='mode' value='edit'>";
-                    echo "<input type='hidden' name='student_id' value='" . htmlspecialchars($row['Student_ID']) . "'>";
+                    echo "<form method='GET' action='index.php'>";
+                    echo "<input type='hidden' name='action' value='student'>
+                    <input type='hidden' name='mode' value='edit'>
+                    <input type='hidden' name='student_id' value='" . htmlspecialchars($row['Student_ID']) . "'>";
                     echo "<input type='submit' value='Sửa'>";
                     echo "</form>";
                     echo "<button onclick=\"openModal('" . htmlspecialchars($row['Student_ID']) . "')\">Xem Khóa Học</button>";
@@ -542,7 +549,7 @@ if ($mode == 'edit' && $student_id) {
             document.getElementById('modalStudentId').value = studentId;
             document.getElementById('courseModal').style.display = 'block';
 
-            fetch(`<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>?action=get_courses&student_id=${studentId}`, {
+            fetch('index.php?action=get_courses&student_id=' + studentId, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
             })
@@ -592,7 +599,7 @@ if ($mode == 'edit' && $student_id) {
             const studentId = document.getElementById('modalStudentId').value;
 
             console.log('Saving courses for student:', studentId);
-            fetch('<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>', {
+            fetch('index.php?action=student', {
                 method: 'POST',
                 body: formData
             })

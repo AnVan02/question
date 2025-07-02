@@ -32,6 +32,9 @@
         elseif ($action == 'student' ){
             include ("./modules/cauhoi/student.php");
         }
+        elseif ($action == 'get_courses') {
+            include ("./modules/cauhoi/student.php");
+        }
 
         elseif ($action == 'khoahoc') {
             include ("./modules/cauhoi/khoahoc.php");
