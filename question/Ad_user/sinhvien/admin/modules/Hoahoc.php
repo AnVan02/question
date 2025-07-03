@@ -19,7 +19,7 @@ if ($conn->connect_error) {
 }
 
 $ma_khoa = '10'; // Mã khóa học
-$id_test = '12'; // Mã bài test
+$id_test = '41'; // Mã bài test
 $student_id = $_SESSION['student_id'];
 $link_quay_lai = "add_student.php"; // Thay bằng URL thực tế
 $link_tiep_tuc = "add_khoahoc.php"; // Thay bằng URL thực tế
@@ -697,7 +697,6 @@ $conn->close();
                     }
                 }
             }
-            
 
             // Lấy danh sách ID câu hỏi hợp lệ
             $valid_question_ids = [];

@@ -379,7 +379,7 @@ if (isset($_GET['khoa_hoc_id'])) {
                     <div class='test-info'>
                         <span>Điểm cao nhất: $diem_cao_nhat/$total_questions ($percentage%)</span>
                         <span>Yêu cầu đậu: $required_pass_percent% </span>
-                        <span>Số lần thử: $attempt_count/$max_attempts</span>
+                        <span>Số lần thử: $attempt_count/$total_questions </span>
                     </div>
                     <div class='test-actions'>";
                 

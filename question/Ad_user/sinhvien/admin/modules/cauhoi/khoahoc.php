@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // Bật hiển thị lỗi để debug
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -28,7 +29,7 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
     if ($stmt) {
         $stmt->bind_param("ii", $id_test, $id_khoa);
         if ($stmt->execute()) {
-            header("Location: " . $_SERVER['PHP_SELF'] . "?id_khoa=" . $id_khoa);
+            header("Location: " . $_SERVER['PHP_SELF']  . "index.php?action=khoahoc&id_khoa=" . $id_khoa);
             exit();
         } else {
             $error_message = "<p>Lỗi khi xóa: " . $conn->error . "</p>";
@@ -36,8 +37,6 @@ if (isset($_GET['delete_test']) && $id_khoa > 0) {
         $stmt->close();
     }
 }
-
-
 
 
 $editing = false;
@@ -90,9 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_test']) && $id_
             $stmt_count->close();
         }
 
-        if ($so_cau == 0 && $so_cau_hien_thi > 0) {
-            $error_message = "<p>Lỗi: Chưa có câu hỏi nào cho loại bài test này. Vui lòng đặt số câu hiển thị là 0 hoặc thêm câu hỏi trước.</p>";
-        } elseif ($so_cau_hien_thi > $so_cau) {
+        if ($so_cau_hien_thi > $so_cau) {
             $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
         } else {
             $stmt = $conn->prepare("UPDATE test SET ten_test = ?, lan_thu = ?, pass = ?, so_cau_hien_thi = ? WHERE id_test = ? AND id_khoa = ?");
@@ -124,112 +121,57 @@ if ($id_khoa > 0) {
         $stmt->close();
     }
 }
-// Xử lý thêm mới
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test'])) {
-    // Debug: Kiểm tra dữ liệu POST
-    echo "<pre>POST data: ";
-    print_r($_POST);
-    echo "</pre>";
-    
-    // Kiểm tra kết nối database
-    if ($conn->connect_error) {
-        die("Kết nối database thất bại: " . $conn->connect_error);
-    }
 
-    // Lấy và validate dữ liệu
-    $ten_test = trim($_POST['ten_test'] ?? '');
-    $pass = trim($_POST['pass'] ?? '');
-    $lan_thu = (int)($_POST['lan_thu'] ?? 0);
-    $so_cau_hien_thi = (int)($_POST['so_cau_hien_thi'] ?? 0);
-    $id_khoa = (int)($_GET['id_khoa'] ?? 0);
-
-    // Debug: Kiểm tra giá trị
-    echo "<p>Debug values:</p>";
-    echo "<ul>
-        <li>ten_test: $ten_test</li>
-        <li>pass: $pass</li>
-        <li>lan_thu: $lan_thu</li>
-        <li>so_cau_hien_thi: $so_cau_hien_thi</li>
-        <li>id_khoa: $id_khoa</li>
-    </ul>";
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_test']) && $id_khoa > 0 && $khoa_hoc) {
+    $ten_test = trim($_POST['ten_test']);
+    $pass = trim($_POST['pass']);
+    $lan_thu = (int)$_POST['lan_thu'];
+    $so_cau_hien_thi = (int)$_POST['so_cau_hien_thi'];
 
     // Validate dữ liệu
-    $errors = [];
     if (empty($ten_test)) {
-        $errors[] = "Tên bài test không được để trống!";
-    }
-    if (!preg_match('/^[0-9]+%?$/', $pass) || (int)$pass < 0 || (int)$pass > 100) {
-        $errors[] = "Pass phải là số từ 0 đến 100 (có thể kèm %)";
-    }
-    if ($lan_thu < 1) {
-        $errors[] = "Lần thứ phải là số nguyên dương";
-    }
-    if ($so_cau_hien_thi < 0) {
-        $errors[] = "Số câu hiển thị phải là số không âm";
-    }
-
-    if (!empty($errors)) {
-        $error_message = "<p>Lỗi: " . implode("<br>", $errors) . "</p>";
+        $error_message = "<p>Lỗi: Tên bài test không được để trống!</p>";
+    } elseif (!preg_match('/^[0-9]+%?$/', $pass) || (int)$pass < 0 || (int)$pass > 100) {
+        $error_message = "<p>Lỗi: Pass phải là số từ 0 đến 100 (có thể kèm %).</p>";
+    } elseif ($lan_thu < 1) {
+        $error_message = "<p>Lỗi: Lần thứ phải là số nguyên dương.</p>";
+    } elseif ($so_cau_hien_thi < 0) {
+        $error_message = "<p>Lỗi: Số câu hiển thị phải là số không âm.</p>";
     } else {
-        try {
-            // Xác định loại test
-            $test_type = (stripos($ten_test, 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
-            
-            // Đếm số câu hỏi có sẵn
-            $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau 
-                         FROM quiz q 
-                         INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc)) 
-                         WHERE k.id = ? AND q.id_baitest = ?";
-            
-            $stmt_count = $conn->prepare($sql_count);
-            if (!$stmt_count) {
-                throw new Exception("Lỗi chuẩn bị đếm câu hỏi: " . $conn->error);
-            }
-            
+        $test_type = (stripos($ten_test, 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
+        $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau FROM quiz q INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc)) WHERE k.id = ? AND q.id_baitest = ?";
+        $stmt_count = $conn->prepare($sql_count);
+        $so_cau = 0;
+        if ($stmt_count) {
             $stmt_count->bind_param("is", $id_khoa, $test_type);
-            if (!$stmt_count->execute()) {
-                throw new Exception("Lỗi thực thi đếm câu hỏi: " . $stmt_count->error);
-            }
-            
+            $stmt_count->execute();
             $result_count = $stmt_count->get_result();
-            $row_count = $result_count->fetch_assoc();
-            $so_cau = (int)($row_count['so_cau'] ?? 0);
+            if ($row_count = $result_count->fetch_assoc()) {
+                $so_cau = (int)$row_count['so_cau'];
+            }
             $stmt_count->close();
+        }
 
-            // Kiểm tra số câu hỏi
-            if ($so_cau == 0 && $so_cau_hien_thi > 0) {
-                throw new Exception("Chưa có câu hỏi nào cho loại bài test này. Vui lòng đặt số câu hiển thị là 0 hoặc thêm câu hỏi trước");
-            } elseif ($so_cau_hien_thi > $so_cau) {
-                throw new Exception("Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)");
-            }
-
-            // Thêm bài test mới
+        if ($so_cau_hien_thi > $so_cau) {
+            $error_message = "<p>Lỗi: Số câu hiển thị ($so_cau_hien_thi) vượt quá số câu hỏi có sẵn ($so_cau)!</p>";
+        } else {
             $stmt = $conn->prepare("INSERT INTO test (id_khoa, ten_test, lan_thu, pass, so_cau_hien_thi) VALUES (?, ?, ?, ?, ?)");
-            if (!$stmt) {
-                throw new Exception("Lỗi chuẩn bị thêm bài test: " . $conn->error);
-            }
-            
-            $stmt->bind_param("isisi", $id_khoa, $ten_test, $lan_thu, $pass, $so_cau_hien_thi);
-            if ($stmt->execute()) {
-                $new_test_id = $stmt->insert_id;
+            if ($stmt) {
+                $stmt->bind_param("isisi", $id_khoa, $ten_test, $lan_thu, $pass, $so_cau_hien_thi);
+                if ($stmt->execute()) {
+                    $success_message = "<p>Bài test đã được thêm thành công!</p>";
+                    header("Location: " . $_SERVER['PHP_SELF'] . "index.php?action=khoahoc&id_khoa=" . $id_khoa);
+                    exit();
+                } else {
+                    $error_message = "<p>Lỗi khi thêm: " . $conn->error . "</p>";
+                }
                 $stmt->close();
-                
-                // Redirect sau khi thành công
-                $redirect_url = "index.php?action=khoahoc&id_khoa" . $id_khoa;
-                echo "<script>alert('Thêm bài test thành công!'); window.location.href='index.php?action=khoahoc&khoa_id';</script>";
-                exit();
-            } else {
-                throw new Exception("Lỗi thực thi thêm bài test: " . $stmt->error);
-            }
-        } catch (Exception $e) {
-            $error_message = "<p>Lỗi: " . $e->getMessage() . "</p>";
-            // Debug: Hiển thị lỗi SQL nếu có
-            if (isset($stmt) && $stmt->error) {
-                $error_message .= "<p>SQL Error: " . $stmt->error . "</p>";
             }
         }
     }
 }
+
+
 $result = null;
 if ($id_khoa > 0 && $khoa_hoc) {
     $sql = "SELECT t.id_test, t.id_khoa, t.ten_test, t.lan_thu, t.pass, t.so_cau_hien_thi, k.khoa_hoc FROM test t LEFT JOIN khoa_hoc k ON t.id_khoa = k.id WHERE t.id_khoa = ?";
@@ -241,6 +183,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
         $stmt->close();
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -248,8 +191,9 @@ if ($id_khoa > 0 && $khoa_hoc) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thêm bài test - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></title>
+    <title>Nhập và hiển thị dữ liệu Test - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></title>
     <style>
+    
 
         h2 {
             margin-bottom: 25px;
@@ -506,14 +450,14 @@ if ($id_khoa > 0 && $khoa_hoc) {
 </head>
 <body>
     <h2><?php echo $editing ? 'Sửa bài kiểm tra' : 'Nhập dữ liệu bài test'; ?> - <?php echo htmlspecialchars($khoa_hoc ?? 'Không xác định'); ?></h2>
-    <a href="index.php?action=add_khoahoc" class="back-button">Quay lại danh sách khóa học</a>
+    <a href="add_khoahoc.php" class="back-button">Quay lại danh sách khóa học</a>
 
     <?php 
     if ($success_message) echo "<p class='success'>$success_message</p>";
     if ($error_message) echo "<p class='error'>$error_message</p>";
     ?>
     <?php if ($khoa_hoc && $id_khoa > 0): ?>
-        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
+        <form method="post" action="index.php?action=khoahoc&id_khoa=<?php echo $id_khoa; ?>">
             <div class="form-group">
                 <label for="ten_test">Tên Test:</label>
                 <input type="text" id="ten_test" name="ten_test" maxlength="255" value="<?php echo $editing ? htmlspecialchars($edit_test['ten_test']) : ''; ?>" required>
@@ -544,8 +488,6 @@ if ($id_khoa > 0 && $khoa_hoc) {
                 <button type="submit" name="add_test">Thêm</button>
             <?php endif; ?>
         </form>
-        
-
         
         <h2>Danh sách bài test</h2>
         <?php if ($result && $result->num_rows > 0): ?>
@@ -591,7 +533,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
                         <td><?php echo htmlspecialchars($row['pass']); ?></td>
                         <td>
                             <?php echo htmlspecialchars($row['so_cau_hien_thi'] . '/' . $so_cau); ?>
-                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo '<span style="color: red;"></span>'; ?>
+                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo '<span style="color: red;">(Lỗi: Số câu hiển thị vượt quá số câu hỏi)</span>'; ?>
                             <?php if ($so_cau == 0) echo '<span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
                         </td>
                         <td><?php echo htmlspecialchars($so_cau); ?></td>
@@ -599,10 +541,8 @@ if ($id_khoa > 0 && $khoa_hoc) {
                             <a href="index.php?action=khoahoc&id_khoa=<?php echo htmlspecialchars($id_khoa); ?>&edit_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="edit-button">Sửa</a>
                             <a href="index.php?action=khoahoc&id_khoa=<?php echo htmlspecialchars($id_khoa); ?>&delete_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
                             <a href="index.php?action=question&id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
-                        </td>
+                        </td>                    
                     </tr>
-                    
-                    
                 <?php endwhile; ?>
             </table>
         <?php else: ?>
@@ -616,4 +556,5 @@ if ($id_khoa > 0 && $khoa_hoc) {
 
 <?php
 $conn->close();
+ob_end_flush();
 ?>

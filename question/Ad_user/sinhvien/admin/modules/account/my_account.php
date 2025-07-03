@@ -51,6 +51,7 @@ $row = mysqli_fetch_array($query_account_edit);
         </div>
     </div>
 </div>
+
 <script>
     function showSuccessToast() {
         toast({

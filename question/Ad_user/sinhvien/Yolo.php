@@ -19,8 +19,8 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$ma_khoa = '10'; // Mã khóa học
-$id_test = '12'; // Mã bài test
+$ma_khoa = '3'; // Mã khóa học
+$id_test = '16'; // Mã bài test
 $student_id = $_SESSION['student_id'];
 $link_quay_lai = "add_khoahoc.php"; // Thay bằng URL thực tế
 $link_tiep_tuc = "baihoc.php"; // Thay bằng URL thực tế

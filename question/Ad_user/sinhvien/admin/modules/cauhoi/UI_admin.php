@@ -351,7 +351,6 @@ if (isset($_GET['khoa_hoc_id'])) {
 
                 $max_attempts = $test['max_attempts'] ?? 1;
                 
-
                 // Tính số lần đã làm bài test này
                 $attempt_count_sql = "SELECT COUNT(*) as attempt_count FROM ket_qua 
                                      WHERE student_id = '$student_id' AND khoa_id = $khoa_hoc_id AND test_id = '$test_id'";

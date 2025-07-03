@@ -12,7 +12,6 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-
 // Kết nối cơ sở dữ liệu
 $conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
@@ -20,7 +19,7 @@ if ($conn->connect_error) {
 }
 
 $ma_khoa = '8'; // Mã khóa học
-$id_test = '2'; // Mã bài test
+$id_test = '47'; // Mã bài test
 $student_id = $_SESSION['student_id'];
 $link_quay_lai = "index.php"; // Thay bằng URL thực tế
 $link_tiep_tuc = "dashboard.php"; // Thay bằng URL thực tế
@@ -50,7 +49,6 @@ if ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-
 // Kiểm tra ID bài test
 $stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
 $stmt->bind_param("i", $id_test);
@@ -63,8 +61,6 @@ if ($result->num_rows == 0) {
 $row = $result->fetch_assoc();
 $id_baitest = $row['ten_test'];
 $stmt->close();
-
-
 
 // Lấy danh sách khóa học
 function getCoursesFromDB($conn) {
@@ -613,7 +609,9 @@ $conn->close();
         a.nav-link {
             background-color: #28a745;
         }
-       
+        a.nav-link:hover {
+            background-color: #218838;
+        }
         button:hover:not(:disabled), a.try-again:hover:not(.disabled), a.back-to-quiz:hover {
             background-color: #0056b3;
         }
@@ -664,17 +662,17 @@ $conn->close();
 <body>
     <div class="container">
         <!-- Debug info (bật khi cần) -->
-        <!-- <div class="debug-info">
+        <div class="debug-info">
             <p>Current Index: <?php echo $current_index; ?></p>
             <p>Total Questions: <?php echo count($_SESSION['questions']); ?></p>
             <p>Answers: <?php echo json_encode($_SESSION['answers']); ?></p>
             <p>POST Data: <?php echo json_encode($_POST); ?></p>
-        </div> -->
+        </div>
 
         <?php if ($current_index < count($_SESSION['questions'])): ?>
             <!-- Hiển thị link quay lại khi đang làm bài test -->
             <div class="navigation-links">
-                <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link" style="margin-right: 85%;">← Quay lại</a>
+                <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link">← Quay lại</a>
             </div>
             
             <?php $question = $_SESSION['questions'][$current_index]; ?>
@@ -777,7 +775,9 @@ $conn->close();
             $conn->close();
             ?>
               <!-- Hiển thị link tiếp tục khi ở trang kết quả -->
-          
+            <div class="navigation-links">
+                <a href="<?php echo htmlspecialchars($link_tiep_tuc); ?>" class="nav-link">Tiếp tục →</a>
+            </div>
             <h1>Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?></h1>
        
             
@@ -807,7 +807,7 @@ $conn->close();
                                 if ($is_selected) {
                                     $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
                                 } elseif ($is_correct) {
-                                    // $style = 'correct';
+                                    $style = 'correct';
                                 }
                                 ?>
                                 <li class="<?php echo $style; ?>">
@@ -824,21 +824,18 @@ $conn->close();
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-             <div class="navigation-actions" style="display: flex; align-items: center;">
-                <form method="POST" action="">
-                    <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>
-                        🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)
-                    </button>
-                </form>
-                <!-- Hiển thị link tiếp tục khi ở trang kết quả -->
-                <a href="<?php echo htmlspecialchars($link_tiep_tuc); ?>" class="nav-link" style="margin-left: 72%; text-decoration: none; padding: 8px 14px; background-color: #3182ce; color: white; border-radius: 5px;">
-                    → Tiếp tục
-                </a>
-            </div>
+            <form method="POST" action="">
+                <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)</button>
+            </form>
         <?php endif; ?>
-        
     </div>
+    <script>
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.replace("<?php echo $link_quay_lai; ?>");
+            }
+        });
+    </script>
 </body>
 </html>
-
-<?php ob_end_flush();  ?>
+<?php ob_end_flush(); // Kết thúc output buffering ?>
