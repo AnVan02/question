@@ -46,22 +46,22 @@
             </a>
         </li> -->
 
-     
+        <li class="nav-item <?php if ($action === 'add_taikhoan') { echo "activi"; } ?>">
+            <a class="nav-link" href ="index.php?action=add_taikhoan">
+                <span class="menu-title"><i></i> Quản lý tài khoản </span>
+            </a>
+        </li>
+        
         <li class="nav-item <?php if ($action === 'them') {echo "active";} ?>">
             <a class="nav-link" href="index.php?action=them">
                 <span class="manu-title"><i style=font-size:17px>➕ </i>Thêm tài khoản </span>
             </a>
         </li>
         
-        <li class="nav-item <?php if ($action === 'account') { echo "active"; } ?>">
-            <a class="nav-link" href="index.php?action=account&query=account_list">
-                <span class="menu-title"><i style=font-size:17px>👤 </i> Quản Lý Tài khoản</span>
-            </a>
-        </li>
-
+        
         <?php if($_SESSION['account_type'] == 2): ?>
             <li class="nav-item <?php if ($action === 'settings') { echo "active"; } ?>">
-                <a class="nav-link" href="index.php?action=settings&query=settings">
+                <a class="nav-link" href="index.php?action=settings">
                     <span class="menu-title"><i style=font-size:17px>⚙️ </i>Cài đặt</span>
                 </a>
             </li>

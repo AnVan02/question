@@ -661,18 +661,10 @@ $conn->close();
 </head>
 <body>
     <div class="container">
-        <!-- Debug info (bật khi cần) -->
-        <div class="debug-info">
-            <p>Current Index: <?php echo $current_index; ?></p>
-            <p>Total Questions: <?php echo count($_SESSION['questions']); ?></p>
-            <p>Answers: <?php echo json_encode($_SESSION['answers']); ?></p>
-            <p>POST Data: <?php echo json_encode($_POST); ?></p>
-        </div>
-
         <?php if ($current_index < count($_SESSION['questions'])): ?>
             <!-- Hiển thị link quay lại khi đang làm bài test -->
             <div class="navigation-links">
-                <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link">← Quay lại</a>
+                <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link" style="margin-right: 85%;">← Quay lại</a>
             </div>
             
             <?php $question = $_SESSION['questions'][$current_index]; ?>
@@ -775,9 +767,7 @@ $conn->close();
             $conn->close();
             ?>
               <!-- Hiển thị link tiếp tục khi ở trang kết quả -->
-            <div class="navigation-links">
-                <a href="<?php echo htmlspecialchars($link_tiep_tuc); ?>" class="nav-link">Tiếp tục →</a>
-            </div>
+              
             <h1>Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?></h1>
        
             
@@ -794,7 +784,7 @@ $conn->close();
             <?php else: ?>
                 <?php foreach ($_SESSION['questions'] as $index => $question): ?>
                     <div class="question-block">
-                        <p class="question-text">Câu <?php echo $index + 1; ?> (ID:<?php echo $question['id']; ?>): <?php echo htmlspecialchars($question['question']); ?></p>
+                        <p class="question-text" >Câu <?php echo $index + 1; ?> <?php echo htmlspecialchars($question['question']); ?></p>
                         <?php if (!empty($question['image'])): ?>
                             <img src="<?php echo htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
                         <?php endif; ?>
@@ -820,13 +810,20 @@ $conn->close();
                                 <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index]['selected']]); ?></p>
                             <?php endif; ?>
                         </div>
-                        <hr>
+                        
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-            <form method="POST" action="">
-                <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)</button>
-            </form>
+            <div class="navigation-actions" style="display: flex; align-items: center;">
+                <form method="POST" action="">
+                    <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)</button>
+                </form>
+                <!-- Hiển thị link tiếp tục khi ở trang kết quả -->
+                <a href="<?php echo htmlspecialchars($link_tiep_tuc); ?>" class="nav-link" style="margin-left: 72%; text-decoration: none; padding: 8px 14px; background-color: #3182ce; color: white; border-radius: 5px;">
+                    → Tiếp tục
+                </a>
+            </div>
+            
         <?php endif; ?>
     </div>
     <script>

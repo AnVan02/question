@@ -382,7 +382,6 @@ if (isset($_GET['khoa_hoc_id'])) {
                 } else {
                    echo "<span class='not-completed'>Đã hết lượt làm bài </span>"; 
                 }
-
                 echo "<a href='?student_id=$student_id&khoa_hoc_id=$khoa_hoc_id&xem_ket_qua={$test['id_test']}'>Xem chi tiết kết quả</a>
                     </div>
                 </li>";
@@ -448,6 +447,7 @@ if (isset($_GET['xem_ket_qua'])) {
                     }
                 }
             }
+            
 
             // Lấy danh sách câu hỏi và hiển thị
             $quiz_result = $conn->query("

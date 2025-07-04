@@ -3,60 +3,46 @@ $sql_accound_edit ="SELECT * FROM account WHERE account_id ='$_GET[account_id]'L
 $query_account_edit = mysql_query($mysql, $sql_accound_edit);
 
 ?>
+<h2>Danh sách tài khoản </h2>
+<div class ="box">
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Tên</th>
+            <th>Email</th>
+            <th>Loại</th>
+            <th>Thao tác</th>
+        </tr>
+        <?php 
+        $res = $conn -> query ("SELECT * FROM account");
+        if ($res && $res ->num_rows) :
+            while ($row = $res -> fetch_assoc()) :
+        ?>
+          <tr>
+            <form method="POST">
+                <td>
+                    <input type="hidden" name="account_id" value="<?=htmlspecialchars($row['account_id'])?>">
+                    <input value="<?=htmlspecialchars($row['account_id'])?>" disabled>
+                </td>
 
-<div id="wp-content">
-        <div id="content" class="container-fluid">
-            <div class="card">
-                <div class="card-header font-weight-bold">
-                    Thêm tài khoản mới 
-                </div>
-                <div class="card-body">
-                    <form action="" method="POST">
-                        <?php echo form_success('account'); ?>
-                        <?php echo form_error('account'); ?>
-
-                        <div class="form-group">
-                            <label for="fullname">Tên tài khoản</label>
-                            <input class="form-control" type="text" name="fullname" id="fullname" value="<?php echo set_value('fullname'); ?>" placeholder="Họ và Tên">
-                            <?php echo form_error('fullname'); ?>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input class="form-control" type="text" name="username" id="username" value="<?php echo set_value('username'); ?>" placeholder="Tên tài khoản">
-                            <?php echo form_error('username'); ?>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input class="form-control" type="text" name="email" id="email" value="<?php echo set_value('email'); ?>" placeholder="Email">
-                            <?php echo form_error('email'); ?>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="password">Mật khẩu</label>
-                            <input class="form-control" type="password" name="password" id="password" placeholder="Mật khẩu">
-                            <?php echo form_error('password'); ?>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="password">Nhập lại mật khẩu</label>
-                            <input class="form-control"type="password" name="password" id="password" placeholder="Nhập lại mật khẩu">
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary" name="btn_add">Sửa tài khoản</button>
-
-                        <button type="submit" class="btn btn-primary" name="btn_add">Thêm mới tài khoản</button>
-                        
-                        
-                    </form>
-                </div>
-            </div>
+                <td><input name="account_name" value="<?=htmlspecialchars($row['account_name'])?>" required></td>
+                <td><input type="email" name="account_email" value="<?=htmlspecialchars($row['account_email'])?>" required></td>
+                <td><input name="account_type" value="<?=htmlspecialchars($row['account_type'])?>" required></td>
+                <td>
+                    <button class="btn btn-sm btn-edit" name="btn_update">✏️ Sửa</button>
+                    <a class="btn btn-sm btn-del" href="index.php?action=them&delete=<?=urlencode($row['account_id'])?>" 
+                    onclick="return confirm('Xoá tài khoản này?')"> 🗑️ Xoá</a>
+                </td>
+            </form>
+            </tr>
+        <?php endwhile; else: ?>
+            <tr><td colspan="5">Chưa có tài khoản.</td></tr>
+        <?php endif; ?>
+        </table>
         </div>
-    </div>
-<div>
+    </table>
+</div>
 <script>
-    
     function showErrorToast() {
         toast({
             title: "Success",
@@ -66,7 +52,6 @@ $query_account_edit = mysql_query($mysql, $sql_accound_edit);
         });
     }
 </script>
-
 
 <?php
 if (isset($_GET['message']) && $_GET['message'] == 'success') {

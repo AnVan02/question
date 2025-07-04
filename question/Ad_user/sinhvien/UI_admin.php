@@ -400,6 +400,7 @@ if (isset($_GET['khoa_hoc_id'])) {
     } else {
         echo "<div class='error'>Không tìm thấy khóa học.</div>";
     }
+
 }
 
 // Xử lý khi nhấn "Xem kết quả chi tiết"
@@ -497,30 +498,27 @@ if (isset($_GET['xem_ket_qua'])) {
                     }
                     echo "</div>";
                     
-                    // echo "<div class='explanation'>";
-                    // if ($user_answer !== null) {
-                    //     echo "Bạn chọn: <span class='user-answer'>$user_answer</span>";
-                    //     if ($user_answer !== $dap_an_dung) {
-                    //         echo " | Đáp án đúng: $dap_an_dung";
-                    //         // Hiển thị giải thích cho đáp án đúng
-                    //         $explanation_field = 'giaithich_' . strtolower($dap_an_dung);
-                    //         $explanation = $q[$explanation_field];
-                    //         if (!empty($explanation)) {
-                    //             echo "<div class='explanation-detail'><strong>Giải thích:</strong> $explanation</div>";
-                    //         }
-                    //     } else {
-                    //         // Hiển thị giải thích khi trả lời đúng
-                    //         $explanation_field = 'giaithich_' . strtolower($dap_an_dung);
-                    //         $explanation = $q[$explanation_field];
-                    //         if (!empty($explanation)) {
-                    //             echo "<div class='explanation-detail'><strong>Giải thích:</strong> $explanation</div>";
-                    //         }
-                    //     }
-                    // } else {
-                    //     echo "Bạn chưa trả lời câu này";
-                    // }
-                    // echo "</div>";
+                    // kiêm tra giai thích câu hỏi 
+
                     
+                    echo "<div class='explanation'>";
+                    if ($user_answer !== null) {
+                        echo "Bạn chọn <span class='user-answer'>$user_answer</span>";
+                        if ($user_answer != $dap_an_dung) {
+                           echo "<div class='explanation-detail'></strong>Giới thích :</strong>$explanation</div>";
+
+                        }
+                    } else {
+                        // hiển thị giai thích khi tra lời đúng
+                        $explanation_field ='giaithich_'.strtolower($dap_an_dung);
+                        $explanation = $q[$explanation_field];
+                        if (!empty ($explanation)) {
+                            echo "<div class='explanation-detail'><strong>Giải thích: </strong> $explanation</div>";
+                        }
+                    }
+                    echo "<div>";
+                    
+
                     echo "</div>";
                     $question_number++;
                 }

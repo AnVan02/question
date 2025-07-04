@@ -183,14 +183,13 @@ if (isset($_GET['edit'])) {
         }
 
         h2, h3 {
-            margin-bottom: 25px;
-            color: #2d3748;
-            font-size: 24px;
-            font-weight: 600;
+            color: #1e3a8a;
+            margin: 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            padding: 10px;
-            background-color: #edf2f7;
-            /* border-radius: 8px; */
+            text-transform: uppercase;
+            letter-spacing: 1px;
 
         }
 
@@ -281,7 +280,7 @@ if (isset($_GET['edit'])) {
 
         ul li {
             background-color: #fafafa;
-            border: 1px solid #e0e0e0;
+            /* border: 1px solid #e0e0e0; */
             padding: 12px 15px;
             border-radius: 8px;
             margin-bottom: 10px;
@@ -348,10 +347,7 @@ if (isset($_GET['edit'])) {
             color: white;
         }
 
-        ul li a.btn:hover {
-            background-color: #0277bd;
-            transform: translateY(-1px);
-        }
+       
     </style>
 </head>
 <body>
@@ -377,7 +373,6 @@ if (isset($_GET['edit'])) {
             <ul>
                 <?php foreach ($khoa_hoc_list as $kh): ?>
                     <li>
-                        <strong></strong>
                         <span class="course-name"><?= htmlspecialchars($kh['khoa_hoc']) ?></span>
                         <a href="index.php?action=add_khoahoc&edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
                         <a href="index.php?action=add_khoahoc&delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>

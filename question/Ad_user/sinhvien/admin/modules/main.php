@@ -45,37 +45,13 @@
             include ("./modules/cauhoi/them.php");
         }
 
+        elseif ($action == 'add_taikhoan.php') {
+            include ("./modules/add_taikhoan.php");
+        }
 
-        // elseif ($action == 'hochoc') {
-        //     include ("./modules/cauhoi/hoahoc.php");
-        // }
-
-        // elseif ($action == '') {
-        //     include (".modules/cauhoi/python_cb.php");
-        // }
-
-        // elseif ($action == '') {
-        //     include (".modules/cauhoi/python_nc.php");
-        // }
-
-        // elseif ($action = '') {
-        //     include (".modules/cauhoi/sinhhoc.php");
-
-        // }
-
-        // elseif ($action = '') {
-        //     include (".modules/cauhoi/sinhhoc.php"); 
-            
-        // }
-
-        // elseif ($action ='') {
-        //     include (".modules/cauhoi/yolo");
-        // }
-
-        // elseif ($action = ''){
-        //     include (".modules/cauhoi/tienganh");
-        // }
-
+        elseif ($action == 'add_taikhon.php') {
+            include (".");
+        }
         elseif($action =='account' ) {
             include("./modules/account/my_account.php");
         }

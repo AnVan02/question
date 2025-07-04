@@ -256,6 +256,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = $_POST['password'];
         $ten = $_POST['ten'];
         $email = $_POST['email'];
+
+        
         
         
 
@@ -649,9 +651,13 @@ if ($mode == 'edit' && $student_id) {
     <style>
        
         h2 {
+            color: #1e3a8a;
+            margin: 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         ul li {
             background-color: #fafafa;

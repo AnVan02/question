@@ -341,6 +341,12 @@ if ($mode == 'edit' && $student_id) {
             </p>
         <?php endif; ?>
 
+        <?php if (!empty($message)):?>
+            <p class="<?php echo stropos($message, 'lỗi') === false ? 'message' : 'error'; ?>">
+                <?php echo htmlspecialchars ($message); ?>
+            </p>
+        <?php endif;?>
+        
         <form method="POST" action="index.php?action=student">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="student_id" value="<?php echo htmlspecialchars($student_id); ?>">
@@ -666,11 +672,16 @@ if ($mode == 'edit' && $student_id) {
             line-height: 1.6;
             padding: 15px;
         }
-        h2 {
+          h2 {
+            color: #1e3a8a;
+            margin: 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+
         .form-container {
             display: flex;
             justify-content: center;

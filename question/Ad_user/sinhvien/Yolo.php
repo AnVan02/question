@@ -666,14 +666,6 @@ $conn->close();
 </head>
 <body>
     <div class="container">
-        <!-- Debug info (bật khi cần) -->
-        <!-- <div class="debug-info">
-            <p>Current Index: <?php echo $current_index; ?></p>
-            <p>Total Questions: <?php echo count($_SESSION['questions']); ?></p>
-            <p>Answers: <?php echo json_encode($_SESSION['answers']); ?></p>
-            <p>POST Data: <?php echo json_encode($_POST); ?></p>
-        </div> -->
-
         <?php if ($current_index < count($_SESSION['questions'])): ?>
             <!-- Hiển thị link quay lại khi đang làm bài test -->
             <div class="navigation-links">

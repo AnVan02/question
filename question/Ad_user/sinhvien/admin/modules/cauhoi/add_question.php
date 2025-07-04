@@ -152,15 +152,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
         h2 {
+            color: #1e3a8a;
+            margin: 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            color: rgb(247, 18, 18);
-            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        ul li {
+         ul li {
             background-color: #fafafa;
-            border: 1px solid #e0e0e0;
-            padding: 12px 15px;
+            /* border: 1px solid #e0e0e0; */
+            /* padding: 12px 15px; */
             border-radius: 8px;
             margin-bottom: 10px;
             display: grid;
@@ -169,6 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             gap: 10px;
             transition: background-color 0.3s, box-shadow 0.3s;
             font-size:17px;
+            
         }
 
         form label {

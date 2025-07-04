@@ -198,14 +198,13 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h2 {
-            margin-bottom: 25px;
-            color: #2d3748;
-            font-size: 24px;
-            font-weight: 600;
+            color: #1e3a8a;
+            margin: 1.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            padding: 10px;
-            background-color: #edf2f7;
-            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .message.success {

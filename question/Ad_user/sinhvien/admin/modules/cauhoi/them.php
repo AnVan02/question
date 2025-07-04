@@ -1,261 +1,369 @@
 <?php
-// ------------------- KẾT NỐI CSDL -------------------
+/* ---------- KẾT NỐI CSDL ---------- */
 function dbconnect() {
     $conn = new mysqli("localhost", "root", "", "student");
     if ($conn->connect_error) {
-        error_log("Kết nối thất bại: " . $conn->connect_error);
         die("Lỗi kết nối CSDL: " . $conn->connect_error);
     }
-    $conn->set_charset('utf8mb4');
+    $conn->set_charset("utf8mb4");
     return $conn;
 }
-
 $conn = dbconnect();
 
-$errors = [];
-$success = false;
+$errors  = [];
+$success = "";
 
-// ------------------- XỬ LÝ FORM -------------------
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_add'])) {
-    $account_id = trim($_POST['account_id']);
-    $account_name = trim($_POST['account_name']);
-    $account_email = trim($_POST['account_email']);
-    $account_password = $_POST['account_password'];
-    $account_type = trim($_POST['account_type']);
-
-    // Kiểm tra dữ liệu rỗng
-    if (empty($account_id) || empty($account_name) || empty($account_email) || empty($account_password) || empty($account_type)) {
-        $errors[] = "Vui lòng nhập đầy đủ thông tin!";
+/* ---------- XOÁ ---------- */
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    $stmt = $conn->prepare("DELETE FROM account WHERE account_id=?");
+    $stmt->bind_param("s", $id);
+    if ($stmt->execute() && $stmt->affected_rows) {
+        $success = "🗑️ Đã xoá tài khoản $id.";
+    } else {
+        $errors[] = "Không xoá được (có thể ID không tồn tại).";
     }
+    $stmt->close();
+}
 
-    // Kiểm tra trùng ID hoặc email
-    if (empty($errors)) {
-        $stmt = $conn->prepare("SELECT * FROM account WHERE account_email = ? OR account_id = ?");
-        $stmt->bind_param("ss", $account_email, $account_id);
+/* ---------- CẬP NHẬT ---------- */
+if (isset($_POST['btn_update'])) {
+    $id    = $_POST['account_id'];          // hidden input
+    $name  = trim($_POST['account_name']);
+    $email = trim($_POST['account_email']);
+    $type  = trim($_POST['account_type']);
+
+    if (!$name || !$email || !$type) {
+        $errors[] = "Vui lòng nhập đủ thông tin khi sửa.";
+    } else {
+        $stmt = $conn->prepare(
+            "UPDATE account SET account_name=?, account_email=?, account_type=? WHERE account_id=?"
+        );
+        $stmt->bind_param("ssss", $name, $email, $type, $id);
+        if ($stmt->execute() && $stmt->affected_rows) {
+            $success = "✏️ Đã cập nhật tài khoản $id.";
+        } else {
+            $errors[] = "Không có hàng nào được cập nhật (có thể bạn không đổi gì).";
+        }
+        $stmt->close();
+    }
+}
+
+/* ---------- THÊM ---------- */
+if (isset($_POST['btn_add'])) {
+    $id       = trim($_POST['account_id']);
+    $name     = trim($_POST['account_name']);
+    $email    = trim($_POST['account_email']);
+    $password = $_POST['account_password'];
+    $type     = trim($_POST['account_type']);
+
+    if (!$id || !$name || !$email || !$password || !$type) {
+        $errors[] = "Vui lòng nhập đầy đủ thông tin khi thêm.";
+    } else {
+        // kiểm tra trùng
+        $stmt = $conn->prepare(
+            "SELECT 1 FROM account WHERE account_id=? OR account_email=? LIMIT 1"
+        );
+        $stmt->bind_param("ss", $id, $email);
         $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $errors[] = "Email hoặc ID đã tồn tại!";
+        $stmt->store_result();
+        if ($stmt->num_rows) {
+            $errors[] = "ID hoặc Email đã tồn tại.";
         }
         $stmt->close();
     }
 
-    // Thêm tài khoản
-    if (empty($errors)) {
-        $hashed_password = password_hash($account_password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO account (account_id, account_name, account_password, account_email, account_type, account_status) VALUES (?, ?, ?, ?, ?, 0)");
-        $stmt->bind_param("sssss", $account_id, $account_name, $hashed_password, $account_email, $account_type);
+    if (!$errors) {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare(
+            "INSERT INTO account (account_id, account_name, account_password, account_email, account_type)
+             VALUES (?,?,?,?,?)"
+        );
+        $stmt->bind_param("sssss", $id, $name, $hash, $email, $type);
         if ($stmt->execute()) {
-            $success = true;
+            $success = "✅ Đã thêm tài khoản $id.";
         } else {
-            $errors[] = "Lỗi khi thêm tài khoản: " . $conn->error;
+            $errors[] = "Lỗi thêm tài khoản: " . $conn->error;
         }
         $stmt->close();
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý tài khoản</title>
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #16a34a;
-            --error-color: #dc2626;
-            --border-color: #e5e7eb;
-            --background-color: #f9fafb;
-        }
+<meta charset="UTF-8">
+<title>Quản lý tài khoản</title>
+<style>
+  
 
-        h2 {
-            color: #1f2937;
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
+    /* Headings */
+    h2 {
+        color: #1e3a8a;
+        margin: 1.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
 
-        .form-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        label {
-            font-weight: 500;
-            color: #374151;
-            font-size: 0.9rem;
-        }
-
-        input {
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-            width: 100%;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .submit-btn {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s;
-            
-        }
+    /* Box container */
+    .box {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 0 auto 2.5rem;
+        max-width: 2800px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
 
-        .error {
-            background-color: #fee2e2;
+    /* Form grid */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Labels */
+    label {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #1e3a8a;
+        margin-bottom: 0.5rem;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Inputs */
+    input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        background: #f1f5f9;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    input:focus {
+        outline: none;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+    }
+
+    .btn:active {
+        transform: scale(1);
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .btn[name="btn_add"] {
+        background: #3b82f6;
+    }
+
+
+    .btn-edit {
+        background:rgb(96, 160, 255);
+    }
+
+    .btn-del {
+        background: #ef4444;
+        text-decoration: none;
+        display: inline-flex;
+    }
+
+
+    /* Table */
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 1rem;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+        padding: 1.25rem;
+        text-align: left;
+    }
+
+    th {
+        background:rgb(9, 5, 211);
+        color: #fff;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        border-bottom: 1px solid #e5e7eb;
+        background: #f8fafc;
+    }
+
+    td input[disabled] {
+        background: #e2e8f0;
+        color: #4b5563;
+        border: none;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .alert.err {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-left: 4px solid #ef4444;
+    }
+
+    .alert.ok {
+        background: #ecfdf5;
+        color: #065f46;
+        border-left: 4px solid #10b981;
+    }
+
+    .alert ul {
+        list-style: disc;
+        margin-left: 1.75rem;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        body {
             padding: 1rem;
-            border-radius: 0.375rem;
-            color: var(--error-color);
-            margin-bottom: 1rem;
         }
 
-        .error ul {
-            list-style: none;
-            margin-top: 0.5rem;
-        }
-
-        .success {
-            background-color: #dcfce7;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            color: var(--success-color);
-            margin-bottom: 1rem;
-        }
-
-        .table-container {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .grid {
+            grid-template-columns: 1fr;
         }
 
         table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
         }
 
         th, td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
+            min-width: 160px;
         }
 
-        th {
-            background-color: #f3f4f6;
-            font-weight: 600;
-            color: #374151;
+        .btn, .btn-sm, .btn-del {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        h2 {
+            font-size: 1.5rem;
         }
 
-        tr:last-child td {
-            border-bottom: none;
+        .box {
+            padding: 1.5rem;
         }
 
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
+        input, .btn, .btn-sm {
+            font-size: 0.9rem;
         }
+    }
     </style>
 </head>
 <body>
-    <h2>Thêm tài khoản mới</h2>
 
-    <?php if (!empty($errors)): ?>
-        <div class="error">
-            <ul>
-                <?php foreach ($errors as $e): ?>
-                    <li><?= htmlspecialchars($e) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php elseif ($success): ?>
-        <div class="success">✅ Tài khoản đã được thêm thành công!</div>
-    <?php endif; ?>
+<h2>Thêm tài khoản mới</h2>
 
-    <div class="form-container">
-        <form method="POST">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>ID tài khoản</label>
-                    <input type="text" name="account_id" required>
-                </div>
-                <div class="form-group">
-                    <label>Tên tài khoản</label>
-                    <input type="text" name="account_name" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="account_email" required>
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu</label>
-                    <input type="password" name="account_password" required>
-                </div>
-                <div class="form-group">
-                    <label>Loại tài khoản</label>
-                    <input type="text" name="account_type" required>
-                </div>
-            </div>
-            <input type="submit" name="btn_add" value="Thêm tài khoản" class="submit-btn">
-        </form>
-    </div>
+<?php if ($errors): ?>
+    <div class="alert err"><ul><?php foreach($errors as $e) echo "<li>".htmlspecialchars($e)."</li>"; ?></ul></div>
+<?php elseif ($success): ?>
+    <div class="alert ok"><?= $success ?></div>
+<?php endif; ?>
 
-    <h2>Danh sách tài khoản</h2>
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Tên tài khoản</th>
-                <th>Email</th>
-                <th>Loại</th>
-            </tr>
-            <?php
-            $result = $conn->query("SELECT * FROM account");
-            if ($result && $result->num_rows > 0):
-                while ($row = $result->fetch_assoc()):
-            ?>
-            <tr>
-                <td><?= htmlspecialchars($row['account_id']) ?></td>
-                <td><?= htmlspecialchars($row['account_name']) ?></td>
-                <td><?= htmlspecialchars($row['account_email']) ?></td>
-                <td><?= htmlspecialchars($row['account_type']) ?></td>
-            </tr>
-            <?php endwhile; else: ?>
-            <tr><td colspan="4">Chưa có tài khoản nào.</td></tr>
-            <?php endif; ?>
-        </table>
-    </div>
+<div class="box">
+    <form method="POST">
+        <div class="grid">
+            <div><label>ID</label><input name="account_id" required></div>
+            <div><label>Tên</label><input name="account_name" required></div>
+            <div><label>Email</label><input type="email" name="account_email" required></div>
+            <div><label>Mật khẩu</label><input type="password" name="account_password" required></div>
+            <div><label>Loại</label><input name="account_type" required></div>
+        </div><br>
+        <button class="btn" name="btn_add">Thêm tài khoản</button>
+    </form>
+</div>
+
+<h2>Danh sách tài khoản</h2>
+<div class="box">
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Tên</th>
+        <th>Email</th>
+        <th>Loại</th>
+        <th>Thao tác</th>
+    </tr>
+<?php
+$res = $conn->query("SELECT * FROM account");
+if ($res && $res->num_rows):
+    while ($row = $res->fetch_assoc()):
+?>
+    <tr>
+      <form method="POST">
+        <td>
+            <input type="hidden" name="account_id" value="<?=htmlspecialchars($row['account_id'])?>">
+            <input value="<?=htmlspecialchars($row['account_id'])?>" disabled>
+        </td>
+
+        <td><input name="account_name" value="<?=htmlspecialchars($row['account_name'])?>" required></td>
+        <td><input type="email" name="account_email" value="<?=htmlspecialchars($row['account_email'])?>" required></td>
+        <td><input name="account_type" value="<?=htmlspecialchars($row['account_type'])?>" required></td>
+        <td>
+            <button class="btn btn-sm btn-edit" name="btn_update">✏️ Sửa</button>
+            <a class="btn btn-sm btn-del" href="index.php?action=them&delete=<?=urlencode($row['account_id'])?>" 
+               onclick="return confirm('Xoá tài khoản này?')"> 🗑️ Xoá</a>
+        </td>
+      </form>
+    </tr>
+<?php endwhile; else: ?>
+    <tr><td colspan="5">Chưa có tài khoản.</td></tr>
+<?php endif; ?>
+</table>
+</div>
+
 </body>
 </html>
