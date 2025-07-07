@@ -165,6 +165,12 @@ if ($row = $result->fetch_assoc()) {
                 'C' => $row2['cau_c'],
                 'D' => $row2['cau_d']
             ],
+            'images' => [
+                'A' => $row2['hinhanh_a'],
+                'B' => $row2['hinhanh_b'],
+                'C' => $row2['hinhanh_c'],
+                'D' => $row2['hinhanh_d']
+            ],
             'explanations' => [
                 'A' => $row2['giaithich_a'],
                 'B' => $row2['giaithich_b'],
@@ -434,6 +440,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_question'])) {
                     'C' => $row2['cau_c'],
                     'D' => $row2['cau_d']
                 ],
+                'images' => [
+                    'A' => $row2['hinhanh_a'],
+                    'B' => $row2['hinhanh_b'],
+                    'C' => $row2['hinhanh_c'],
+                    'D' => $row2['hinhanh_d']
+                ],
                 'explanations' => [
                     'A' => $row2['giaithich_a'],
                     'B' => $row2['giaithich_b'],
@@ -640,6 +652,9 @@ $conn->close();
                                         required> 
                                     <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
                                 </label>
+                                <?php if (!empty($question['images'][$key])): ?>
+                                    <br><img src="<?php echo htmlspecialchars($question['images'][$key]); ?>" alt="Ảnh đáp án <?php echo $key; ?>">
+                                <?php endif; ?>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -747,12 +762,11 @@ $conn->close();
                                 $is_correct = $key === $question['correct'];
                                 if ($is_selected) {
                                     $style = $answers[$index]['is_correct'] ? 'correct' : 'incorrect';
-                                } elseif ($is_correct) {
-                                    // $style = 'correct';
                                 }
                                 ?>
                                 <li class="<?php echo $style; ?>">
                                     <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
+                                  
                                 </li>
                             <?php endforeach; ?>
                         </ul>

@@ -53,28 +53,37 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     $question_id = isset($_POST["question_id"]) && is_numeric($_POST["question_id"]) ? (int)$_POST["question_id"] : null;
     $image = isset($_POST["existing_image"]) ? $_POST["existing_image"] : null;
 
+    // Thêm biến cho ảnh đáp án
+    $image_answers = [];
+    foreach(['a','b','c','d'] as $opt) {
+        $image_answers[$opt] = isset($_POST["existing_image_{$opt}"]) ? $_POST["existing_image_{$opt}"] : null;
+    }
+
     $upload_dir = "images/";
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0755, true);
     }
-    // Xử lý hình ảnh
-    if (isset($_FILES["image"]) && $_FILES["image"]["error"] === UPLOAD_ERR_OK) {
-        $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
-        $file_ext = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
-        if (!in_array($file_ext, $allowed_exts)) {
-            $message = "<div style='color:red;'>Chỉ cho phép các định dạng hình ảnh JPG, JPEG, PNG, GIF!</div>";
-        } elseif ($_FILES["image"]["size"] > 5 * 1024 * 1024) {
-            $message = "<div style='color:red;'>Hình ảnh không được vượt quá 5MB!</div>";
-        } else {
-            $file_name = uniqid() . "." . $file_ext;
-            $file_path = $upload_dir . $file_name;
-            if (move_uploaded_file($_FILES["image"]["tmp_name"], $file_path)) {
-                $image = $file_path;
-                if ($question_id && !empty($question_data['hinhanh']) && file_exists($question_data['hinhanh'])) {
-                    unlink($question_data['hinhanh']);
-                }
+    // Xử lý hình ảnh đáp án
+    foreach(['a','b','c','d'] as $opt) {
+        $file_key = "image_{$opt}";
+        if (isset($_FILES[$file_key]) && $_FILES[$file_key]["error"] === UPLOAD_ERR_OK) {
+            $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
+            $file_ext = strtolower(pathinfo($_FILES[$file_key]["name"], PATHINFO_EXTENSION));
+            if (!in_array($file_ext, $allowed_exts)) {
+                $message = "<div style='color:red;'>Chỉ cho phép các định dạng hình ảnh JPG, JPEG, PNG, GIF cho đáp án ".strtoupper($opt)."!</div>";
+            } elseif ($_FILES[$file_key]["size"] > 5 * 1024 * 1024) {
+                $message = "<div style='color:red;'>Hình ảnh đáp án ".strtoupper($opt)." không được vượt quá 5MB!</div>";
             } else {
-                $message = "<div style='color:red;'>Lỗi khi tải lên hình ảnh!</div>";
+                $file_name = uniqid($opt.'_') . "." . $file_ext;
+                $file_path = $upload_dir . $file_name;
+                if (move_uploaded_file($_FILES[$file_key]["tmp_name"], $file_path)) {
+                    $image_answers[$opt] = $file_path;
+                    if ($question_id && !empty($question_data['hinhanh_' . $opt]) && file_exists($question_data['hinhanh_' . $opt])) {
+                        unlink($question_data['hinhanh_' . $opt]);
+                    }
+                } else {
+                    $message = "<div style='color:red;'>Lỗi khi tải lên hình ảnh đáp án ".strtoupper($opt)."!</div>";
+                }
             }
         }
     }
@@ -90,33 +99,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
         $conn = dbconnect();
         if ($question_id) {
             $sql = "UPDATE quiz SET id_baitest=?, ten_khoa=?, cauhoi=?, hinhanh=?, 
-                        cau_a=?, giaithich_a=?, 
-                        cau_b=?, giaithich_b=?, 
-                        cau_c=?, giaithich_c=?, 
-                        cau_d=?, giaithich_d=?, 
+                        cau_a=?, hinhanh_a=?, giaithich_a=?, 
+                        cau_b=?, hinhanh_b=?, giaithich_b=?, 
+                        cau_c=?, hinhanh_c=?, giaithich_c=?, 
+                        cau_d=?, hinhanh_d=?, giaithich_d=?, 
                         dap_an=? 
                     WHERE Id_cauhoi=?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssssssssssssi", $id_baitest, $ten_khoa, $question_text, $image,
-                $choices['A'], $explanations['A'],
-                $choices['B'], $explanations['B'],
-                $choices['C'], $explanations['C'],
-                $choices['D'], $explanations['D'],
+            $stmt->bind_param("ssssssssssssssssi", $id_baitest, $ten_khoa, $question_text, $image,
+                $choices['A'], $image_answers['a'], $explanations['A'],
+                $choices['B'], $image_answers['b'], $explanations['B'],
+                $choices['C'], $image_answers['c'], $explanations['C'],
+                $choices['D'], $image_answers['d'], $explanations['D'],
                 $correct, $question_id);
         } else {
             $sql = "INSERT INTO quiz (id_baitest, ten_khoa, cauhoi, hinhanh, 
-                        cau_a, giaithich_a, 
-                        cau_b, giaithich_b, 
-                        cau_c, giaithich_c, 
-                        cau_d, giaithich_d, 
+                        cau_a, hinhanh_a, giaithich_a, 
+                        cau_b, hinhanh_b, giaithich_b, 
+                        cau_c, hinhanh_c, giaithich_c, 
+                        cau_d, hinhanh_d, giaithich_d, 
                         dap_an) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssssssssssss", $id_baitest, $ten_khoa, $question_text, $image,
-                $choices['A'], $explanations['A'],
-                $choices['B'], $explanations['B'],
-                $choices['C'], $explanations['C'],
-                $choices['D'], $explanations['D'],
+            $stmt->bind_param("sssssssssssssssss", $id_baitest, $ten_khoa, $question_text, $image,
+                $choices['A'], $image_answers['a'], $explanations['A'],
+                $choices['B'], $image_answers['b'], $explanations['B'],
+                $choices['C'], $image_answers['c'], $explanations['C'],
+                $choices['D'], $image_answers['d'], $explanations['D'],
                 $correct);
         }
         // hiển thị thêm thành công
@@ -248,11 +257,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
 
             <?php
             $options = ['A', 'B', 'C', 'D'];
-            foreach ($options as $opt): ?>
+            foreach ($options as $opt): $opt_lc = strtolower($opt); ?>
                 <label>Đáp án <?= $opt ?>:</label>
-                <input type="text" name="choice_<?= strtolower($opt) ?>" value="<?= htmlspecialchars($question_data["cau_".strtolower($opt)] ?? '') ?>">
+                <input type="text" name="choice_<?= $opt_lc ?>" value="<?= htmlspecialchars($question_data["cau_".$opt_lc] ?? '') ?>">
+                <label>Ảnh đáp án <?= $opt ?> (nếu có):</label>
+                <input type="file" name="image_<?= $opt_lc ?>" accept="image/*">
+                <?php if (!empty($question_data["hinhanh_" . $opt_lc])): ?>
+                    <div class="existing-image">
+                        <img src="<?= htmlspecialchars($question_data["hinhanh_" . $opt_lc]) ?>" alt="Ảnh đáp án <?= $opt ?>">
+                        <input type="hidden" name="existing_image_<?= $opt_lc ?>" value="<?= htmlspecialchars($question_data["hinhanh_" . $opt_lc]) ?>">
+                    </div>
+                <?php endif; ?>
                 <label>Giải thích <?= $opt ?>:</label>
-                <input type="text" name="explain_<?= strtolower($opt) ?>" value="<?= htmlspecialchars($question_data["giaithich_".strtolower($opt)] ?? '') ?>">
+                <input type="text" name="explain_<?= $opt_lc ?>" value="<?= htmlspecialchars($question_data["giaithich_".$opt_lc] ?? '') ?>">
             <?php endforeach; ?>
 
             <label>Đáp án đúng:</label>

@@ -1,25 +1,15 @@
-+ note bài lam
++ Tạo nhánh 
+	git checkout -b + nhánh
 
-   tk A sẽ học khoá 1,2,3 nhưng ko vào dc các khoa khác
-   tk B sẽ học khoá 4,5,6 nhưng ko vào dc các khoa khác
-   tk C sẽ học khoá 7,8 nhưng ko vào dc các khoa khác
-	  
-   Tài khoản A
-	Hoá hoc 1 		 
-	yolo 2 		        
-	tiếng anh 3         	
++ Kiểm tra nhánh 
+	git branch 
 
-  Tài khoản B
-	Python cơ bản 4     	
-	sinh học 5  	 	
-	toán 6   		
++ Kiểm tra remote 
+	git remote -v
 
-  Tài khoản C
-	Python nâng cao 7   	
-	văn 8	
++ Đổi remote "đôi trang git"
+	git remote set-url origin + tên trang git 
 
 
-+ kiêm tra 
--	nêu nhập id_test sai thì thông báo khi nhập sai 
--   kiểm tra thông tin truy cập từng tài khoản 
--   
+
+
