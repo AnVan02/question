@@ -52,13 +52,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
     $correct = strtoupper(trim($_POST["correct"]));
     $question_id = isset($_POST["question_id"]) && is_numeric($_POST["question_id"]) ? (int)$_POST["question_id"] : null;
     $image = isset($_POST["existing_image"]) ? $_POST["existing_image"] : null;
-
+    // Xử lý xoá ảnh câu hỏi nếu có chọn
+    if (isset($_POST["delete_image"]) && $_POST["delete_image"] == "1" && $image && file_exists($image)) {
+        unlink($image);
+        $image = null;
+    }
     // Thêm biến cho ảnh đáp án
     $image_answers = [];
     foreach(['a','b','c','d'] as $opt) {
         $image_answers[$opt] = isset($_POST["existing_image_{$opt}"]) ? $_POST["existing_image_{$opt}"] : null;
+        // Xử lý xoá ảnh đáp án nếu có chọn
+        if (isset($_POST["delete_image_{$opt}"]) && $_POST["delete_image_{$opt}"] == "1" && $image_answers[$opt] && file_exists($image_answers[$opt])) {
+            unlink($image_answers[$opt]);
+            $image_answers[$opt] = null;
+        }
     }
-
     $upload_dir = "images/";
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0755, true);
@@ -84,6 +92,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
                 } else {
                     $message = "<div style='color:red;'>Lỗi khi tải lên hình ảnh đáp án ".strtoupper($opt)."!</div>";
                 }
+            }
+        }
+    }
+    // Xử lý hình ảnh câu hỏi (nếu có upload mới)
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $allowed_exts = ['jpg', 'jpeg', 'png', 'gif'];
+        $file_ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+        if (!in_array($file_ext, $allowed_exts)) {
+            $message = "<div style='color:red;'>Chỉ cho phép các định dạng hình ảnh JPG, JPEG, PNG, GIF cho câu hỏi!</div>";
+        } elseif ($_FILES['image']['size'] > 5 * 1024 * 1024) {
+            $message = "<div style='color:red;'>Hình ảnh câu hỏi không được vượt quá 5MB!</div>";
+        } else {
+            $file_name = uniqid('q_') . "." . $file_ext;
+            $file_path = $upload_dir . $file_name;
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $file_path)) {
+                $image = $file_path;
+                if ($question_id && !empty($question_data['hinhanh']) && file_exists($question_data['hinhanh'])) {
+                    unlink($question_data['hinhanh']);
+                }
+            } else {
+                $message = "<div style='color:red;'>Lỗi khi tải lên hình ảnh câu hỏi!</div>";
             }
         }
     }
@@ -190,6 +219,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
         }
         form textarea {
             resize: vertical;
+            min-height: 40px;
         }
         .custom-select {
             padding: 8px 12px;
@@ -229,6 +259,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             border-radius: 6px;
         }
     </style>
+    <script>
+    function removeImage(btn, inputName, containerClass) {
+        var container = btn.closest('.' + containerClass);
+        if (container) {
+            var img = container.querySelector('img');
+            if (img) img.style.display = 'none';
+            var notice = document.createElement('div');
+            notice.style.color = 'red';
+            notice.style.fontWeight = 'bold';
+            notice.textContent = 'Đã chọn xoá ảnh';
+            container.appendChild(notice);
+            btn.style.display = 'none';
+        }
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = inputName;
+        input.value = '1';
+        btn.form.appendChild(input);
+    }
+    // Hiển thị preview và nút xoá bên cạnh input file khi chọn file
+    function showPreviewAndRemoveBtn(inputId, previewId, removeBtnId) {
+        var input = document.getElementById(inputId);
+        var preview = document.getElementById(previewId);
+        var removeBtn = document.getElementById(removeBtnId);
+        if (input.files && input.files.length > 0) {
+            var file = input.files[0];
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'inline-block';
+                removeBtn.style.display = 'inline-block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            removeBtn.style.display = 'none';
+        }
+    }
+    function removeNewImage(inputId, previewId, removeBtnId) {
+        var input = document.getElementById(inputId);
+        var preview = document.getElementById(previewId);
+        var removeBtn = document.getElementById(removeBtnId);
+        input.value = '';
+        preview.src = '';
+        preview.style.display = 'none';
+        removeBtn.style.display = 'none';
+    }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -246,12 +325,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             <input type="text" name="ten_khoa" value="<?= htmlspecialchars($question_data['ten_khoa'] ?? '') ?>">
 
             <label>Hình ảnh (nếu có):</label>
-            <input type="file" name="image" accept="image/*">
+            <input type="file" name="image" id="image_input" accept="image/*" onchange="showPreviewAndRemoveBtn('image_input', 'image_preview', 'remove_image_btn')">
+            <img id="image_preview" src="" style="display:none;max-width:120px;margin-left:10px;vertical-align:middle;border-radius:10px;" alt="Preview">
+            <button type="button" id="remove_image_btn" style="display:none;margin-left:10px;background:#f55;vertical-align:middle;" onclick="removeNewImage('image_input','image_preview','remove_image_btn')">Xoá ảnh</button>
             <?php if (!empty($question_data['hinhanh'])): ?>
-                <div class="existing-image">
+                <div class="existing-image question-image">
                     <p>Hình ảnh hiện tại:</p>
                     <img src="<?= htmlspecialchars($question_data['hinhanh']) ?>" alt="Hình ảnh câu hỏi">
                     <input type="hidden" name="existing_image" value="<?= htmlspecialchars($question_data['hinhanh']) ?>">
+                    <button type="button" onclick="removeImage(this, 'delete_image', 'question-image')">Xoá ảnh</button>
                 </div>
             <?php endif; ?>
 
@@ -259,17 +341,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["save_question"])) {
             $options = ['A', 'B', 'C', 'D'];
             foreach ($options as $opt): $opt_lc = strtolower($opt); ?>
                 <label>Đáp án <?= $opt ?>:</label>
-                <input type="text" name="choice_<?= $opt_lc ?>" value="<?= htmlspecialchars($question_data["cau_".$opt_lc] ?? '') ?>">
+                <textarea name="choice_<?= $opt_lc ?>" rows="2"><?= htmlspecialchars($question_data["cau_".$opt_lc] ?? '') ?></textarea>
                 <label>Ảnh đáp án <?= $opt ?> (nếu có):</label>
-                <input type="file" name="image_<?= $opt_lc ?>" accept="image/*">
+                <input type="file" name="image_<?= $opt_lc ?>" id="image_input_<?= $opt_lc ?>" accept="image/*" onchange="showPreviewAndRemoveBtn('image_input_<?= $opt_lc ?>', 'image_preview_<?= $opt_lc ?>', 'remove_image_btn_<?= $opt_lc ?>')">
+                <img id="image_preview_<?= $opt_lc ?>" src="" style="display:none;max-width:120px;margin-left:10px;vertical-align:middle;border-radius:10px;" alt="Preview">
+                <button type="button" id="remove_image_btn_<?= $opt_lc ?>" style="display:none;margin-left:10px;background:#f55;vertical-align:middle;" onclick="removeNewImage('image_input_<?= $opt_lc ?>','image_preview_<?= $opt_lc ?>','remove_image_btn_<?= $opt_lc ?>')">Xoá ảnh</button>
                 <?php if (!empty($question_data["hinhanh_" . $opt_lc])): ?>
-                    <div class="existing-image">
+                    <div class="existing-image answer-image-<?= $opt_lc ?>">
                         <img src="<?= htmlspecialchars($question_data["hinhanh_" . $opt_lc]) ?>" alt="Ảnh đáp án <?= $opt ?>">
                         <input type="hidden" name="existing_image_<?= $opt_lc ?>" value="<?= htmlspecialchars($question_data["hinhanh_" . $opt_lc]) ?>">
+                        <button type="button" onclick="removeImage(this, 'delete_image_<?= $opt_lc ?>', 'answer-image-<?= $opt_lc ?>')">Xoá ảnh</button>
                     </div>
                 <?php endif; ?>
                 <label>Giải thích <?= $opt ?>:</label>
-                <input type="text" name="explain_<?= $opt_lc ?>" value="<?= htmlspecialchars($question_data["giaithich_".$opt_lc] ?? '') ?>">
+                <textarea name="explain_<?= $opt_lc ?>" rows="2"><?= htmlspecialchars($question_data["giaithich_".$opt_lc] ?? '') ?></textarea>
             <?php endforeach; ?>
 
             <label>Đáp án đúng:</label>

@@ -470,6 +470,73 @@ if ($id_khoa > 0 && $khoa_hoc) {
     if ($error_message) echo "<p class='error'>$error_message</p>";
     ?>
     <?php if ($khoa_hoc && $id_khoa > 0): ?>
+        <!-- Form xóa nhiều -->
+        <form id="delete-multi-form" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
+            <button type="submit" name="delete_selected" id="delete-selected-btn" style="margin-bottom: 15px; background: #c53030; color: #fff;">Xóa đã chọn</button>
+            <table>
+                <tr>
+                    <th><input type="checkbox" id="check-all"></th>
+                    <th>ID Test</th>
+                    <th>Khóa học</th>
+                    <th>Tên Test</th>
+                    <th>Lần thứ</th>
+                    <th>Pass</th>
+                    <th>Câu hỏi</th>
+                    <th>Tổng số câu hỏi</th>
+                    <th>Hành động</th>
+                </tr>
+                <?php if ($result && $result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                        <?php
+                        // Xác định loại bài test (Giữa kỳ hoặc Cuối kỳ) dựa trên ten_test
+                        $test_type = (stripos($row['ten_test'], 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
+                        
+                        // Đếm số câu hỏi có sẵn trong quiz
+                        $so_cau = 0;
+                        $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau FROM quiz q INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc)) WHERE k.id = ? AND q.id_baitest = ?";
+                        $stmt_count = $conn->prepare($sql_count);
+                        if ($stmt_count) {
+                            $stmt_count->bind_param("is", $id_khoa, $test_type);
+                            $stmt_count->execute();
+                            $result_count = $stmt_count->get_result();
+                            if ($row_count = $result_count->fetch_assoc()) {
+                                $so_cau = (int)$row_count['so_cau'];
+                            }
+                            $stmt_count->close();
+                        } else {
+                            $error_message = "<p>Lỗi chuẩn bị truy vấn đếm câu hỏi: " . $conn->error . "</p>";
+                        }
+                        ?>
+                        
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selected_tests[]" value="<?php echo htmlspecialchars($row['id_test']); ?>">
+                            </td>
+                            <td><?php echo htmlspecialchars($row['id_test']); ?></td>
+                            <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
+                            <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
+                            <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
+                            <td><?php echo htmlspecialchars($row['pass']); ?></td>
+                            <td>
+                                <?php echo htmlspecialchars($row['so_cau_hien_thi'] . '/' . $so_cau); ?>
+                                <?php if ($so_cau < $row['so_cau_hien_thi']) echo '<span style="color: red;">(Lỗi: Số câu hiển thị vượt quá số câu hỏi)</span>'; ?>
+                                <?php if ($so_cau == 0) echo '<span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($so_cau); ?></td>
+                            <td>
+                                <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
+                                <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
+                                <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr><td colspan="9">Chưa có dữ liệu trong bảng Test cho khóa học này.</td></tr>
+                <?php endif; ?>
+            </table>
+        </form>
+        
+        <h2>Danh sách bài test</h2>
         <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id_khoa=" . $id_khoa); ?>">
             <div class="form-group">
                 <label for="ten_test">Tên Test:</label>
@@ -502,65 +569,27 @@ if ($id_khoa > 0 && $khoa_hoc) {
             <?php endif; ?>
         </form>
         
-        <h2>Danh sách bài test</h2>
-        <?php if ($result && $result->num_rows > 0): ?>
-            <table>
-                <tr>
-                    <th>ID Test</th>
-                    <th>Khóa học</th>
-                    <th>Tên Test</th>
-                    <th>Lần thứ</th>
-                    <th>Pass</th>
-                    <th>Câu hỏi</th>
-                    <th>Tổng số câu hỏi</th>
-                    <th>Hành động</th>
-                </tr>
-                
-                <?php while ($row = $result->fetch_assoc()): ?>
-                    <?php
-                    // Xác định loại bài test (Giữa kỳ hoặc Cuối kỳ) dựa trên ten_test
-                    $test_type = (stripos($row['ten_test'], 'Giữa kỳ') !== false) ? 'Giữa kỳ' : 'Cuối kỳ';
-                    
-                    // Đếm số câu hỏi có sẵn trong quiz
-                    $so_cau = 0;
-                    $sql_count = "SELECT COUNT(q.Id_cauhoi) as so_cau FROM quiz q INNER JOIN khoa_hoc k ON LOWER(TRIM(q.ten_khoa)) = LOWER(TRIM(k.khoa_hoc)) WHERE k.id = ? AND q.id_baitest = ?";
-                    $stmt_count = $conn->prepare($sql_count);
-                    if ($stmt_count) {
-                        $stmt_count->bind_param("is", $id_khoa, $test_type);
-                        $stmt_count->execute();
-                        $result_count = $stmt_count->get_result();
-                        if ($row_count = $result_count->fetch_assoc()) {
-                            $so_cau = (int)$row_count['so_cau'];
-                        }
-                        $stmt_count->close();
-                    } else {
-                        $error_message = "<p>Lỗi chuẩn bị truy vấn đếm câu hỏi: " . $conn->error . "</p>";
+        <script>
+            // Chọn tất cả
+            document.getElementById('check-all').addEventListener('change', function() {
+                var checkboxes = document.querySelectorAll('input[name="selected_tests[]"]');
+                for (var i = 0; i < checkboxes.length; i++) {
+                    checkboxes[i].checked = this.checked;
+                }
+            });
+            // Xác nhận khi xóa nhiều
+            document.getElementById('delete-multi-form').addEventListener('submit', function(e) {
+                var checked = document.querySelectorAll('input[name="selected_tests[]"]:checked');
+                if (checked.length === 0) {
+                    alert('Vui lòng chọn ít nhất một bài kiểm tra để xóa!');
+                    e.preventDefault();
+                } else {
+                    if (!confirm('Bạn có chắc chắn muốn xóa các bài kiểm tra đã chọn?')) {
+                        e.preventDefault();
                     }
-                    ?>
-                    
-                    <tr>
-                        <td><?php echo htmlspecialchars($row['id_test']); ?></td>
-                        <td><?php echo htmlspecialchars($row['khoa_hoc'] ?? 'Không xác định'); ?></td>
-                        <td><?php echo htmlspecialchars($row['ten_test']); ?></td>
-                        <td><?php echo htmlspecialchars($row['lan_thu']); ?></td>
-                        <td><?php echo htmlspecialchars($row['pass']); ?></td>
-                        <td>
-                            <?php echo htmlspecialchars($row['so_cau_hien_thi'] . '/' . $so_cau); ?>
-                            <?php if ($so_cau < $row['so_cau_hien_thi']) echo '<span style="color: red;">(Lỗi: Số câu hiển thị vượt quá số câu hỏi)</span>'; ?>
-                            <?php if ($so_cau == 0) echo '<span style="color: red;">(Chưa có câu hỏi)</span>'; ?>
-                        </td>
-                        <td><?php echo htmlspecialchars($so_cau); ?></td>
-                        <td>
-                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&edit_test=' . $row['id_test']); ?>" class="edit-button">Sửa</a>
-                            <a href="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . '?id_khoa=' . $id_khoa . '&delete_test=' . $row['id_test']); ?>" class="delete-button" onclick="return confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')">Xóa</a>
-                            <a href="question.php?id_test=<?php echo htmlspecialchars($row['id_test']); ?>" class="action-button">Xem câu hỏi</a>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            </table>
-        <?php else: ?>
-            <p>Chưa có dữ liệu trong bảng Test cho khóa học này.</p>
-        <?php endif; ?>
+                }
+            });
+        </script>
     <?php else: ?>
         <p>Vui lòng chọn một khóa học hợp lệ từ trang danh sách khóa học.</p>
     <?php endif; ?>
