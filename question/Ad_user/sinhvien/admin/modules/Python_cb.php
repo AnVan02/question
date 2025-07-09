@@ -274,7 +274,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['previous'])) {
 
 // Xử lý nộp bài
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['submit'])) {
-    // Lưu lại toàn bộ câu trả lời trước khi hiển thị kết quả
+    // Xử lý câu trả lời cuối cùng nếu có
+    if (isset($_POST['answer']) && isset($_SESSION['questions'][$current_index])) {
+        $user_answer = $_POST['answer'];
+        $current_question = $_SESSION['questions'][$current_index];
+        $is_correct = ($user_answer === $current_question['correct']);
+        $answers[$current_index] = [
+            'selected' => $user_answer,
+            'is_correct' => $is_correct
+        ];
+        $_SESSION['answers'] = $answers;
+        if ($is_correct && !isset($_SESSION['score_saved'][$current_index])) {
+            $score++;
+            $_SESSION['score'] = $score;
+            $_SESSION['score_saved'][$current_index] = true;
+        }
+    }
+
+    // Lưu lại toàn bộ câu trả lời vào cơ sở dữ liệu
     $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score);
     $_SESSION['highest_score'] = $highest_score;
     $current_index = count($_SESSION['questions']);
@@ -282,7 +299,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['submit'])) {
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
-
 // Xử lý thiết lập lại
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['reset'])) {
     $attempts++;
