@@ -154,28 +154,37 @@ INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
 --
 
 CREATE TABLE `quiz` (
-  `Id_cauhoi` int(11) NOT NULL,
+  `Id_cauhoi` int(11) NOT NULL AUTO_INCREMENT,
   `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
   `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
   `cauhoi` varchar(255) NOT NULL,
   `hinhanh` varchar(255) DEFAULT NULL,
   `cau_a` varchar(255) NOT NULL,
+  `hinhanh_a` varchar(255) DEFAULT NULL,
   `giaithich_a` varchar(250) NOT NULL,
   `cau_b` varchar(255) NOT NULL,
+  `hinhanh_b` varchar(255) DEFAULT NULL,
   `giaithich_b` varchar(255) NOT NULL,
   `cau_c` varchar(255) NOT NULL,
+  `hinhanh_c` varchar(255) DEFAULT NULL,
   `giaithich_c` varchar(255) NOT NULL,
   `cau_d` varchar(255) NOT NULL,
+  `hinhanh_d` varchar(255) DEFAULT NULL,
   `giaithich_d` varchar(255) NOT NULL,
   `dap_an` varchar(255) NOT NULL,
-  PRIMARY_KEY (Id_cauhoi)
+  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- lấy dữ liên thêm cau hỏi tăng id_câuhoi
 
 ALTER TABLE quiz
 MODIFY COLUMN Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE quiz MODIFY Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE quiz ADD PRIMARY KEY (Id_cauhoi);
+
 
 -----
 --

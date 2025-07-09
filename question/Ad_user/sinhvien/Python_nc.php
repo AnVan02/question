@@ -777,7 +777,7 @@ $conn->close();
             <p><strong>Bài test:</strong> <?php echo htmlspecialchars($id_baitest); ?></p>
             <p><strong>Thời gian hoàn thành:</strong> <?php echo date('H:i:s d/m/Y'); ?></p>
             <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
-            <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
+            <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> /<?php echo count($_SESSION['questions']); ?></p>
             <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
             <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
             <hr>

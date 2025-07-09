@@ -24,7 +24,7 @@
     <div class="navbar-menu-wrapper d-flex align-items-top">
         <ul class="navbar-nav">
             <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
-                <h1 class="welcome-text" style="margin: 0px;">Xin chào,<span class="text-black fw-bold"><?php if (isset($_SESSION['account_name'])) { echo $_SESSION['account_name']; } ?></span></h1>
+                <h1 class="welcome-text" style="margin: 0px;">Xin chào,<span class="text-black fw-bold">
             </li>
         </ul>
         <ul class="navbar-nav ms-auto">

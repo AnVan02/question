@@ -183,13 +183,14 @@ if (isset($_GET['edit'])) {
         }
 
         h2, h3 {
-            color: #1e3a8a;
-            margin: 1.5rem 0;
-            font-size: 1.5rem;
-            font-weight: 700;
+            margin-bottom: 25px;
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 600;
             text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 10px;
+            background-color: #edf2f7;
+            /* border-radius: 8px; */
 
         }
 
@@ -278,48 +279,39 @@ if (isset($_GET['edit'])) {
             margin-top: 20px;
         }
 
-        ul li {
+       ul li {
             background-color: #fafafa;
-            /* border: 1px solid #e0e0e0; */
+            border: 1px solid #e0e0e0;
             padding: 12px 15px;
             border-radius: 8px;
             margin-bottom: 10px;
-            display: grid;
-            grid-template-columns: 50px 1fr 60px 60px 100px;
+            display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
             transition: background-color 0.3s, box-shadow 0.3s;
-            font-size:17px;
-            
-        }
-
-        ul li:hover {
-            background-color: #f5f5f5;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            font-size: 16px;
+            flex-wrap: wrap;
         }
 
         ul li strong {
-            text-align: left;
-            color: #333;
-            font-weight: 500;
+            flex: 0 0 80px;
+            color: #444;
         }
 
         ul li .course-name {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: #333;
-            font-size:15px;
+            flex: 1 1 auto;
+            color: #222;
+            padding-left: 10px;
+            min-width: 200px;
         }
 
         ul li a {
-            text-align: center;
-            padding: 6px 0;
-            text-decoration: none;
+            padding: 6px 12px;
             border-radius: 6px;
+            text-decoration: none;
             font-size: 14px;
-            display: block;
-            transition: background-color 0.3s, transform 0.1s;
+            transition: background-color 0.3s ease, transform 0.1s ease;
         }
 
         ul li a.edit {
@@ -327,19 +319,10 @@ if (isset($_GET['edit'])) {
             color: #0288d1;
         }
 
-        ul li a.edit:hover {
-            background-color: #bbdefb;
-            transform: translateY(-1px);
-        }
 
         ul li a.delete {
             background-color: #ffebee;
             color: #c62828;
-        }
-
-        ul li a.delete:hover {
-            background-color: #ffcdd2;
-            transform: translateY(-1px);
         }
 
         ul li a.btn {
@@ -347,7 +330,6 @@ if (isset($_GET['edit'])) {
             color: white;
         }
 
-       
     </style>
 </head>
 <body>
@@ -366,21 +348,23 @@ if (isset($_GET['edit'])) {
                 <button type="submit" name="add_course">Thêm khóa học</button>
             <?php endif; ?>
         </form>
-        <br><h2>Danh sách khóa học</h2>
+       <br><h2>Danh sách khóa học</h2>
         <?php if (empty($khoa_hoc_list)): ?>
             <p style="text-align: center; color: #666;">Chưa có khóa học nào.</p>
         <?php else: ?>
             <ul>
                 <?php foreach ($khoa_hoc_list as $kh): ?>
                     <li>
+                        <strong>ID: <?= htmlspecialchars($kh['id']) ?></strong>
                         <span class="course-name"><?= htmlspecialchars($kh['khoa_hoc']) ?></span>
                         <a href="index.php?action=add_khoahoc&edit=<?= $kh['id'] ?>" class="edit">Sửa</a>
                         <a href="index.php?action=add_khoahoc&delete=<?= $kh['id'] ?>" class="delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
-                        <a href="index.php?action=khoahoc&id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>                        
+                        <a href="index.php?action=khoahoc&id_khoa=<?= htmlspecialchars($kh['id']) ?>" class="btn">Xem test</a>
                     </li>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
+
     </div>
     </div>
 </body>

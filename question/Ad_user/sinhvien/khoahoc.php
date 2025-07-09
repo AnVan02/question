@@ -489,7 +489,7 @@ if ($id_khoa > 0 && $khoa_hoc) {
 
             <div class="form-group">
                 <label for="so_cau_hien_thi">Số câu hiển thị:</label>
-                <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi']) : '0'; ?>" min="0" required>
+                <input type="number" id="so_cau_hien_thi" name="so_cau_hien_thi" value="<?php echo $editing ? htmlspecialchars($edit_test['so_cau_hien_thi'])  : '0'; ?>" min="0" required>
                 <small style="color: #4a5568;">Đặt 0 nếu chưa có câu hỏi</small>
             </div>
             

@@ -18,8 +18,8 @@ if ($conn->connect_error) {
     die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-$ma_khoa = '4'; // Mã khóa học
-$id_test = '23'; // Mã bài test
+$ma_khoa = '31'; // Mã khóa học
+$id_test = '72'; // Mã bài test
 $student_id = $_SESSION['student_id'];
 $link_quay_lai = "index.php"; // Thay bằng URL thực tế
 $link_tiep_tuc = "dashboard.php"; // Thay bằng URL thực tế

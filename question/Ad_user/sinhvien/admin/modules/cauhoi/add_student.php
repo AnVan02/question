@@ -679,7 +679,7 @@ if ($mode == 'edit' && $student_id) {
             gap: 40px;
             flex-wrap: wrap;
             margin: 0 auto 20px;
-            max-width: 1000px;
+            max-width: 1200px;
             padding: 20px;
             background-color: #fff;
             border-radius: 12px;
@@ -749,6 +749,7 @@ if ($mode == 'edit' && $student_id) {
         th, td {
             padding: 14px 18px;
             text-align: left;
+            font-size:17px;
             border-bottom: 1px solid #e6e6e6;
             text-align: center;
         }
@@ -757,16 +758,14 @@ if ($mode == 'edit' && $student_id) {
             color: #fff;
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 14px;
+            font-size: 17px;
             border-left: 1px solid #e6e6e6;
             text-align: center;
         }
         td + td {
             border-left: 1px solid #e6e6e6;
         }
-        tr:hover {
-            background-color: #f4f6f8;
-        }
+        
         .actions form {
             display: inline-block;
             margin-right: 5px;

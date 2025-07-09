@@ -129,7 +129,7 @@ INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
 -- Cấu trúc bảng cho bảng `quiz`
 --
 
-CREATE TABLE `quiz` (
+CREATE TABLE `quizs` (
   `Id_cauhoi` int(11) NOT NULL,
   `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
   `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
@@ -137,14 +137,19 @@ CREATE TABLE `quiz` (
   `hinhanh` varchar(255) DEFAULT NULL,
   `cau_a` varchar(255) NOT NULL,
   `giaithich_a` varchar(250) NOT NULL,
+  `hinhanh` varchar(255) DEFAULT NULL,
   `cau_b` varchar(255) NOT NULL,
   `giaithich_b` varchar(255) NOT NULL,
+  `hinhanh` varchar(255) DEFAULT NULL,
   `cau_c` varchar(255) NOT NULL,
   `giaithich_c` varchar(255) NOT NULL,
+  `hinhanh` varchar(255) DEFAULT NULL,
   `cau_d` varchar(255) NOT NULL,
   `giaithich_d` varchar(255) NOT NULL,
+  `hinhanh` varchar(255) DEFAULT NULL,
   `dap_an` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Đang đổ dữ liệu cho bảng `quiz`
@@ -201,6 +206,32 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 (48, 'Cuối kỳ', 'Hoá học', 'Số hiệu nguyên tử H là?', NULL, '1', 'Đúng', '2', 'Sai', '0', 'Sai', '8', 'Sai', 'A');
 
 -- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `cauhoi`
+--
+
+CREATE TABLE `cauhoi` (
+  `Id_cauhoi` int(11) NOT NULL,
+  `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
+  `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
+  `cauhoi` varchar(255) NOT NULL,
+  `hinhanh` varchar(255) DEFAULT NULL,
+  `cau_a` varchar(255) NOT NULL,
+  `giaithich_a` varchar(250) NOT NULL,
+  `hinhanh` varchar(280) DEFAULT NULL,
+  `cau_b` varchar(255) NOT NULL,
+  `giaithich_b` varchar(255) NOT NULL,
+  `hinhanh` varchar(280) DEFAULT NULL,
+  `cau_c` varchar(255) NOT NULL,
+  `giaithich_c` varchar(255) NOT NULL,
+  `hinhanh` varchar(280) DEFAULT NULL,
+  `cau_d` varchar(255) NOT NULL,
+  `giaithich_d` varchar(255) NOT NULL,
+  `hinhanh` varchar(255) DEFAULT NULL,
+  `dap_an` varchar(280) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Cấu trúc bảng cho bảng `sinhvien`

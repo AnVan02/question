@@ -692,6 +692,10 @@ $conn->close();
                                     <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
                                 </label>
                             </li>
+                            <?php if (!empty($choise['image'])):?>
+                                <img src="<?php echo htmlspecialchars($choise['image']);?>" alt="hình ảnh đáp án">
+                            <?php endif;?>
+                                
                         <?php endforeach; ?>
                     </ul>
                     <div class="btn-area">
@@ -773,16 +777,16 @@ $conn->close();
               <!-- Hiển thị link tiếp tục khi ở trang kết quả -->
               
             <h1>Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?></h1>
-       
-            
+         
             <p><strong>Khóa học:</strong> <?php echo htmlspecialchars($ten_khoa); ?></p>
             <p><strong>Bài test:</strong> <?php echo htmlspecialchars($id_baitest); ?></p>
             <p><strong>Thời gian hoàn thành:</strong> <?php echo date('H:i:s d/m/Y'); ?></p>
-            <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
-            <p><strong>Điểm cao nhất:</strong> <?php echo $highest_score; ?> / <?php echo count($_SESSION['questions']); ?></p>
-            <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
-            <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+            <p><strong>Tổng điểm:</strong> <?php echo $_SESSION['score']; ?> / <?php echo count($questions); ?></p>
+            <p><strong>Điểm cao nhất:</strong> <?php echo $_SESSION['highest_score']; ?> / <?php echo count($questions); ?></p>
+            <p><strong>Số lần làm bài:</strong> <?php echo $_SESSION['attempts']; ?> / <?php echo $test_info['lan_thu']; ?></p>
+            <p><strong>Trạng thái:</strong> <?php echo $is_passed ? 'Đạt' : 'Không đạt'; ?></p>
             <hr>
+
             <?php if (empty($answers)): ?>
                 <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>
             <?php else: ?>
