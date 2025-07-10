@@ -50,13 +50,18 @@ INSERT INTO `account` (`account_id`, `account_name`, `account_password`, `accoun
 -- Cấu trúc bảng cho bảng `ket_qua`
 --
 
+
 CREATE TABLE `ket_qua` (
   `student_id` int(11) NOT NULL,
   `khoa_id` int(11) NOT NULL,
-  `test_id` varchar(255) NOT NULL,
-  `kq_cao_nhat` int(11) NOT NULL,
-  `tt_bai_test` text DEFAULT NULL COMMENT 'Lưu dạng JSON hoặc format thống nhất'
+  `test_id` int(11) NOT NULL,
+  `so_lan_thu` int(11) DEFAULT 1,
+  `kq_cao_nhat` int(11) DEFAULT 0,
+  `test_cao_nhat` text DEFAULT NULL COMMENT 'Lưu dạng JSON hoặc format thống nhất',
+  `test_gan_nhat` text DEFAULT NULL COMMENT 'Lưu dạng JSON hoặc format thống nhất',
+  PRIMARY KEY (`student_id`, `khoa_id`, `test_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Đang đổ dữ liệu cho bảng `ket_qua`

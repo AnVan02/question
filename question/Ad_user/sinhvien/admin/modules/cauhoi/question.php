@@ -92,7 +92,7 @@ if ($id_test > 0) {
 $questions = [];
 if ($id_test > 0 && $test_info && $khoa_hoc) {
     $conn = dbconnect();
-    $sql = "SELECT Id_cauhoi, id_baitest, ten_khoa, cauhoi, cau_a, cau_b, cau_c, cau_d, dap_an 
+    $sql = "SELECT Id_cauhoi, id_baitest, ten_khoa, cauhoi, hinhanh, cau_a, hinhanh_a, cau_b, hinhanh_b, cau_c, hinhanh_c, cau_d, hinhanh_d, dap_an 
             FROM quiz 
             WHERE id_baitest = ? AND ten_khoa = ?";
     $stmt = $conn->prepare($sql);
@@ -138,10 +138,9 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                 <table>
                     <thead>
                         <tr>
-                            <!-- <th>ID Câu hỏi</th> -->
-                            <th>Bài test</th>
-                            <th>Môn học</th>
+                            <th>ID Câu hỏi</th>
                             <th>Câu hỏi</th>
+                            <th>Hình ảnh</th>
                             <th>Hành động</th>
 
                         </tr>
@@ -149,28 +148,43 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                     <tbody>
                         <?php foreach ($questions as $question): ?>
                             <tr>
-                                <!-- <td><?php echo htmlspecialchars($question['Id_cauhoi']); ?></td> -->
-                                <td><?php echo htmlspecialchars($question['id_baitest']); ?></td>
-                                <td><?php echo htmlspecialchars($question['ten_khoa']); ?></td>
+                                <td><?php echo htmlspecialchars($question['Id_cauhoi']); ?></td>
                                 <td>
                                     <?php echo htmlspecialchars($question['cauhoi']); ?>
-                                    <ul style="margin: 8px 0 0 20px; padding: 0;">
-                                        <p<?php if ($question['dap_an'] == 'A') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
-                                            A. <?php echo htmlspecialchars($question['cau_a']); ?>
-                                        </p>
-                                        <p<?php if ($question['dap_an'] == 'B') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
-                                            B. <?php echo htmlspecialchars($question['cau_a']); ?>
-                                        </p>
-                                        <p<?php if($question['dap_an'] == 'C') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
-                                            C. <?php echo htmlspecialchars($question['cau_c']);?>
-                                        </p>
-                                        <p<?php if($question['dap_an'] == 'D') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
-                                            D. <?php echo htmlspecialchars($question ['cau_d']);?>
-                                        </p>
-
+                                    <ul class="answer-list">
+                                        <li<?php if ($question['dap_an'] == 'A') echo ' class="correct"'; ?>>
+                                            <span class="answer-label">A.</span>
+                                            <span class="answer-text"><?php echo htmlspecialchars($question['cau_a']); ?></span>
+                                            <?php if (!empty($question['hinhanh_a'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_a']); ?>" alt="Hình A">
+                                            <?php endif; ?>
+                                        </li>
+                                        <li<?php if ($question['dap_an'] == 'B') echo ' class="correct"'; ?>>
+                                            <span class="answer-label">B.</span>
+                                            <span class="answer-text"><?php echo htmlspecialchars($question['cau_b']); ?></span>
+                                            <?php if (!empty($question['hinhanh_b'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_b']); ?>" alt="Hình B">
+                                            <?php endif; ?>
+                                        </li>
+                                        <li<?php if ($question['dap_an'] == 'C') echo ' class="correct"'; ?>>
+                                            <span class="answer-label">C.</span>
+                                            <span class="answer-text"><?php echo htmlspecialchars($question['cau_c']); ?></span>
+                                            <?php if (!empty($question['hinhanh_c'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_c']); ?>" alt="Hình C">
+                                            <?php endif; ?>
+                                        </li>
+                                        <li<?php if ($question['dap_an'] == 'D') echo ' class="correct"'; ?>>
+                                            <span class="answer-label">D.</span>
+                                            <span class="answer-text"><?php echo htmlspecialchars($question['cau_d']); ?></span>
+                                            <?php if (!empty($question['hinhanh_d'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_d']); ?>" alt="Hình D">
+                                            <?php endif; ?>
+                                        </li>
                                     </ul>
                                 </td>
-
+                                <td>
+                                   
+                                </td>
                                 <td>
                                     <a href="index.php?action=add_question&question_id=<?php echo htmlspecialchars($question['Id_cauhoi']); ?>&id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-edit">Sửa</a>
                                     <a href="<?php echo htmlspecialchars('index.php?action=question&id_test=' . $id_test . '&delete_id=' . $question['Id_cauhoi']); ?>" 
@@ -189,94 +203,166 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
     </div>
     <style>
        
-        .container {
-            max-width: 1250px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            margin-bottom: 25px;
-            color: #2d3748;
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-            padding: 10px;
-            background-color: #edf2f7;
-            border-radius: 8px;
-        }
+        body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f4f8;
+    margin: 0;
+    padding: 0;
+}
 
-        .message.success {
-            color: #2f855a;
-            background-color: #e6fff3;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .message.error {
-            color: #c53030;
-            background-color: #fff5f5;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        th, td {
-            /* padding: 12px 15px; */
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            font-size:17px;
-            
-        }
-        th {
-            background-color:  #3182ce;
-            color: white;
-            font-weight: 600;
-            font-size:17px;
-        }
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-        .btn-add, .btn-edit, .btn-delete, .btn-back {
-            display: inline-block;
-            padding: 8px 12px;
-            margin-right: 5px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        .btn-add {
-            background-color:rgb(245, 17, 17);
-            color: white;
-        }
-        .btn-edit {
-            background-color: #e3f2fd;
-            color: #0288d1;
-        }
-        
-        .btn-delete {
-            background-color: #ffebee;
-            color: #c62828;
-        }
-   
-        .btn-back {
-            background-color:  #3182ce;
-            color: white;
-            margin-bottom: 20px;
-        }
-      
+.container {
+    max-width: 1250px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+    margin-bottom: 25px;
+    color: #2d3748;
+    font-size: 26px;
+    font-weight: 700;
+    text-align: center;
+    background-color: #edf2f7;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.message.success {
+    color: #2f855a;
+    background-color: #e6fff3;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.message.error {
+    color: #c53030;
+    background-color: #fff5f5;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #ddd;
+    font-size: 17px;
+    vertical-align: top;
+}
+
+th {
+    background-color: #3182ce;
+    color: white;
+    font-weight: 600;
+    text-align: left;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.btn-add,
+.btn-edit,
+.btn-delete,
+.btn-back {
+    display: inline-block;
+    padding: 10px 14px;
+    margin: 10px 5px 15px 0;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+
+.btn-add {
+    background-color: #e53e3e;
+    color: #fff;
+}
+
+.btn-edit {
+    background-color: #e3f2fd;
+    color: #0288d1;
+}
+
+.btn-delete {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.btn-back {
+    background-color: #3182ce;
+    color: #fff;
+}
+
+.answer-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 10px 0;
+}
+
+.answer-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #cbd5e0;
+    font-size: 16px;
+    flex-wrap: wrap;
+}
+
+.answer-label {
+    font-weight: bold;
+    min-width: 24px;
+    color: #2d3748;
+}
+
+.answer-text {
+    flex: 1;
+    word-break: break-word;
+}
+
+.answer-list img {
+    max-width: 160px;
+    max-height: 120px;
+    border: 2px solid #3182ce;
+    border-radius: 10px;
+    padding: 4px;
+    background: #f7fafc;
+    transition: 0.3s ease;
+}
+
+.answer-list img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(49, 130, 206, 0.5);
+}
+
+.answer-list li.correct {
+    color: #2b6cb0;
+    font-weight: bold;
+    background: #ebf8ff;
+    border-left: 4px solid #3182ce;
+    padding-left: 12px;
+    font-size: 18px;
+}
+
     </style>
 </body>
 </html>

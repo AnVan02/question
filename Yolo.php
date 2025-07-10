@@ -276,8 +276,7 @@ $conn->close();
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
-            text-decoration: none;
+            margin-top: 10px;AA
             display: inline-block;
             transition: background-color 0.3s;
         }
