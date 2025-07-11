@@ -1,58 +1,187 @@
 <?php
-// ------------------- KẾT NỐI CSDL -------------------
-function dbconnect() {
-    $conn = new mysqli("localhost", "root", "", "student");
-    if ($conn->connect_error) {
-        error_log("Kết nối thất bại: " . $conn->connect_error);
-        die("Lỗi kết nối CSDL: " . $conn->connect_error);
-    }
-    $conn->set_charset('utf8mb4');
-    return $conn;
+// Bắt đầu session và bật output buffering
+session_start();
+ob_start();
+
+// Thiết lập múi giờ và báo lỗi
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Kiểm tra đăng nhập
+if (!isset($_SESSION['student_id'])) {
+    header("Location: login.php");
+    exit();
 }
 
-$conn = dbconnect();
+// Kết nối cơ sở dữ liệu
+$conn = new mysqli("localhost", "root", "", "student");
+if ($conn->connect_error) {
+    die("Kết nối thất bại: " . $conn->connect_error);
+}
 
-$errors = [];
-$success = false;
+// Thiết lập các biến
+$ma_khoa = '10'; // Mã khóa học
+$id_test = '71'; // Mã bài test
+$student_id = $_SESSION['student_id'];
+$link_quay_lai = "index.php";
+$link_tiep_tuc = "dashboard.php";
+$pass_score = 4; // Điểm đạt
 
-// ------------------- XỬ LÝ FORM -------------------
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_add'])) {
-    $account_id = trim($_POST['account_id']);
-    $account_name = trim($_POST['account_name']);
-    $account_email = trim($_POST['account_email']);
-    $account_password = $_POST['account_password'];
-    $account_type = trim($_POST['account_type']);
+// Kiểm tra quyền truy cập khóa học
+$stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
+$stmt->bind_param("s", $student_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 
-    // Kiểm tra dữ liệu rỗng
-    if (empty($account_id) || empty($account_name) || empty($account_email) || empty($account_password) || empty($account_type)) {
-        $errors[] = "Vui lòng nhập đầy đủ thông tin!";
+// Kiểm tra ID bài test
+$stmt = $conn->prepare("SELECT ten_test FROM test WHERE id_test = ?");
+$stmt->bind_param("i", $id_test);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($result->num_rows == 0) {
+    echo "<script>alert('ID bài test ($id_test) không tồn tại trong hệ thống. Vui lòng kiểm tra lại!');</script>";
+    exit();
+}
+$row = $result->fetch_assoc();
+$id_baitest = $row['ten_test'];
+$stmt->close();
+
+// Lấy thông tin khóa học
+$stmt = $conn->prepare("SELECT khoa_hoc FROM khoa_hoc WHERE id = ?");
+$stmt->bind_param("s", $ma_khoa);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($row = $result->fetch_assoc()) {
+    $ten_khoa = $row['khoa_hoc'];
+} else {
+    die("Lỗi: Không tìm thấy khóa học với mã '$ma_khoa'");
+}
+$stmt->close();
+
+// Hàm lấy danh sách câu hỏi từ database
+function getQuestionsFromDB($conn, $ten_khoa, $id_baitest) {
+    $stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ? ORDER BY Id_cauhoi");
+    $stmt->bind_param("ss", $ten_khoa, $id_baitest);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $questions = [];
+    while ($row = $result->fetch_assoc()) {
+        $questions[] = [
+            'id' => $row['Id_cauhoi'],
+            'question' => $row['cauhoi'],
+            'choices' => [
+                'A' => $row['cau_a'],
+                'B' => $row['cau_b'],
+                'C' => $row['cau_c'],
+                'D' => $row['cau_d']
+            ],
+            'correct' => $row['dap_an'],
+            'image' => $row['hinhanh']
+        ];
     }
+    $stmt->close();
+    return $questions;
+}
 
-    // Kiểm tra trùng ID hoặc email
-    if (empty($errors)) {
-        $stmt = $conn->prepare("SELECT * FROM account WHERE account_email = ? OR account_id = ?");
-        $stmt->bind_param("ss", $account_email, $account_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $errors[] = "Email hoặc ID đã tồn tại!";
+// Khởi tạo biến session
+if (!isset($_SESSION['questions'])) {
+    $_SESSION['questions'] = getQuestionsFromDB($conn, $ten_khoa, $id_baitest);
+    $_SESSION['current_index'] = 0;
+    $_SESSION['answers'] = [];
+    $_SESSION['score'] = 0;
+    $_SESSION['attempts'] = 1;
+}
+
+$questions = $_SESSION['questions'];
+$current_index = $_SESSION['current_index'];
+$answers = $_SESSION['answers'];
+$score = $_SESSION['score'];
+$attempts = $_SESSION['attempts'];
+
+// Xử lý khi người dùng gửi câu trả lời
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['answer_submit'])) {
+        $user_answer = $_POST['answer'];
+        $current_question = $questions[$current_index];
+        $is_correct = ($user_answer === $current_question['correct']);
+        
+        $answers[$current_index] = [
+            'selected' => $user_answer,
+            'is_correct' => $is_correct
+        ];
+        
+        if ($is_correct) {
+            $score++;
         }
-        $stmt->close();
-    }
-
-    // Thêm tài khoản
-    if (empty($errors)) {
-        $hashed_password = password_hash($account_password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO account (account_id, account_name, account_password, account_email, account_type, account_status) VALUES (?, ?, ?, ?, ?, 0)");
-        $stmt->bind_param("sssss", $account_id, $account_name, $hashed_password, $account_email, $account_type);
-        if ($stmt->execute()) {
-            $success = true;
+        
+        $_SESSION['answers'] = $answers;
+        $_SESSION['score'] = $score;
+        
+        // Chuyển đến câu tiếp theo hoặc kết thúc
+        if ($current_index < count($questions) - 1) {
+            $_SESSION['current_index']++;
         } else {
-            $errors[] = "Lỗi khi thêm tài khoản: " . $conn->error;
+            // Lưu kết quả vào database khi hoàn thành bài test
+            saveTestResult($conn, $student_id, $ma_khoa, $id_test, $answers, $score);
         }
-        $stmt->close();
+        
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
+    // Xử lý nút "Nộp bài"
+    if (isset($_POST['submit'])) {
+        saveTestResult($conn, $student_id, $ma_khoa, $id_test, $answers, $score);
+        $_SESSION['current_index'] = count($questions); // Kết thúc bài test
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
+    // Xử lý nút "Làm lại"
+    if (isset($_POST['reset'])) {
+        $_SESSION['current_index'] = 0;
+        $_SESSION['answers'] = [];
+        $_SESSION['score'] = 0;
+        $_SESSION['attempts']++;
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
     }
 }
+
+// Hàm lưu kết quả vào database
+function saveTestResult($conn, $student_id, $ma_khoa, $id_test, $answers, $score) {
+    $tt_bai_test = '';
+    foreach ($answers as $index => $answer) {
+        $tt_bai_test .= $index . ":" . $answer['selected'] . ";";
+    }
+    $tt_bai_test = rtrim($tt_bai_test, ";");
+    
+    // Kiểm tra xem đã có kết quả chưa
+    $stmt = $conn->prepare("SELECT kq_cao_nhat FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+    $stmt->bind_param("sis", $student_id, $ma_khoa, $id_test);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $highest_score = max($score, $row['kq_cao_nhat']);
+        
+        $stmt = $conn->prepare("UPDATE ket_qua SET kq_cao_nhat = ?, test_gan_nhat = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+        $stmt->bind_param("issis", $highest_score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
+    } else {
+        $stmt = $conn->prepare("INSERT INTO ket_qua (student_id, khoa_id, test_id, kq_cao_nhat, test_gan_nhat) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sisis", $student_id, $ma_khoa, $id_test, $score, $tt_bai_test);
+    }
+    
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Đóng kết nối database
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -60,222 +189,203 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_add'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý tài khoản</title>
+    <title>Bài kiểm tra - <?php echo htmlspecialchars($ten_khoa); ?></title>
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #16a34a;
-            --error-color: #dc2626;
-            --border-color: #e5e7eb;
-            --background-color: #f9fafb;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Inter', Arial, sans-serif;
-            background-color: var(--background-color);
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+            margin: 0;
+            padding: 20px;
+            font-size: 17px;
+            color: #333;
         }
-
-        h2 {
-            color: #1f2937;
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-            font-weight: 600;
+        .container {
+            max-width: 70%;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-
-        .form-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
+        h1, h2, h3 {
+            color: #2c3e50;
+            text-align: center;
         }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
+        .question-box {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 14px;
+            margin-bottom: 30px;
+            border-left: 6px solid #007bff;
+            transition: box-shadow 0.2s;
         }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+        .question-box h3 {
+            color: #007bff;
+            margin-top: 0;
         }
-
-        label {
-            font-weight: 500;
-            color: #374151;
-            font-size: 0.9rem;
-        }
-
-        input {
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-            width: 100%;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .submit-btn {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-
-        .submit-btn:hover {
-            background-color: #1d4ed8;
-        }
-
-        .error {
-            background-color: #fee2e2;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            color: var(--error-color);
-            margin-bottom: 1rem;
-        }
-
-        .error ul {
+        ul {
             list-style: none;
-            margin-top: 0.5rem;
+            padding: 0;
         }
-
-        .success {
-            background-color: #dcfce7;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            color: var(--success-color);
-            margin-bottom: 1rem;
+        ul li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f1f1f1;
         }
-
-        .table-container {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        ul li label {
+            font-size: 17px;
+            cursor: pointer;
         }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+        li.correct {
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: bold;
         }
-
-        th, td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
+        li.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
         }
-
-        th {
-            background-color: #f3f4f6;
-            font-weight: 600;
-            color: #374151;
+        button, a.try-again, a.back-to-quiz, a.nav-link {
+            padding: 10px 28px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s;
+            margin-right: 10px;
         }
-
-        tr:last-child td {
-            border-bottom: none;
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
-
-        tr:hover {
-            background-color: #f9fafb;
+        a.try-again.disabled {
+            background-color: #ccc;
+            pointer-events: none;
+            cursor: not-allowed;
         }
-
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
+        a.nav-link {
+            background-color: #28a745;
+        }
+      
+        button:hover:not(:disabled), a.try-again:hover:not(.disabled), a.back-to-quiz:hover {
+            background-color: #0056b3;
+        }
+        img {
+            max-width: 40%;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #eee;
+            display: block;
+        }
+        .explanation-block {
+            margin-top: 10px;
+            padding: 15px;
+            border-left: 6px solid;
+            background-color: #fff3cd;
+            border-radius: 6px;
+        }
+        .correct-answer {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .no-answers {
+            color: #e74c3c;
+            text-align: center;
+            font-weight: bold;
+        }
+        .btn-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navigation-links {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        .debug-info {
+            background-color: #f8d7da;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none; /* Bật khi cần debug */
         }
     </style>
 </head>
 <body>
-    <h2>Thêm tài khoản mới</h2>
-
-    <?php if (!empty($errors)): ?>
-        <div class="error">
-            <ul>
-                <?php foreach ($errors as $e): ?>
-                    <li><?= htmlspecialchars($e) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php elseif ($success): ?>
-        <div class="success">✅ Tài khoản đã được thêm thành công!</div>
-    <?php endif; ?>
-
-    <div class="form-container">
-        <form method="POST">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>ID tài khoản</label>
-                    <input type="text" name="account_id" required>
+    <div class="container">
+        <?php if ($current_index < count($questions)): ?>
+            <!-- Hiển thị câu hỏi hiện tại -->
+            <div class="navigation-links">
+                <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link">← Quay lại</a>
+            </div>
+            
+            <h2>
+                Môn học: <span style="color:#1565c0;"><?php echo htmlspecialchars($ten_khoa); ?></span><br>
+                Bài thi: <span style="color:#e67e22;"><?php echo htmlspecialchars($id_baitest); ?></span>
+            </h2>
+            
+            <form method="POST" action="">
+                <div class="question-box">
+                    <h3>Câu <?php echo $current_index + 1; ?> / <?php echo count($questions); ?>: <?php echo htmlspecialchars($questions[$current_index]['question']); ?></h3>
+                    
+                    <?php if (!empty($questions[$current_index]['image'])): ?>
+                        <img src="admin/<?php echo htmlspecialchars($questions[$current_index]['image']); ?>" alt="Hình ảnh câu hỏi">
+                    <?php endif; ?>
+                    
+                    <ul>
+                        <?php foreach ($questions[$current_index]['choices'] as $key => $value): ?>
+                            <li>
+                                <label>
+                                    <input type="radio" name="answer" value="<?php echo $key; ?>" 
+                                        <?php echo isset($answers[$current_index]) && $answers[$current_index]['selected'] === $key ? 'checked' : ''; ?> 
+                                        required>
+                                    <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
+                                </label>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    
+                    <div class="btn-area">
+                        <button type="button" onclick="window.history.back()" <?php echo $current_index == 0 ? 'disabled' : ''; ?>>Câu trước</button>
+                        
+                        <?php if ($current_index == count($questions) - 1): ?>
+                            <button type="submit" name="submit">Nộp bài</button>
+                        <?php else: ?>
+                            <button type="submit" name="answer_submit">Câu sau</button>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Tên tài khoản</label>
-                    <input type="text" name="account_name" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="account_email" required>
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu</label>
-                    <input type="password" name="account_password" required>
-                </div>
-                <div class="form-group">
-                    <label>Loại tài khoản</label>
-                    <input type="text" name="account_type" required>
+            </form>
+            
+        <?php else: ?>
+            <!-- Hiển thị kết quả sau khi hoàn thành bài test -->
+            <div class="result-container">
+                <h2>Kết quả bài kiểm tra</h2>
+                <p>Bạn đã hoàn thành bài kiểm tra với:</p>
+                <p class="score">Điểm số: <?php echo $score; ?>/<?php echo count($questions); ?></p>
+                <p class="status"><?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+                
+                <div class="btn-area">
+                    <form method="POST" action="">
+                        <button type="submit" name="reset">Làm lại</button>
+                    </form>
+                    <a href="<?php echo $link_tiep_tuc; ?>" class="nav-link">Tiếp tục</a>
                 </div>
             </div>
-            <input type="submit" name="btn_add" value="Thêm tài khoản" class="submit-btn">
-        </form>
-    </div>
-
-    <h2>Danh sách tài khoản</h2>
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Tên tài khoản</th>
-                <th>Email</th>
-                <th>Loại</th>
-            </tr>
-            <?php
-            $result = $conn->query("SELECT * FROM account");
-            if ($result && $result->num_rows > 0):
-                while ($row = $result->fetch_assoc()):
-            ?>
-            <tr>
-                <td><?= htmlspecialchars($row['account_id']) ?></td>
-                <td><?= htmlspecialchars($row['account_name']) ?></td>
-                <td><?= htmlspecialchars($row['account_email']) ?></td>
-                <td><?= htmlspecialchars($row['account_type']) ?></td>
-            </tr>
-            <?php endwhile; else: ?>
-            <tr><td colspan="4">Chưa có tài khoản nào.</td></tr>
-            <?php endif; ?>
-        </table>
+        <?php endif; ?>
     </div>
 </body>
 </html>
+
+<?php ob_end_flush(); ?>

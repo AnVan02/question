@@ -12,8 +12,6 @@ if (!isset($_SESSION['student_id'])) {
     exit();
 }
 
-
-
 // Kết nối cơ sở dữ liệu
 $conn = new mysqli("localhost", "root", "", "student");
 if ($conn->connect_error) {
@@ -25,6 +23,7 @@ $id_test = '71'; // Mã bài test
 $student_id = $_SESSION['student_id'];
 $link_quay_lai = "index.php"; // Thay bằng URL thực tế
 $link_tiep_tuc = "dashboard.php"; // Thay bằng URL thực tế
+$page="page2.php";
 
 // Kiểm tra quyền truy cập khóa học
 $stmt = $conn->prepare("SELECT Khoahoc FROM students WHERE Student_ID = ?");
@@ -64,6 +63,22 @@ $row = $result->fetch_assoc();
 $id_baitest = $row['ten_test'];
 $stmt->close();
 
+// Lấy kết quả lần thử gần nhất và số lần thử
+$last_attempt_score = 0;
+$last_attempt_answers = 'Không có câu trả lời';
+$attempts = 0;
+$stmt = $conn->prepare("SELECT kq_cao_nhat, test_gan_nhat, so_lan_thu FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ? ORDER BY student_id DESC LIMIT 1");
+$stmt->bind_param("sis", $student_id, $ma_khoa, $id_test);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $last_attempt_score = $row['kq_cao_nhat'];
+    $last_attempt_answers = $row['test_gan_nhat'];
+    $attempts = (int)$row['so_lan_thu'];
+}
+$stmt->close();
+
 // Lấy danh sách khóa học
 function getCoursesFromDB($conn) {
     $sql = "SELECT id, khoa_hoc FROM khoa_hoc";
@@ -93,10 +108,12 @@ function getTestInfo($conn, $ten_test, $ten_khoa) {
         return $row['lan_thu'];
     }
     $stmt->close();
+
     return 1;
 }
+
 // Hàm lưu câu trả lời vào bảng ket_qua
-function saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score) {
+function saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score, $attempts) {
     // Xây dựng tt_bai_test
     $tt_bai_test = '';
     if (!empty($answers)) {
@@ -124,20 +141,21 @@ function saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, 
     }
 
     // Lưu hoặc cập nhật vào bảng ket_qua
-    $stmt = $conn->prepare("SELECT kq_cao_nhat FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+    $stmt = $conn->prepare("SELECT kq_cao_nhat, test_cao_nhat FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
     $stmt->bind_param("sis", $student_id, $ma_khoa, $id_test);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         $highest_score = max($calculated_score, $row['kq_cao_nhat']);
-        $stmt = $conn->prepare("UPDATE ket_qua SET kq_cao_nhat = ?, tt_bai_test = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-        $stmt->bind_param("issis", $highest_score, $tt_bai_test, $student_id, $ma_khoa, $id_test);
+        $test_cao_nhat = $highest_score > $row['kq_cao_nhat'] ? $tt_bai_test : $row['test_cao_nhat'];
+        $stmt = $conn->prepare("UPDATE ket_qua SET kq_cao_nhat = ?, test_cao_nhat = ?, test_gan_nhat = ?, so_lan_thu = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+        $stmt->bind_param("issisis", $highest_score, $test_cao_nhat, $tt_bai_test, $attempts, $student_id, $ma_khoa, $id_test);
         $stmt->execute();
     } else {
         $highest_score = $calculated_score;
-        $stmt = $conn->prepare("INSERT INTO ket_qua (student_id, khoa_id, test_id, kq_cao_nhat, tt_bai_test) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("isiss", $student_id, $ma_khoa, $id_test, $highest_score, $tt_bai_test);
+        $stmt = $conn->prepare("INSERT INTO ket_qua (student_id, khoa_id, test_id, so_lan_thu, kq_cao_nhat, test_cao_nhat, test_gan_nhat) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isisiss", $student_id, $ma_khoa, $id_test, $attempts, $highest_score, $tt_bai_test, $tt_bai_test);
         $stmt->execute();
     }
     $stmt->close();
@@ -150,7 +168,6 @@ $current_index = isset($_SESSION['current_index']) ? intval($_SESSION['current_i
 $answers = isset($_SESSION['answers']) ? $_SESSION['answers'] : [];
 $score = isset($_SESSION['score']) ? $_SESSION['score'] : 0;
 $highest_score = isset($_SESSION['highest_score']) ? $_SESSION['highest_score'] : 0;
-$attempts = isset($_SESSION['attempts']) ? $_SESSION['attempts'] : 0;
 $pass_score = 4; // Điểm đạt
 
 // Lấy tên khóa học và câu hỏi
@@ -198,12 +215,10 @@ if ($row = $result->fetch_assoc()) {
     $_SESSION['ten_khoa'] = $ten_khoa;
     $_SESSION['id_baitest'] = $id_baitest;
     if (!isset($_SESSION['attempts'])) {
-        $_SESSION['attempts'] = 1;
-        $attempts = 1;
+        $_SESSION['attempts'] = $attempts + 1;
     }
 } else {
     die("Lỗi: Không tìm thấy khóa học với mã '$ma_khoa'");
-
 }
 $stmt->close();
 $stmt2->close();
@@ -223,7 +238,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['answer_submit']) && i
         $_SESSION['score'] = $score;
     }
     // Lưu câu trả lời vào cơ sở dữ liệu
-    $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score);
+    $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score, $_SESSION['attempts']);
     $_SESSION['highest_score'] = $highest_score;
     
     // Chỉ tăng current_index nếu chưa phải câu cuối
@@ -286,11 +301,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['previous'])) {
     exit;
 }
 
-
 // Xử lý nộp bài
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['submit'])) {
     // Lưu lại toàn bộ câu trả lời trước khi hiển thị kết quả
-    $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score);
+    $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score, $_SESSION['attempts']);
     $_SESSION['highest_score'] = $highest_score;
     $current_index = count($_SESSION['questions']);
     $_SESSION['current_index'] = $current_index;
@@ -300,19 +314,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['submit'])) {
 
 // Xử lý thiết lập lại
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['reset'])) {
-    $attempts++;
-    $_SESSION['attempts'] = $attempts;
+    $_SESSION['attempts'] = $attempts + 1;
     $_SESSION['score'] = 0;
     $_SESSION['answers'] = [];
     $_SESSION['current_index'] = 0;
     $current_index = 0;
     $score = 0;
     $answers = [];
-    // Xóa dữ liệu cũ trong ket_qua
-    $stmt = $conn->prepare("DELETE FROM ket_qua WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
-    $stmt->bind_param("sis", $student_id, $ma_khoa, $id_test);
-    $stmt->execute();
-    $stmt->close();
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
@@ -323,8 +331,8 @@ function cleanDeletedQuestionsFromResults($conn, $deleted_question_id, $id_baite
         $conn->begin_transaction();
 
         // Lấy tất cả bản ghi có chứa câu hỏi đã xóa
-        $stmt = $conn->prepare("SELECT student_id, khoa_id, test_id, tt_bai_test, kq_cao_nhat FROM ket_qua WHERE tt_bai_test LIKE CONCAT('%', ?, ':%')");
-        $stmt->bind_param("i", $deleted_question_id);
+        $stmt = $conn->prepare("SELECT student_id, khoa_id, test_id, test_gan_nhat, test_cao_nhat, kq_cao_nhat, so_lan_thu FROM ket_qua WHERE test_gan_nhat LIKE CONCAT('%', ?, ':%') OR test_cao_nhat LIKE CONCAT('%', ?, ':%')");
+        $stmt->bind_param("ii", $deleted_question_id, $deleted_question_id);
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -341,18 +349,20 @@ function cleanDeletedQuestionsFromResults($conn, $deleted_question_id, $id_baite
         }
         $stmt_quiz->close();
 
-        $update_stmt = $conn->prepare("UPDATE ket_qua SET tt_bai_test = ?, kq_cao_nhat = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
+        $update_stmt = $conn->prepare("UPDATE ket_qua SET test_gan_nhat = ?, test_cao_nhat = ?, kq_cao_nhat = ?, so_lan_thu = ? WHERE student_id = ? AND khoa_id = ? AND test_id = ?");
         $affected_rows = 0;
 
         while ($row = $result->fetch_assoc()) {
             $student_id = $row['student_id'];
             $khoa_id = $row['khoa_id'];
             $test_id = $row['test_id'];
-            $tt_bai_test = $row['tt_bai_test'];
+            $test_gan_nhat = $row['test_gan_nhat'];
+            // $test_cao_nhat = $row['test_cao_nhat'];
             $current_highest_score = $row['kq_cao_nhat'];
+            $so_lan_thu = $row['so_lan_thu'];
 
-            // Xóa câu hỏi đã bị xóa khỏi tt_bai_test
-            $pairs = explode(';', $tt_bai_test);
+            // Xóa câu hỏi đã bị xóa khỏi test_gan_nhat
+            $pairs = explode(';', $test_gan_nhat);
             $new_pairs = [];
             foreach ($pairs as $pair) {
                 if (empty($pair)) continue;
@@ -361,12 +371,24 @@ function cleanDeletedQuestionsFromResults($conn, $deleted_question_id, $id_baite
                     $new_pairs[] = $pair;
                 }
             }
-            $new_tt_bai_test = implode(';', $new_pairs);
+            $new_test_gan_nhat = implode(';', $new_pairs);
 
-            // Tính lại điểm số
+            // Xóa câu hỏi đã bị xóa khỏi test_cao_nhat
+            $pairs = explode(';', $test_cao_nhat);
+            $new_pairs = [];
+            foreach ($pairs as $pair) {
+                if (empty($pair)) continue;
+                $parts = explode(':', $pair);
+                if (count($parts) === 2 && $parts[0] != $deleted_question_id) {
+                    $new_pairs[] = $pair;
+                }
+            }
+            $new_test_cao_nhat = implode(';', $new_pairs);
+
+            // Tính lại điểm số cho test_cao_nhat
             $new_score = 0;
-            if (!empty($new_tt_bai_test) && $new_tt_bai_test !== 'Không có câu trả lời') {
-                $pairs = explode(';', $new_tt_bai_test);
+            if (!empty($new_test_cao_nhat) && $new_test_cao_nhat !== 'Không có câu trả lời') {
+                $pairs = explode(';', $new_test_cao_nhat);
                 foreach ($pairs as $pair) {
                     if (empty($pair)) continue;
                     $parts = explode(':', $pair);
@@ -382,7 +404,7 @@ function cleanDeletedQuestionsFromResults($conn, $deleted_question_id, $id_baite
             $new_highest_score = min($new_score, $current_highest_score, $total_questions);
 
             // Cập nhật ket_qua
-            $update_stmt->bind_param("sisii", $new_tt_bai_test, $new_highest_score, $student_id, $khoa_id, $test_id);
+            $update_stmt->bind_param("ssisisi", $new_test_gan_nhat, $new_test_cao_nhat, $new_highest_score, $so_lan_thu, $student_id, $khoa_id, $test_id);
             $update_stmt->execute();
             $affected_rows += $update_stmt->affected_rows;
         }
@@ -433,7 +455,7 @@ function deleteQuizQuestion($conn, $question_id, $id_baitest, $ten_khoa) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_question'])) {
     $question_id = (int)$_POST['delete_question'];
     $result = deleteQuizQuestion($conn, $question_id, $id_baitest, $ten_khoa);
-        if ($result['success']) {
+    if ($result['success']) {
         // Cập nhật lại danh sách câu hỏi từ database
         $stmt = $conn->prepare("SELECT * FROM quiz WHERE ten_khoa = ? AND id_baitest = ?");
         $stmt->bind_param("ss", $ten_khoa, $id_baitest);
@@ -477,10 +499,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_question'])) {
         $_SESSION['error'] = "Lỗi: " . $result['error'];
     }
 
-
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
 
 // Số lần thử tối đa
 $max_attempts = getTestInfo($conn, $id_baitest, $ten_khoa);
@@ -527,7 +548,6 @@ $conn->close();
             color: #007bff;
             margin-top: 0;
         }
-        
         ul {
             list-style: none;
             padding: 0;
@@ -578,7 +598,6 @@ $conn->close();
         a.nav-link {
             background-color: #28a745;
         }
-      
         button:hover:not(:disabled), a.try-again:hover:not(.disabled), a.back-to-quiz:hover {
             background-color: #0056b3;
         }
@@ -617,12 +636,11 @@ $conn->close();
             background-color: #f8f9fa;
             border-radius: 10px;
         }
-        .debug-info {
-            background-color: #f8d7da;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            display: none; /* Bật khi cần debug */
+        .last-attempt {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -630,9 +648,9 @@ $conn->close();
     <div class="container">
         <?php if ($current_index < count($_SESSION['questions'])): ?>
             <!-- Hiển thị link quay lại khi đang làm bài test -->
-                <div class="navigation-links">
-                    <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link" style="margin-right: 85%;">← Quay lại</a>
-                </div>
+            <div class="navigation-links">
+                <a href="<?php echo htmlspecialchars($link_quay_lai); ?>" class="nav-link" style="margin-right: 85%;">← Quay lại</a>
+            </div>
             
             <?php $question = $_SESSION['questions'][$current_index]; ?>
             <h2>
@@ -644,11 +662,9 @@ $conn->close();
                     <h3>Câu <?php echo $current_index + 1; ?> / <?php echo count($_SESSION['questions']); ?>: <?php echo htmlspecialchars($question['question']); ?></h3>
                     <?php if (!empty($question['image'])): ?>
                         <div style="display: flex; justify-content: center">
-                            <img src="<?php echo 'admin/' . htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi";>
+                            <img src="<?php echo 'admin/' . htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
                         </div>
                     <?php endif; ?>
-                 
-
                     <ul>
                         <?php foreach ($question['choices'] as $key => $value): ?>
                             <li>
@@ -658,13 +674,11 @@ $conn->close();
                                         required> 
                                     <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
                                 </label>
-                            <?php if (!empty($question['images'][$key])): ?>
-                                <br><img src="<?php echo 'admin/' . htmlspecialchars($question['images'][$key]); ?>" alt="Ảnh đáp án <?php echo htmlspecialchars($key); ?>">
-                            <?php endif; ?>
-
+                                <?php if (!empty($question['images'][$key])): ?>
+                                    <br><img src="<?php echo 'admin/' . htmlspecialchars($question['images'][$key]); ?>" alt="Ảnh đáp án <?php echo htmlspecialchars($key); ?>">
+                                <?php endif; ?>
                             </li>
                         <?php endforeach; ?>
-
                     </ul>
                     <div class="btn-area">
                         <button type="submit" name="previous" <?php echo $current_index == 0 ? 'disabled' : ''; ?>>Câu trước</button>
@@ -673,7 +687,6 @@ $conn->close();
                         <?php else: ?>
                             <button type="submit" name="next">Câu sau</button>
                         <?php endif; ?>
-                        <!-- <button type="submit" name="answer_submit">Trả lời</button> -->
                     </div>
                 </div>
             </form>
@@ -708,64 +721,44 @@ $conn->close();
             if ($conn->connect_error) {
                 die("Kết nối thất bại: " . $conn->connect_error);
             }
-            $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score);
+            $highest_score = saveAnswerToDatabase($conn, $student_id, $ma_khoa, $id_test, $answers, $score, $_SESSION['attempts']);
             $_SESSION['highest_score'] = $highest_score;
-
-            // Kiểm tra câu hỏi hợp lệ
-            $question_ids = [];
-            if (!empty($tt_bai_test) && $tt_bai_test !== 'Không có câu trả lời') {
-                $pairs = explode(';', $tt_bai_test);
-                foreach ($pairs as $pair) {
-                    if (!empty($pair) && strpos($pair, ':') !== false) {
-                        list($id, $answer) = explode(':', $pair, 2);
-                        $id = trim($id);
-                        if (!empty($id)) {
-                            $question_ids[] = $id;
-                        }
-                    }
-                }
-            }
-
-            // Lấy danh sách ID câu hỏi hợp lệ
-            $valid_question_ids = [];
-            $stmt = $conn->prepare("SELECT Id_cauhoi FROM quiz WHERE id_baitest = ? AND ten_khoa = ?");
-            $stmt->bind_param("ss", $id_baitest, $ten_khoa);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $valid_question_ids[] = $row['Id_cauhoi'];
-                }
-            } else {
-                error_log("Không tìm thấy câu hỏi cho id_baitest='$id_baitest' và ten_khoa='$ten_khoa'");
-            }
-            $stmt->close();
             $conn->close();
+            
+            
             ?>
             
-            <h1>Kết quả Quiz - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?></h1>
             
+            <h1>Kết quả bài test gần nhất - <?php echo htmlspecialchars($ten_khoa); ?> - <?php echo htmlspecialchars($id_baitest); ?></h1>
             <p><strong>Khóa học:</strong> <?php echo htmlspecialchars($ten_khoa); ?></p>
             <p><strong>Bài test:</strong> <?php echo htmlspecialchars($id_baitest); ?></p>
             <p><strong>Thời gian hoàn thành:</strong> <?php echo date('H:i:s d/m/Y'); ?></p>
-            <p><strong>Tổng điểm:</strong> <?php echo $score; ?> / <?php echo count($_SESSION['questions']); ?></p>
-            <p><strong>Điểm cao nhất:</strong> <?php echo $score;?></p>
-            <p><strong>Số lần làm bài:</strong> <?php echo $attempts; ?> / <?php echo $max_attempts; ?></p>
+            <p><strong>Tổng điểm:</strong> <?php echo htmlspecialchars($score); ?> / <?php echo count($_SESSION['questions']); ?></p>
+            <p><strong>Điểm cao nhất:</strong> <?php echo htmlspecialchars($kq_cao_nhat) ?> / <?php echo $max_attempts; ?></p>
+            <p><strong>Số lần thử:</strong> <?php echo htmlspecialchars($_SESSION['so_lan_thu']); ?> / <?php echo $max_attempts; ?></p>
             <p><strong>Trạng thái:</strong> <?php echo $score >= $pass_score ? 'Đạt' : 'Không đạt'; ?></p>
+        
+
+            <div class="navigation-actions" style="display: flex; align-items: center;">
+                <a href="<?php echo htmlspecialchars ($page) ;?>" class="nav-link" style="margin-left: 50%; text-decoration: none; padding: 8px 14px; background-color: #3182ce; color: white; border-radius: 5px;">
+                    Bắt đầu làm bài 
+                </a>
+            </div>
             <hr>
+            <div >
+
+            </div>
             <?php if (empty($answers)): ?>
                 <p class="no-answers">Bạn chưa trả lời câu hỏi nào! <a class="back-to-quiz" href="?reset=1">Quay lại làm bài</a></p>
             <?php else: ?>
                 <?php foreach ($_SESSION['questions'] as $index => $question): ?>
                     <div class="question-block">
-                        <!-- <p class="question-text">Câu <?php echo $index + 1; ?> (ID:<?php echo $question['id']; ?>): <?php echo htmlspecialchars($question['question']); ?></p> -->
-                        <p class="question-text"style="font-size:18px">Câu <?php echo $index + 1; ?>:<?php echo htmlspecialchars($question['question']); ?></p>
+                        <p class="question-text" style="font-size:18px">Câu <?php echo $index + 1; ?>: <?php echo htmlspecialchars($question['question']); ?></p>
                         <?php if (!empty($question['image'])): ?>
                             <div style="display: flex; justify-content: center; margin-top: 15px;">
-                                <img src="<?php echo 'admin/'. htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
+                                <img src="<?php echo 'admin/' . htmlspecialchars($question['image']); ?>" alt="Hình ảnh câu hỏi">
                             </div>
                         <?php endif; ?>
-
                         <ul>
                             <?php foreach ($question['choices'] as $key => $value): ?>
                                 <?php
@@ -779,35 +772,21 @@ $conn->close();
                                 <li class="<?php echo $style; ?>">
                                     <?php echo $key; ?>. <?php echo htmlspecialchars($value); ?>
                                     <?php if (!empty($question['images'][$key])): ?>
-                                        <br><img src="<?php  echo 'admin/' . htmlspecialchars($question['images'][$key]); ?>" alt="Ảnh đáp án <?php echo $key; ?>">
+                                        <br><img src="<?php echo 'admin/' . htmlspecialchars($question['images'][$key]); ?>" alt="Ảnh đáp án <?php echo $key; ?>">
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
                         
-                        <!-- lấy danh sách hiện thị -->
-                        <div class="explanation-block" style="border-color: <?php echo isset($answers[$index]) && $answers[$index]['is_correct'] ? '#28a745' : '#dc3545' ; ?>;">
+                        <div class="explanation-block" style="border-color: <?php echo isset($answers[$index]) && $answers[$index]['is_correct'] ? '#28a745' : '#dc3545'; ?>;">
                             <?php if (isset($answers[$index]['selected']) && !$answers[$index]['is_correct']): ?>
                                 <p><strong>Giải thích:</strong> <?php echo htmlspecialchars($question['explanations'][$answers[$index]['selected']]); ?></p>
                             <?php endif; ?>
                         </div>
-                   
                         <hr>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-           <div class="navigation-actions" style="display: flex; align-items: center;">
-                <form method="POST" action="">
-                    <button type="submit" name="reset" value="1" <?php echo $attempts >= $max_attempts ? 'disabled' : ''; ?>>
-                        🔁 Làm lại (<?php echo $attempts; ?> / <?php echo $max_attempts; ?>)
-                    </button>
-                </form>
-                <!-- Hiển thị link tiếp tục khi ở trang kết quả -->
-                <a href="<?php echo htmlspecialchars($link_tiep_tuc); ?>" class="nav-link" style="margin-left: 72%; text-decoration: none; padding: 8px 14px; background-color: #3182ce; color: white; border-radius: 5px;">
-                    → Tiếp tục
-                </a>
-            </div>
-
         <?php endif; ?>
     </div>
 </body>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 19, 2025 lúc 08:58 AM
+-- Thời gian đã tạo: Th7 10, 2025 lúc 06:12 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -21,10 +21,57 @@ SET time_zone = "+00:00";
 -- Cơ sở dữ liệu: `student`
 --
 
+DELIMITER $$
+--
+-- Thủ tục
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertKetQuaWithIdCauhoi` (IN `p_student_id` INT, IN `p_khoa_id` INT, IN `p_test_id` VARCHAR(255), IN `p_kq_cao_nhat` INT, IN `p_dap_an_list` VARCHAR(1000))   BEGIN
+    DECLARE v_id_cauhoi INT;
+    DECLARE v_new_tt_bai_test VARCHAR(1000) DEFAULT '';
+    DECLARE v_dap_an VARCHAR(255);
+    DECLARE v_counter INT DEFAULT 1;
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur_quiz CURSOR FOR 
+        SELECT Id_cauhoi 
+        FROM quiz 
+        WHERE id_baitest = p_test_id 
+        ORDER BY Id_cauhoi;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Tách danh sách đáp án
+    SET @dap_an_1 = TRIM(SUBSTRING_INDEX(p_dap_an_list, ',', 1));
+    SET @dap_an_2 = IF(LOCATE(',', p_dap_an_list) > 0, TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(p_dap_an_list, ',', 2), ',', -1)), '');
+    SET @dap_an_3 = IF(LOCATE(',', SUBSTRING_INDEX(p_dap_an_list, ',', -1)) > 0, TRIM(SUBSTRING_INDEX(p_dap_an_list, ',', -1)), '');
+
+    -- Xây dựng tt_bai_test
+    OPEN cur_quiz;
+    read_quiz: LOOP
+        FETCH cur_quiz INTO v_id_cauhoi;
+        IF done THEN
+            LEAVE read_quiz;
+        END IF;
+        IF v_counter = 1 THEN
+            SET v_new_tt_bai_test = CONCAT('id', v_id_cauhoi, ': ', @dap_an_1);
+        ELSEIF v_counter = 2 AND @dap_an_2 != '' THEN
+            SET v_new_tt_bai_test = CONCAT(v_new_tt_bai_test, ', id', v_id_cauhoi, ': ', @dap_an_2);
+        ELSEIF v_counter = 3 AND @dap_an_3 != '' THEN
+            SET v_new_tt_bai_test = CONCAT(v_new_tt_bai_test, ', id', v_id_cauhoi, ': ', @dap_an_3);
+        END IF;
+        SET v_counter = v_counter + 1;
+    END LOOP;
+    CLOSE cur_quiz;
+
+    -- Thêm bản ghi vào ket_qua
+    INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_bai_test`)
+    VALUES (p_student_id, p_khoa_id, p_test_id, p_kq_cao_nhat, v_new_tt_bai_test);
+END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng 'login'
+-- Cấu trúc bảng cho bảng `account`
 --
 
 CREATE TABLE `account` (
@@ -33,17 +80,17 @@ CREATE TABLE `account` (
   `account_password` varchar(100) NOT NULL,
   `account_email` varchar(255) NOT NULL,
   `account_type` int(11) NOT NULL
-
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 --
 -- Đang đổ dữ liệu cho bảng `account`
 --
 
-INSERT INTO `account` (`account_id`, `account_name`, `account_password`, `account_email`,`account_type`) VALUES
-(1, 'Admin', '123456', 'admin@gmail.com',2);
+INSERT INTO `account` (`account_id`, `account_name`, `account_password`, `account_email`, `account_type`) VALUES
+(1, 'Admin', '123456', 'admin@gmail.com', 2),
+(2, 'Ad', '$2y$10$6niXOEGeDuvAbW8KC1x9EOUj1JPCtGxUCZGvhs2hDbAwj/6ZJkdce', 'admin2@gmail.com', 1);
 
-
+-- --------------------------------------------------------
 
 --
 -- Cấu trúc bảng cho bảng `ket_qua`
@@ -53,29 +100,22 @@ CREATE TABLE `ket_qua` (
   `student_id` int(11) NOT NULL,
   `khoa_id` int(11) NOT NULL,
   `test_id` varchar(255) NOT NULL,
+  `so_lan_thu` varchar(255) NOT NULL,
   `kq_cao_nhat` int(255) NOT NULL,
-  `tt_bai_test` varchar(1000) NOT NULL
+  `test_cao_nhat` varchar(1000) NOT NULL,
+  `test_gan_nhat` varchar(1000) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Đang đổ dữ liệu cho bảng `ket_qua`
---
-
-INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_bai_test`) VALUES
-(1, 1, '19', 4, 'Câu 1: B, Câu 2: C'),
-(2, 10, '12', 4, 'Câu 1: B, Câu 2: C, Câu 3: D');
-
+--_________
 -- --------------------------------------------------------
 
 --
 -- Cấu trúc bảng cho bảng `khoa_hoc`
 --
 
-
 CREATE TABLE `khoa_hoc` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `khoa_hoc` VARCHAR(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  `id` int(11) NOT NULL,
+  `khoa_hoc` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -83,14 +123,11 @@ CREATE TABLE `khoa_hoc` (
 --
 
 INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
-(1, 'Python cơ bản'),
-(2, 'Python nâng cao'),
-(3, 'YOLO'),
-(4, 'Toán'),
-(5, 'Văn'),
-(6, 'Tiếng anh'),
-(8, 'Sinh học'),
-(10, 'Hoá học');
+(10, 'Python cơ bản'),
+(28, 'Yolo'),
+(29, 'C ++'),
+(30, 'C'),
+(31, 'Toán');
 
 -- --------------------------------------------------------
 
@@ -114,16 +151,8 @@ CREATE TABLE `kiem_tra` (
 --
 
 INSERT INTO `kiem_tra` (`Student_ID`, `Khoa_ID`, `Test_ID`, `Best_Score`, `Max_Score`, `Pass`, `Trial`, `Max_trial`) VALUES
-(3, 1, '19', 0, 0, '80', 0, 3),
-(3, 6, '21', 0, 0, '80', 0, 3),
-(3, 5, '22', 0, 0, '100', 0, 2),
-(3, 3, '16', 0, 0, '80', 0, 2),
-(2, 10, '12', 0, 0, '80', 0, 2),
-(2, 4, '23', 0, 0, '80', 0, 3),
-(2, 3, '16', 0, 0, '80', 0, 2),
-(1, 10, '12', 0, 0, '80', 0, 2),
-(1, 2, '29', 0, 0, '100', 0, 2),
-(1, 4, '23', 0, 0, '80', 0, 3);
+(2, 28, '59', 0, 0, '80', 0, 3),
+(1, 10, '71', 0, 0, '80', 0, 3);
 
 -- --------------------------------------------------------
 
@@ -154,7 +183,7 @@ INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
 --
 
 CREATE TABLE `quiz` (
-  `Id_cauhoi` int(11) NOT NULL AUTO_INCREMENT,
+  `Id_cauhoi` int(11) NOT NULL,
   `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
   `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
   `cauhoi` varchar(255) NOT NULL,
@@ -171,75 +200,18 @@ CREATE TABLE `quiz` (
   `cau_d` varchar(255) NOT NULL,
   `hinhanh_d` varchar(255) DEFAULT NULL,
   `giaithich_d` varchar(255) NOT NULL,
-  `dap_an` varchar(255) NOT NULL,
-  
+  `dap_an` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
---
--- lấy dữ liên thêm cau hỏi tăng id_câuhoi
-
-ALTER TABLE quiz
-MODIFY COLUMN Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE quiz MODIFY Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
-ALTER TABLE quiz ADD PRIMARY KEY (Id_cauhoi);
-
-
------
 --
 -- Đang đổ dữ liệu cho bảng `quiz`
 --
 
-INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `giaithich_a`, `cau_b`, `giaithich_b`, `cau_c`, `giaithich_c`, `cau_d`, `giaithich_d`, `dap_an`) VALUES
-(1, 'Giữa kỳ', 'Python cơ bản', 'Câu lệnh in ra \"Hello World\" trong Python là?', NULL, 'print(\"Hello World\")', 'Đúng', 'echo \"Hello World\"', 'Sai, dùng trong PHP', 'console.log(\"Hello World\")', 'Sai, JS dùng', 'System.out.println(\"Hello World\")', 'Sai, Java dùng', 'A'),
-(2, 'Giữa kỳ', 'Python cơ bản', 'Kiểu dữ liệu nào lưu trữ chuỗi?', NULL, 'int', 'Số nguyên', 'str', 'Đúng, là kiểu chuỗi', 'bool', 'Boolean', 'float', 'Số thực', 'B'),
-(3, 'Giữa kỳ', 'Python cơ bản', 'Vòng lặp nào lặp qua dãy số?', NULL, 'for', 'Đúng, dùng for range', 'if', 'Không phải vòng lặp', 'try', 'Khối xử lý lỗi', 'print', 'In ra', 'A'),
-(4, 'Giữa kỳ', 'Python cơ bản', 'Cách khai báo danh sách?', NULL, '[1,2,3]', 'Đúng, là list', '(1,2,3)', 'Tuple', '{1,2,3}', 'Set', '<1,2,3>', 'Không hợp lệ', 'A'),
-(5, 'Cuối kỳ', 'Python cơ bản', 'Toán tử so sánh bằng là?', NULL, '=', 'Gán giá trị', '==', 'Đúng', '!=', 'So sánh khác', '===', 'Không dùng trong Python', 'B'),
-(6, 'Cuối kỳ', 'Python cơ bản', 'Hàm tính độ dài list?', NULL, 'length()', 'Sai', 'len()', 'Đúng', 'count()', 'Sai', 'size()', 'Sai', 'B'),
-(7, 'Giữa kỳ', 'Python nâng cao', 'Lambda dùng để làm gì?', NULL, 'Định nghĩa hàm nhanh', 'Đúng', 'Tạo biến', 'Sai', 'Tạo class', 'Sai', 'Tạo loop', 'Sai', 'A'),
-(8, 'Giữa kỳ', 'Python nâng cao', 'Decorator được dùng để?', NULL, 'Trang trí UI', 'Sai', 'Chạy chương trình', 'Sai', 'Thêm chức năng cho hàm', 'Đúng', 'Gỡ lỗi', 'Sai', 'C'),
-(9, 'Giữa kỳ', 'Python nâng cao', 'Gói chuẩn để xử lý JSON?', NULL, 'os', 'Sai', 'sys', 'Sai', 'json', 'Đúng', 'math', 'Sai', 'C'),
-(10, 'Cuối kỳ', 'Python nâng cao', 'Generator là gì?', NULL, 'Hàm trả iterator', 'Đúng', 'List', 'Sai', 'Loop', 'Sai', 'Dict', 'Sai', 'A'),
-(11, 'Cuối kỳ', 'Python nâng cao', 'Từ khóa yield dùng trong?', NULL, 'Class', 'Sai', 'Loop', 'Sai', 'Generator', 'Đúng', 'Import', 'Sai', 'C'),
-(12, 'Cuối kỳ', 'Python nâng cao', 'Module nào làm việc với file hệ thống?', NULL, 'os', 'Đúng', 'json', 'Không đúng', 'sys', 'Sai', 'math', 'Sai', 'A'),
-(13, 'Giữa kỳ', 'YOLO', 'YOLO là viết tắt của?', NULL, 'You Only Learn Once', 'Sai', 'You Only Look Once', 'Đúng', 'Your Only Logic Option', 'Sai', 'None of the above', 'Sai', 'B'),
-(14, 'Giữa kỳ', 'YOLO', 'YOLO dùng để?', NULL, 'Dịch ngôn ngữ', 'Sai', 'Xử lý ảnh', 'Đúng', 'Phân tích âm thanh', 'Sai', 'Tạo ảnh', 'Sai', 'B'),
-(15, 'Giữa kỳ', 'YOLO', 'YOLO thuộc nhóm?', NULL, 'Phân loại ảnh', 'Sai', 'Phát hiện vật thể', 'Đúng', 'Tăng cường học', 'Sai', 'LSTM', 'Sai', 'B'),
-(16, 'Cuối kỳ', 'YOLO', 'YOLO dựa vào?', NULL, 'CNN', 'Đúng', 'RNN', 'Sai', 'GAN', 'Sai', 'Transformer', 'Sai', 'A'),
-(17, 'Cuối kỳ', 'YOLO', 'YOLOv4 khác gì YOLOv3?', NULL, 'Nhanh hơn', 'Đúng', 'Chậm hơn', 'Sai', 'Không khác gì', 'Sai', 'Cũ hơn', 'Sai', 'A'),
-(18, 'Cuối kỳ', 'YOLO', 'Đầu ra của YOLO là?', NULL, 'Văn bản', 'Sai', 'Ảnh', 'Sai', 'Hộp giới hạn & nhãn', 'Đúng', 'Âm thanh', 'Sai', 'C'),
-(19, 'Cuối kỳ', 'Toán', 'Giá trị của π là?', NULL, '3.14', 'Gần đúng', '2.71', 'Sai', '1.61', 'Sai', '1.41', 'Sai', 'A'),
-(20, 'Giữa kỳ', 'Toán', 'Đạo hàm của x^2 là?', NULL, 'x', 'Sai', '2x', 'Đúng', 'x^2', 'Sai', '1', 'Sai', 'B'),
-(21, 'Giữa kỳ', 'Toán', 'Hàm số y = mx + b là dạng?', NULL, 'Bậc hai', 'Sai', 'Tuyến tính', 'Đúng', 'Hằng số', 'Sai', 'Lôgarit', 'Sai', 'B'),
-(22, 'Giữa kỳ', 'Toán', 'sin(90°) bằng?', NULL, '0', 'Sai', '1', 'Đúng', '0.5', 'Sai', '√2/2', 'Sai', 'B'),
-(23, 'Giữa kỳ', 'Toán', 'Căn bậc hai của 49?', NULL, '5', 'Sai', '6', 'Sai', '7', 'Đúng', '8', 'Sai', 'C'),
-(24, 'Giữa kỳ', 'Toán', 'log(100) cơ số 10?', NULL, '1', 'Sai', '2', 'Đúng', '10', 'Sai', '0', 'Sai', 'B'),
-(25, 'Giữa kỳ', 'Văn', 'Tác giả Truyện Kiều?', NULL, 'Nguyễn Du', 'Đúng', 'Nguyễn Trãi', 'Sai', 'Hồ Xuân Hương', 'Sai', 'Tố Hữu', 'Sai', 'A'),
-(26, 'Giữa kỳ', 'Văn', 'Phong cách thơ Xuân Quỳnh?', NULL, 'Lãng mạn', 'Đúng', 'Hiện thực', 'Sai', 'Trào phúng', 'Sai', 'Chính luận', 'Sai', 'A'),
-(27, 'Giữa kỳ', 'Văn', 'Truyện ngắn \"Lão Hạc\" của?', NULL, 'Nam Cao', 'Đúng', 'Kim Lân', 'Sai', 'Ngô Tất Tố', 'Sai', 'Nguyễn Huy Tưởng', 'Sai', 'A'),
-(28, 'Giữa kỳ', 'Văn', '\"Bình Ngô đại cáo\" do ai viết?', NULL, 'Nguyễn Du', 'Sai', 'Nguyễn Trãi', 'Đúng', 'Lê Lợi', 'Sai', 'Trần Quốc Tuấn', 'Sai', 'B'),
-(29, 'Cuối kỳ', 'Văn', 'Thể thơ lục bát là?', NULL, '6-8 chữ', 'Đúng', '5 chữ', 'Sai', '7 chữ', 'Sai', '4 chữ', 'Sai', 'A'),
-(30, 'Cuối kỳ', 'Văn', 'Tác phẩm \"Tắt đèn\" của?', NULL, 'Ngô Tất Tố', 'Đúng', 'Nam Cao', 'Sai', 'Tô Hoài', 'Sai', 'Vũ Trọng Phụng', 'Sai', 'A'),
-(31, 'Cuối kỳ', 'Tiếng anh', 'Từ \"beautiful\" là loại từ gì?', NULL, 'Động từ', 'Sai', 'Tính từ', 'Đúng', 'Danh từ', 'Sai', 'Trạng từ', 'Sai', 'B'),
-(32, 'Giữa kỳ', 'Tiếng anh', 'Quá khứ của \"go\"?', NULL, 'goed', 'Sai', 'gone', 'Sai', 'went', 'Đúng', 'goes', 'Sai', 'C'),
-(33, 'Giữa kỳ', 'Tiếng anh', 'Số nhiều của \"child\"?', NULL, 'childs', 'Sai', 'children', 'Đúng', 'childes', 'Sai', 'childer', 'Sai', 'B'),
-(34, 'Cuối kỳ', 'Tiếng anh', 'Which word is a noun?', NULL, 'run', 'Sai', 'quick', 'Sai', 'happiness', 'Đúng', 'sad', 'Sai', 'C'),
-(35, 'Cuối kỳ', 'Tiếng anh', 'Tense of \"had eaten\"?', NULL, 'Present', 'Sai', 'Past Simple', 'Sai', 'Past Perfect', 'Đúng', 'Future', 'Sai', 'C'),
-(36, 'Cuối kỳ', 'Tiếng anh', 'Antonym of \"happy\"?', NULL, 'joyful', 'Sai', 'sad', 'Đúng', 'glad', 'Sai', 'cheerful', 'Sai', 'B'),
-(37, 'Giữa kỳ', 'Sinh hoc', 'Đơn vị cấu tạo cơ thể?', NULL, 'Tế bào', 'Đúng', 'Cơ quan', 'Sai', 'Hệ cơ quan', 'Sai', 'Tổ chức', 'Sai', 'A'),
-(38, 'Giữa kỳ', 'Sinh hoc', 'DNA mang thông tin?', NULL, 'Di truyền', 'Đúng', 'Thức ăn', 'Sai', 'Hô hấp', 'Sai', 'Thị giác', 'Sai', 'A'),
-(39, 'Giữa kỳ', 'Sinh hoc', 'Thực vật quang hợp nhờ?', NULL, 'Ti thể', 'Sai', 'Lục lạp', 'Đúng', 'Nhân', 'Sai', 'Không bào', 'Sai', 'B'),
-(40, 'Cuối kỳ', 'Sinh hoc', 'Hệ tuần hoàn gồm?', NULL, 'Tim và mạch máu', 'Đúng', 'Não và tủy', 'Sai', 'Gan và thận', 'Sai', 'Xương và cơ', 'Sai', 'A'),
-(41, 'Cuối kỳ', 'Sinh hoc', 'Máu vận chuyển gì?', NULL, 'Oxy và chất dinh dưỡng', 'Đúng', 'Điện', 'Sai', 'Khí CO2', 'Chỉ 1 phần', 'Sóng', 'Sai', 'A'),
-(42, 'Cuối kỳ', 'Sinh hoc', 'Bộ gen người có?', NULL, '23 cặp NST', 'Đúng', '46 NST đơn lẻ', 'Cũng đúng', '24 cặp NST', 'Sai', '22 NST', 'Sai', 'A'),
-(43, 'Giữa kỳ', 'Hoá học', 'H2O là công thức của?', NULL, 'Oxy', 'Sai', 'Nước', 'Đúng', 'Hydro', 'Sai', 'Không khí', 'Sai', 'B'),
-(44, 'Giữa kỳ', 'Hoá học', 'pH < 7 là?', NULL, 'Trung tính', 'Sai', 'Axit', 'Đúng', 'Bazơ', 'Sai', 'Muối', 'Sai', 'B'),
-(45, 'Giữa kỳ', 'Hoá học', 'NaCl là?', NULL, 'Axit', 'Sai', 'Muối', 'Đúng', 'Bazơ', 'Sai', 'Kim loại', 'Sai', 'B'),
-(46, 'Cuối kỳ', 'Hoá học', 'Khi đốt Mg trong O2 tạo?', NULL, 'CO2', 'Sai', 'MgO', 'Đúng', 'H2O', 'Sai', 'NaCl', 'Sai', 'B'),
-(47, 'Cuối kỳ', 'Hoá học', 'Nguyên tử có?', NULL, 'Proton, neutron, electron', 'Đúng', 'Chỉ electron', 'Sai', 'Chỉ proton', 'Sai', 'Chỉ neutron', 'Sai', 'A'),
-(48, 'Cuối kỳ', 'Hoá học', 'Số hiệu nguyên tử H là?', NULL, '1', 'Đúng', '2', 'Sai', '0', 'Sai', '8', 'Sai', 'A');
+INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, `cau_a`, `hinhanh_a`, `giaithich_a`, `cau_b`, `hinhanh_b`, `giaithich_b`, `cau_c`, `hinhanh_c`, `giaithich_c`, `cau_d`, `hinhanh_d`, `giaithich_d`, `dap_an`) VALUES
+(1, 'Bài kiểm tra chương 1', 'Python cơ bản', 'qqqqqqqqqqq', NULL, 'qqqqqqqqqqqqqq', NULL, 'qqqqqqqqqqqq', 'qqqqqqqqqqqq', NULL, 'qqqqqqqqqqqqqq', 'qqqqqqqqqqq', NULL, 'QQQQQQQQQQQQQQ', 'QQQQQQQQQQQQ', NULL, 'sssssssssssss', 'B'),
+(2, 'Bài kiểm tra chương 1', 'Python cơ bản', 'qqqqqqqqqq', NULL, 'aaaaaaaa', NULL, 'aaaaaaaaaaaa', 'aaaaaaaaaaaaa', NULL, 'aaaaaaaaaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaa', NULL, 'ssssssssssssss', 'ssssssssssssssss', 'images/d_686ea437a7402.png', 'wwwwwwwwwwwwwwww', '0'),
+(3, 'Bài kiểm tra chương 1', 'Python cơ bản', 'qqqqqqqqqq', NULL, 'aaaaaaaa', NULL, 'aaaaaaaaaaaa', 'aaaaaaaaaaaaa', NULL, 'aaaaaaaaaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaa', NULL, 'ssssssssssssss', 'ssssssssssssssss', 'images/d_686ea437a7402.png', 'wwwwwwwwwwwwwwww', '0'),
+(4, 'Bài kiểm tra chương 1', 'Python cơ bản', 'qqqqqqqqqqq', NULL, 'qqqqqqqqqqqqqq', NULL, 'qqqqqqqqqqqq', 'qqqqqqqqqqqq', NULL, 'qqqqqqqqqqqqqq', 'qqqqqqqqqqq', NULL, 'QQQQQQQQQQQQQQ', 'QQQQQQQQQQQQ', NULL, 'sssssssssssss', 'B');
 
 -- --------------------------------------------------------
 
@@ -276,9 +248,10 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`IMEI`, `MB_ID`, `OS_ID`, `Student_ID`, `Password`, `Ten`, `Email`, `Khoahoc`) VALUES
-(1, 1, 1, '1', '1', 'A', 'an1@gmail.com', '1,4'),
-(2, 2, 2, '2', '2', 'B', 'an2@gmail.com', '10,3'),
-(3, 3, 3, '3', '3', 'C', 'An3@gmail.com', '1,6,5,3');
+(1, 1, 1, '1', '1', 'A', 'an1@gmail.com', '10'),
+(2, 2, 2, '2', '2', 'B', 'an2@gmail.com', '28'),
+(3, 3, 3, '3', '3', 'C', 'An3@gmail.com', ''),
+(4, 4, 4, '4', '4', 'abc', 'aa@gmail.com', '');
 
 -- --------------------------------------------------------
 
@@ -300,24 +273,21 @@ CREATE TABLE `test` (
 --
 
 INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau_hien_thi`) VALUES
-(2, 8, 'Giữa kỳ', 2, '80', 0),
-(12, 10, 'Giữa kỳ', 2, '80', 3),
-(16, 3, 'Giữa kỳ', 2, '80', 0),
-(19, 1, 'Cuối kỳ', 3, '80', 0),
-(21, 6, 'Cuối kỳ', 3, '80', 0),
-(22, 5, 'Giữa kỳ', 2, '100', 0),
-(23, 4, 'Giữa kỳ', 3, '80', 0),
-(29, 2, 'Giữa kỳ', 2, '100', 0);
+(52, 26, 'Cuối kỳ', 3, '100', 0),
+(53, 26, 'Giữa kỳ', 3, '80', 0),
+(59, 28, 'Giữa kỳ', 3, '80', 0),
+(71, 10, 'Bài kiểm tra chương 1', 3, '80', 4),
+(72, 31, 'Giữa kỳ', 1, '80', 0);
 
 --
 -- Chỉ mục cho các bảng đã đổ
 --
 
 --
--- Chỉ mục cho bảng `ket_qua`
+-- Chỉ mục cho bảng `account`
 --
-ALTER TABLE `ket_qua`
-  ADD PRIMARY KEY (`student_id`);
+ALTER TABLE `account`
+  ADD PRIMARY KEY (`account_id`);
 
 --
 -- Chỉ mục cho bảng `khoa_hoc`
@@ -354,16 +324,16 @@ ALTER TABLE `test`
 --
 
 --
--- AUTO_INCREMENT cho bảng `ket_qua`
+-- AUTO_INCREMENT cho bảng `khoa_hoc`
 --
-ALTER TABLE `ket_qua`
-  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+ALTER TABLE `khoa_hoc`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT cho bảng `test`
 --
 ALTER TABLE `test`
-  MODIFY `id_test` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id_test` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

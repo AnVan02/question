@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 26, 2025 lúc 07:44 PM
+-- Thời gian đã tạo: Th6 19, 2025 lúc 08:58 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -24,6 +24,28 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng 'login'
+--
+
+CREATE TABLE `account` (
+  `account_id` int(11) NOT NULL,
+  `account_name` varchar(255) NOT NULL,
+  `account_password` varchar(100) NOT NULL,
+  `account_email` varchar(255) NOT NULL,
+  `account_type` int(11) NOT NULL
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
+
+--
+-- Đang đổ dữ liệu cho bảng `account`
+--
+
+INSERT INTO `account` (`account_id`, `account_name`, `account_password`, `account_email`,`account_type`) VALUES
+(1, 'Admin', '123456', 'admin@gmail.com',2);
+
+
+
+--
 -- Cấu trúc bảng cho bảng `ket_qua`
 --
 
@@ -31,8 +53,8 @@ CREATE TABLE `ket_qua` (
   `student_id` int(11) NOT NULL,
   `khoa_id` int(11) NOT NULL,
   `test_id` varchar(255) NOT NULL,
-  `kq_cao_nhat` int(11) NOT NULL,
-  `tt_bai_test` text DEFAULT NULL COMMENT 'Lưu dạng JSON hoặc format thống nhất'
+  `kq_cao_nhat` int(255) NOT NULL,
+  `tt_bai_test` varchar(1000) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -40,8 +62,8 @@ CREATE TABLE `ket_qua` (
 --
 
 INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_bai_test`) VALUES
-(1, 1, '19', 2, '5:B;6:B'),
-(1, 4, '23', 2, '20:B;21:B;22:B;23:B;24:B');
+(1, 1, '19', 4, 'Câu 1: B, Câu 2: C'),
+(2, 10, '12', 4, 'Câu 1: B, Câu 2: C, Câu 3: D');
 
 -- --------------------------------------------------------
 
@@ -49,9 +71,11 @@ INSERT INTO `ket_qua` (`student_id`, `khoa_id`, `test_id`, `kq_cao_nhat`, `tt_ba
 -- Cấu trúc bảng cho bảng `khoa_hoc`
 --
 
+
 CREATE TABLE `khoa_hoc` (
-  `id` int(11) NOT NULL,
-  `khoa_hoc` varchar(255) NOT NULL
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `khoa_hoc` VARCHAR(255) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -66,8 +90,7 @@ INSERT INTO `khoa_hoc` (`id`, `khoa_hoc`) VALUES
 (5, 'Văn'),
 (6, 'Tiếng anh'),
 (8, 'Sinh học'),
-(10, 'Hoá học'),
-(11, 'Vật lý');
+(10, 'Hoá học');
 
 -- --------------------------------------------------------
 
@@ -94,9 +117,10 @@ INSERT INTO `kiem_tra` (`Student_ID`, `Khoa_ID`, `Test_ID`, `Best_Score`, `Max_S
 (3, 1, '19', 0, 0, '80', 0, 3),
 (3, 6, '21', 0, 0, '80', 0, 3),
 (3, 5, '22', 0, 0, '100', 0, 2),
-(2, 3, '16', 0, 0, '80', 0, 2),
+(3, 3, '16', 0, 0, '80', 0, 2),
 (2, 10, '12', 0, 0, '80', 0, 2),
 (2, 4, '23', 0, 0, '80', 0, 3),
+(2, 3, '16', 0, 0, '80', 0, 2),
 (1, 10, '12', 0, 0, '80', 0, 2),
 (1, 2, '29', 0, 0, '100', 0, 2),
 (1, 4, '23', 0, 0, '80', 0, 3);
@@ -129,28 +153,40 @@ INSERT INTO `login` (`Id`, `Student_ID`, `Password`) VALUES
 -- Cấu trúc bảng cho bảng `quiz`
 --
 
-CREATE TABLE `quizs` (
-  `Id_cauhoi` int(11) NOT NULL,
+CREATE TABLE `quiz` (
+  `Id_cauhoi` int(11) NOT NULL AUTO_INCREMENT,
   `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
   `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
   `cauhoi` varchar(255) NOT NULL,
   `hinhanh` varchar(255) DEFAULT NULL,
   `cau_a` varchar(255) NOT NULL,
+  `hinhanh_a` varchar(255) DEFAULT NULL,
   `giaithich_a` varchar(250) NOT NULL,
-  `hinhanh` varchar(255) DEFAULT NULL,
   `cau_b` varchar(255) NOT NULL,
+  `hinhanh_b` varchar(255) DEFAULT NULL,
   `giaithich_b` varchar(255) NOT NULL,
-  `hinhanh` varchar(255) DEFAULT NULL,
   `cau_c` varchar(255) NOT NULL,
+  `hinhanh_c` varchar(255) DEFAULT NULL,
   `giaithich_c` varchar(255) NOT NULL,
-  `hinhanh` varchar(255) DEFAULT NULL,
   `cau_d` varchar(255) NOT NULL,
+  `hinhanh_d` varchar(255) DEFAULT NULL,
   `giaithich_d` varchar(255) NOT NULL,
-  `hinhanh` varchar(255) DEFAULT NULL,
-  `dap_an` varchar(255) NOT NULL
+  `dap_an` varchar(255) NOT NULL,
+  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
+--
+-- lấy dữ liên thêm cau hỏi tăng id_câuhoi
+
+ALTER TABLE quiz
+MODIFY COLUMN Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE quiz MODIFY Id_cauhoi INT(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE quiz ADD PRIMARY KEY (Id_cauhoi);
+
+
+-----
 --
 -- Đang đổ dữ liệu cho bảng `quiz`
 --
@@ -208,32 +244,6 @@ INSERT INTO `quiz` (`Id_cauhoi`, `id_baitest`, `ten_khoa`, `cauhoi`, `hinhanh`, 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `cauhoi`
---
-
-CREATE TABLE `cauhoi` (
-  `Id_cauhoi` int(11) NOT NULL,
-  `id_baitest` varchar(50) NOT NULL COMMENT 'Lưu Giữa kỳ hoặc Cuối kỳ',
-  `ten_khoa` varchar(100) NOT NULL COMMENT 'Tên môn học, ví dụ: Lập trình',
-  `cauhoi` varchar(255) NOT NULL,
-  `hinhanh` varchar(255) DEFAULT NULL,
-  `cau_a` varchar(255) NOT NULL,
-  `giaithich_a` varchar(250) NOT NULL,
-  `hinhanh` varchar(280) DEFAULT NULL,
-  `cau_b` varchar(255) NOT NULL,
-  `giaithich_b` varchar(255) NOT NULL,
-  `hinhanh` varchar(280) DEFAULT NULL,
-  `cau_c` varchar(255) NOT NULL,
-  `giaithich_c` varchar(255) NOT NULL,
-  `hinhanh` varchar(280) DEFAULT NULL,
-  `cau_d` varchar(255) NOT NULL,
-  `giaithich_d` varchar(255) NOT NULL,
-  `hinhanh` varchar(255) DEFAULT NULL,
-  `dap_an` varchar(280) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-
---
 -- Cấu trúc bảng cho bảng `sinhvien`
 --
 
@@ -266,8 +276,8 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`IMEI`, `MB_ID`, `OS_ID`, `Student_ID`, `Password`, `Ten`, `Email`, `Khoahoc`) VALUES
-(1, 1, 1, '1', '1', 'A', 'an1@gmail.com', '1,4,10'),
-(2, 2, 2, '2', '2', 'B', 'an2@gmail.com', '10,3,4'),
+(1, 1, 1, '1', '1', 'A', 'an1@gmail.com', '1,4'),
+(2, 2, 2, '2', '2', 'B', 'an2@gmail.com', '10,3'),
 (3, 3, 3, '3', '3', 'C', 'An3@gmail.com', '1,6,5,3');
 
 -- --------------------------------------------------------
@@ -290,7 +300,7 @@ CREATE TABLE `test` (
 --
 
 INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau_hien_thi`) VALUES
-(1, 8, 'Giữa kỳ', 2, '80', 0),
+(2, 8, 'Giữa kỳ', 2, '80', 0),
 (12, 10, 'Giữa kỳ', 2, '80', 3),
 (16, 3, 'Giữa kỳ', 2, '80', 0),
 (19, 1, 'Cuối kỳ', 3, '80', 0),
@@ -307,7 +317,7 @@ INSERT INTO `test` (`id_test`, `id_khoa`, `ten_test`, `lan_thu`, `Pass`, `so_cau
 -- Chỉ mục cho bảng `ket_qua`
 --
 ALTER TABLE `ket_qua`
-  ADD PRIMARY KEY (`student_id`,`khoa_id`,`test_id`);
+  ADD PRIMARY KEY (`student_id`);
 
 --
 -- Chỉ mục cho bảng `khoa_hoc`
@@ -344,10 +354,10 @@ ALTER TABLE `test`
 --
 
 --
--- AUTO_INCREMENT cho bảng `khoa_hoc`
+-- AUTO_INCREMENT cho bảng `ket_qua`
 --
-ALTER TABLE `khoa_hoc`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+ALTER TABLE `ket_qua`
+  MODIFY `student_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `test`

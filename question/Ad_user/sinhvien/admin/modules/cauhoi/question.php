@@ -92,7 +92,7 @@ if ($id_test > 0) {
 $questions = [];
 if ($id_test > 0 && $test_info && $khoa_hoc) {
     $conn = dbconnect();
-    $sql = "SELECT Id_cauhoi, id_baitest, ten_khoa, cauhoi, cau_a, cau_b, cau_c, cau_d, dap_an 
+    $sql = "SELECT Id_cauhoi, id_baitest, ten_khoa, cauhoi, cau_a, cau_b, cau_c, cau_d, dap_an, hinhanh_a, hinhanh_b, hinhanh_c, hinhanh_d 
             FROM quiz 
             WHERE id_baitest = ? AND ten_khoa = ?";
     $stmt = $conn->prepare($sql);
@@ -138,9 +138,7 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                 <table>
                     <thead>
                         <tr>
-                            <!-- <th>ID Câu hỏi</th> -->
-                            <th>Bài test</th>
-                            <th>Môn học</th>
+                           
                             <th>Câu hỏi</th>
                             <th>Hành động</th>
 
@@ -150,36 +148,49 @@ if ($id_test > 0 && $test_info && $khoa_hoc) {
                         <?php foreach ($questions as $question): ?>
                             <tr>
                                 <!-- <td><?php echo htmlspecialchars($question['Id_cauhoi']); ?></td> -->
-                                <td><?php echo htmlspecialchars($question['id_baitest']); ?></td>
-                                <td><?php echo htmlspecialchars($question['ten_khoa']); ?></td>
+                                <!-- <td><?php echo htmlspecialchars($question['id_baitest']); ?></td>
+                                <td><?php echo htmlspecialchars($question['ten_khoa']); ?></td> -->
                                 <td>
                                     <?php echo htmlspecialchars($question['cauhoi']); ?>
                                     <ul style="margin: 8px 0 0 20px; padding: 0;">
                                         <p<?php if ($question['dap_an'] == 'A') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
                                             A. <?php echo htmlspecialchars($question['cau_a']); ?>
+                                            <?php if (!empty($question['hinhanh_a'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_a']); ?>" alt="Ảnh đáp án A" style="max-width:480px; border-radius:8px; margin-top:5px;">
+                                            <?php endif; ?>
                                         </p>
+
                                         <p<?php if ($question['dap_an'] == 'B') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
-                                            B. <?php echo htmlspecialchars($question['cau_a']); ?>
+                                            B. <?php echo htmlspecialchars($question['cau_b']); ?>
+                                            <?php if (!empty($question['hinhanh_b'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_b']); ?>" alt="Ảnh đáp án B" style="max-width:480px; border-radius:8px; margin-top:5px;">
+                                            <?php endif; ?>
                                         </p>
+
                                         <p<?php if($question['dap_an'] == 'C') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
                                             C. <?php echo htmlspecialchars($question['cau_c']);?>
-                                        </p>
-                                        <p<?php if($question['dap_an'] == 'D') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
-                                            D. <?php echo htmlspecialchars($question ['cau_d']);?>
+                                            <?php if (!empty($question['hinhanh_c'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_c']); ?>" alt="Ảnh đáp án C" style="max-width:480px; border-radius:8px; margin-top:5px;">
+                                            <?php endif; ?>
                                         </p>
 
+                                        <p<?php if($question['dap_an'] == 'D') echo ' style="color: #3182ce;font-weight:bold;font-size:18px"'; ?>>
+                                            D. <?php echo htmlspecialchars($question['cau_d']);?>
+                                            <?php if (!empty($question['hinhanh_d'])): ?>
+                                                <br><img src="<?php echo htmlspecialchars($question['hinhanh_d']); ?>" alt="Ảnh đáp án D" style="max-width:480px; border-radius:8px; margin-top:5px;">
+                                            <?php endif; ?>
+                                        </p>
                                     </ul>
                                 </td>
-
-                                <td>
-                                    <a href="index.php?action=add_question&question_id=<?php echo htmlspecialchars($question['Id_cauhoi']); ?>&id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-edit">Sửa</a>
-                                    <a href="<?php echo htmlspecialchars('index.php?action=question&id_test=' . $id_test . '&delete_id=' . $question['Id_cauhoi']); ?>" 
-                                       class="btn-delete" 
-                                       onclick="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">Xóa</a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
+                            <td>
+                                <a href="index.php?action=add_question&question_id=<?php echo htmlspecialchars($question['Id_cauhoi']); ?>&id_test=<?php echo htmlspecialchars($id_test); ?>" class="btn-edit">Sửa</a>
+                                <a href="<?php echo htmlspecialchars('index.php?action=question&id_test=' . $id_test . '&delete_id=' . $question['Id_cauhoi']); ?>" 
+                                    class="btn-delete" 
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa câu hỏi này?');">Xóa</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
                     
                 </table>
             <?php endif; ?>
