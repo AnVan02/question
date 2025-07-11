@@ -1,0 +1,15 @@
++ Tạo nhánh 
+	git checkout -b + nhánh
+
++ Kiểm tra nhánh 
+	git branch 
+
++ Kiểm tra remote 
+	git remote -v
+
++ Đổi remote "đôi trang git"
+	git remote set-url origin + tên trang git 
+
+
+
+
